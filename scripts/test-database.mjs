@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { testQueueManagementConcurrency } from "../tests/database/queue-management-concurrency.mjs";
 import { testOnboardingConcurrency } from "../tests/database/onboarding-concurrency.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -48,6 +49,7 @@ try {
   docker(["cp", "supabase/tests", `${container}:/tmp/queuezero-tests`]);
   docker(["exec", container, "pg_prove", "-U", "postgres", "-d", "postgres", "--ext", ".sql", "--recurse", "/tmp/queuezero-tests"]);
   await testOnboardingConcurrency(container);
+  await testQueueManagementConcurrency(container);
 } finally {
   // The randomly named test container is the only resource removed.
   spawnSync("docker", ["rm", "--force", container], { stdio: "ignore" });

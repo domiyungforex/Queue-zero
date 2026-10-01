@@ -1,0 +1,20 @@
+import { randomUUID } from "node:crypto";
+import Link from "next/link";
+import { requireBusinessManager } from "@/lib/business/membership";
+import { getDashboardLocations } from "@/lib/dashboard/data";
+import { createQueue } from "@/app/dashboard/queues/actions";
+import { QueueForm } from "@/components/queue/queue-form";
+
+export default async function NewQueuePage() {
+  const membership = await requireBusinessManager();
+  const locations = await getDashboardLocations();
+  const queueId = randomUUID();
+  return <>
+    <Link href="/dashboard/queues" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary">← Queues</Link>
+    <h1 className="mt-3 text-3xl font-semibold">Create a queue</h1>
+    <p className="mb-8 mt-3 text-muted">Choose the service your customers are waiting for.</p>
+    {locations.some((location) => location.is_active)
+      ? <QueueForm action={createQueue.bind(null, { businessId: membership.businessId, queueId })} locations={locations} />
+      : <div className="rounded-2xl border border-black/10 bg-white p-8"><h2 className="text-xl font-semibold">An active location is needed</h2><p className="mt-3 text-muted">This business has no active locations for a new queue.</p><Link href="/dashboard/locations" className="mt-4 inline-flex min-h-11 items-center font-semibold text-primary">View locations →</Link></div>}
+  </>;
+}

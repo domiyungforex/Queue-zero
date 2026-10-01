@@ -2,7 +2,7 @@
 Universal virtual queues for physical service businesses.
 
 ## Current scope
-Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, and a responsive business dashboard. Queue operations, billing, and PWA are subsequent bounded tasks.
+Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, and queue creation/management. Customer joining, staff ticket operations, billing, and PWA are subsequent bounded tasks.
 
 ## Local development
 Requires Node.js 22.12+ (including the test tooling) and npm.
@@ -22,7 +22,7 @@ Remaining integration variables are placeholders until their integrations are im
 
 See [the database guide](supabase/README.md) for native Clerk/Supabase setup, migrations, permissions, and generated types. The server-only `createUserSupabaseClient()` uses the verified Clerk session and the public project key, so PostgreSQL RLS remains active. It never falls back to the service role.
 
-All application tables have RLS. Owners/admins can read their tenant's operational data; staff customer access is limited to assigned queues. Billing is owner-only. Public customers have no direct table access. Direct client table writes are disabled; the authenticated onboarding RPC is the first controlled mutation.
+All application tables have RLS. Owners/admins can read their tenant's operational data; staff customer access is limited to assigned queues. Billing is owner-only. Public customers have no direct table access. Direct client table writes are disabled; authenticated onboarding and queue-management RPCs provide controlled mutations.
 
 Run the PostgreSQL isolation suite without configuring hosted credentials:
 
@@ -48,11 +48,27 @@ The server action authenticates and validates with Zod. The database RPC indepen
 
 ## Dashboard
 
-The dashboard provides responsive navigation, real queue summaries, locations, read-only business settings, and the current plan. Analytics and subscription management are explicitly upcoming; no synthetic metrics or nonfunctional queue controls are shown.
+The dashboard provides responsive navigation, real queue summaries, locations, read-only business settings, and the current plan. Analytics and subscription management are explicitly upcoming; no synthetic metrics are shown.
 
 Users with multiple memberships can switch workspaces. An HTTP-only cookie stores the preference; every request verifies it against the current Clerk user's memberships. Missing or revoked selections fall back to the first membership ordered by creation time and ID. Queries explicitly scope the selected business and retain RLS. Staff see only assigned queues; locations and analytics require owner/admin access; billing and settings require owner access, enforced server-side as well as in navigation.
 
-Queue creation and editing are the next task. Dashboard data has loading, empty, populated, and retryable error states. Business switching returns to the overview so a different role cannot strand a user on an inaccessible page.
+Dashboard data has loading, empty, populated, and retryable error states. Business switching returns to the overview so a different role cannot strand a user on an inaccessible page.
+
+## Queue management
+
+Apply `20261001000003_queue_management.sql` before using these screens. Owners and admins can create a queue at `/dashboard/queues/new`, view its details, edit settings, and pause, close, resume, or reopen it. Staff can view only assigned queues and cannot use these management controls. Ticket operations come later.
+
+Forms validate queue name, optional description, active location, service time in minutes (stored as whole seconds), notification threshold, and phone collection. The server derives the selected business from verified membership. Database functions independently authorize the caller and check location ownership; direct table writes remain disabled.
+
+A stable random ID per creation form makes repeated submissions safe, including retries after an ambiguous network failure. This protects retries of the same form, not separately opened creation forms. Slugs have an independent random suffix and remain stable on edits. Queue revisions and row locks reject stale edits/status changes rather than overwriting a newer change. Reloading after a conflict replaces unsaved values with the latest settings. Queue changes and administrative audit events commit together. Closing a queue preserves its records and tickets.
+
+With real Clerk/Supabase credentials configured, verify:
+
+1. Create a queue at your onboarding location, then edit its settings.
+2. Pause → resume → close → reopen; check the list and detail status agree.
+3. Open the same edit page in two tabs, save in the first, then submit in the second. The second must show a conflict and offer to reload.
+4. Try direct manager routes/actions as staff and from another business; neither may change the queue.
+5. Retry a failed creation from the same form; it must not duplicate a committed queue.
 
 ## Validation
 ```sh
@@ -79,4 +95,4 @@ Real sign-in, verification, and logout require working Clerk credentials; those 
 ## Layout
 `app` contains marketing, auth, dashboard, and public route shells. `components/ui` is reserved for shadcn/ui-compatible components. Domain libraries live in `lib`; migrations in `supabase/migrations`; tests in `tests`.
 
-Next bounded task: queue creation and management (Prompt 6).
+Next bounded task: QR preview, PNG download, print sheet, and public link tools (Prompt 7).

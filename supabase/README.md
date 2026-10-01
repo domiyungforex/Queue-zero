@@ -1,6 +1,6 @@
 # QueueZero database foundation
 
-The migrations are authoritative. Storage, tenant security, and atomic business onboarding are implemented. Public projections, queue mutations, notifications, billing handlers, and Realtime are later bounded tasks.
+The migrations are authoritative. Storage, tenant security, atomic business onboarding, and queue management are implemented. Public projections, customer/ticket mutations, notifications, billing handlers, and Realtime are later bounded tasks.
 
 ## Clerk identity and Supabase setup
 
@@ -28,7 +28,7 @@ Keep only `public` in the exposed API schemas. `private` contains narrowly scope
 | User push keys | Own user only | Own user only | Own user only | No direct access |
 | Customer push keys, daily counters, raw webhooks | No direct access | No direct access | No direct access | No direct access |
 
-Every application table has forced RLS. Authenticated clients have only the listed SELECT grants; there are no direct table mutation policies/grants. `onboard_business` is the only authenticated mutation RPC currently granted. Do not weaken RLS or add a service-role fallback when a query is denied. Never expose a ticket row directly from a public endpoint: future endpoints must resolve an opaque token and return a deliberate public projection without other customers' identities or phone numbers.
+Every application table has forced RLS. Authenticated clients have only the listed SELECT grants; there are no direct table mutation policies/grants. `onboard_business`, `create_queue`, `update_queue`, and `set_queue_status` are the authenticated mutation RPCs currently granted. Queue management RPCs require owner/admin membership in the target business, independently of application checks. Do not weaken RLS or add a service-role fallback when a query is denied. Never expose a ticket row directly from a public endpoint: future endpoints must resolve an opaque token and return a deliberate public projection without other customers' identities or phone numbers.
 
 The service role has explicit table DML grants for trusted background/server operations, but cannot truncate tables or mutate existing ticket events. It bypasses RLS, so future uses must derive authorization and queue ownership server-side. No service-role application client is provided in this step.
 
@@ -55,6 +55,14 @@ The lock protects concurrent onboarding calls across app instances. Future membe
 
 Industry/country options are validated in both the application and RPC. If the allowed lists change, update application validation and add a migration; do not edit an already-deployed migration.
 
+### Queue management transactions
+
+`create_queue` validates manager membership, settings, and an active tenant-owned location. It serializes by the form's random queue ID, rechecks existence after locking, and returns the same ID for an authorized retry without another write. Slugs use a separate random UUID suffix; no internal queue ID is embedded in them.
+
+`update_queue` and `set_queue_status` lock the selected business's queue row, compare `p_expected_revision`, and reject stale writes with SQLSTATE `40001`. A trigger advances the revision on every queue update. Name/location/settings edits never change the slug. A same-status request at the current revision is a no-op. Each committed change appends a business audit event inside the same transaction. No delete RPC or direct write grant is added. Staff management is deliberately denied here; assigned-staff operational RPCs are a later task.
+
+Future joining and ticket operations must coordinate with the same queue row lock when inspecting/changing queue state. An RLS policy or a frontend check alone cannot enforce open/paused/closed state during concurrent operations.
+
 ### Commands
 
 Requires Docker and the checked-in npm dependencies:
@@ -78,7 +86,7 @@ npm run db:test:isolated
 
 This builds a smaller PostgreSQL 17 + pgTAP image, starts a randomly named container without networking or published ports, applies every migration from scratch, runs the same tests through `pg_prove`, and removes that container. It does not touch an existing project database. `tests/database/bootstrap.sql` outside this directory is a **test-only** reproduction of Supabase roles, default grants, and `auth.jwt()`; never apply it to Supabase itself.
 
-The isolated runner also opens two overlapping PostgreSQL sessions to verify onboarding idempotency. The first keeps its transaction open while the second calls onboarding; both must return the same ID, with exactly one business, owner, location, and audit event. The pgTAP onboarding suite additionally forces a late location-insert failure to verify rollback leaves no partial state.
+The isolated runner also opens two overlapping PostgreSQL sessions to verify onboarding idempotency. The first keeps its transaction open while the second calls onboarding; both must return the same ID, with exactly one business, owner, location, and audit event. The runner also overlaps queue creation requests and conflicting status updates, verifying creation commits once and a stale status update fails. The pgTAP suites force late location/audit failures to verify rollback leaves no partial state, and cover direct RPC validation, tenant boundaries, inactive locations, stable slugs, and revision conflicts.
 
 ## Verification boundary
 

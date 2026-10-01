@@ -380,6 +380,7 @@ export type Database = {
                     "location_id": string;
                     "name": string;
                     "require_phone": boolean;
+                    "revision": number;
                     "slug": string;
                     "status": Database["public"]['Enums']["queue_status"];
                     "updated_at": string;
@@ -395,6 +396,7 @@ export type Database = {
                     "location_id": string;
                     "name": string;
                     "require_phone"?: boolean;
+                    "revision"?: number;
                     "slug": string;
                     "status"?: Database["public"]['Enums']["queue_status"];
                     "updated_at"?: string;
@@ -410,6 +412,7 @@ export type Database = {
                     "location_id"?: string;
                     "name"?: string;
                     "require_phone"?: boolean;
+                    "revision"?: number;
                     "slug"?: string;
                     "status"?: Database["public"]['Enums']["queue_status"];
                     "updated_at"?: string;
@@ -648,6 +651,20 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
+            "create_queue": {
+                Args: {
+                    "p_allow_phone": boolean;
+                    "p_average_service_seconds": number;
+                    "p_business_id": string;
+                    "p_description": string;
+                    "p_location_id": string;
+                    "p_name": string;
+                    "p_queue_id": string;
+                    "p_require_phone": boolean;
+                    "p_warning_threshold": number;
+                };
+                Returns: string;
+            };
             "onboard_business": {
                 Args: {
                     "p_business_name": string;
@@ -656,6 +673,30 @@ export type Database = {
                     "p_location_address": string;
                     "p_location_name": string;
                     "p_timezone": string;
+                };
+                Returns: string;
+            };
+            "set_queue_status": {
+                Args: {
+                    "p_business_id": string;
+                    "p_expected_revision": number;
+                    "p_queue_id": string;
+                    "p_status": Database["public"]['Enums']["queue_status"];
+                };
+                Returns: string;
+            };
+            "update_queue": {
+                Args: {
+                    "p_allow_phone": boolean;
+                    "p_average_service_seconds": number;
+                    "p_business_id": string;
+                    "p_description": string;
+                    "p_expected_revision": number;
+                    "p_location_id": string;
+                    "p_name": string;
+                    "p_queue_id": string;
+                    "p_require_phone": boolean;
+                    "p_warning_threshold": number;
                 };
                 Returns: string;
             };

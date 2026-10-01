@@ -22,7 +22,7 @@ it("hides owner-only navigation for admins", () => {
 });
 it("renders real queue data and never invents waiting counts", () => {
   render(<QueueSummary queues={[{ id: "queue", name: "Consultation", description: null, status: "paused", average_service_seconds: 300, locations: { name: "Main branch" } }]} />);
-  expect(screen.getByText("Consultation")).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "Consultation" })).toBeTruthy();
   expect(screen.getByText("paused")).toBeTruthy();
   expect(screen.getByText("Main branch")).toBeTruthy();
   expect(screen.queryByText(/waiting/i)).toBeNull();
