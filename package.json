@@ -8,10 +8,16 @@
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:start": "supabase db start",
+    "db:migrate": "supabase migration up --local",
+    "db:test": "supabase test db --local",
+    "db:test:isolated": "node scripts/test-database.mjs",
+    "db:types": "node scripts/generate-database-types.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.9",
+    "@supabase/supabase-js": "^2.117.2",
     "next": "^16.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -25,6 +31,7 @@
     "@types/react-dom": "^19.2.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
+    "supabase": "^2.119.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.9.0",
     "vitest": "^5.0.3"
