@@ -14,7 +14,7 @@ function isServiceKey(key: string): boolean {
   } catch { return false; }
 }
 
-/** Restricted to the public join action; never forward this client to a component. */
+/** Restricted to controlled public join/cancel actions; never forward this client to a component. */
 export function createJoinSupabaseClient() {
   const env = getSupabaseEnv();
   const parsed = z.string().refine(isServiceKey).safeParse(process.env.SUPABASE_SERVICE_ROLE_KEY);

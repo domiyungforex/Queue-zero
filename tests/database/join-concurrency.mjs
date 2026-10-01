@@ -50,5 +50,17 @@ export async function testJoinConcurrency(container) {
   assert.equal(pause[0].code, 0, pause[0].errors);
   assert.notEqual(pause[1].code, 0);
   assert.match(pause[1].errors, /QZ002/);
+  const retryToken = retries[0].output.match(/token=([0-9a-f-]+)/)[1];
+  const cancel = (token) => `select 'cancel=' || public.cancel_public_ticket('${token}');`;
+  const cancelled = await overlap(`${session} ${cancel(retryToken)}`, [cancel(retryToken), cancel(retryToken)], "cancel=");
+  for (const result of cancelled) { assert.equal(result.code, 0, result.errors); assert.match(result.output, /cancel=cancelled/); }
+  const cancellationCount = await query(`select count(*) from public.ticket_events where type='cancelled' and ticket_id=(select id from public.tickets where public_token='${retryToken}');`);
+  assert.equal(cancellationCount.output.trim(), "1", "overlapping cancellation records one event");
+  const calledToken = results[0].output.match(/token=([0-9a-f-]+)/)[1];
+  const called = await overlap(`begin; select 1 from public.queues where id='${queueId}' for update;
+    update public.tickets set status='serving',called_at=clock_timestamp() where public_token='${calledToken}'; select 'serving-lock';`, [cancel(calledToken)], "serving-lock");
+  assert.equal(called[0].code, 0, called[0].errors);
+  assert.notEqual(called[1].code, 0); assert.match(called[1].errors, /QZ007/);
+  console.log("Concurrent cancellation: repeated submissions write one event; a committed serving transition prevents cancellation.");
   console.log("Concurrent joining: 12 unique allocations; overlapping retries create one ticket/event; pause lock rejects a waiting join.");
 }

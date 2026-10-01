@@ -29,10 +29,14 @@ describe("public join boundaries", () => {
   it("starts an anonymous HttpOnly session without creating a ticket", async () => {
     const response = await GET(new NextRequest("https://queuezero.example/q/clinic/join/start"), { params: Promise.resolve({ slug: "clinic" }) });
     expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe("https://queuezero.example/q/clinic/join?session=ready");
+    expect(response.headers.get("location")).toBe("/q/clinic/join?session=ready");
     const cookie = response.cookies.get("queuezero-customer");
     expect(cookie?.httpOnly).toBe(true); expect(cookie?.sameSite).toBe("lax");
     expect(response.headers.get("cache-control")).toBe("no-store"); expect(rpc).not.toHaveBeenCalled();
+  });
+  it("keeps the browser origin when Next uses a bind address behind a proxy", async () => {
+    const response = await GET(new NextRequest("http://0.0.0.0:3000/q/clinic/join/start", { headers: { host: "preview.example" } }), { params: Promise.resolve({ slug: "clinic" }) });
+    expect(response.headers.get("location")).toBe("/q/clinic/join?session=ready");
   });
   it("preserves an existing valid session and rejects redirect injection", async () => {
     const response = await GET(new NextRequest("https://queuezero.example/q/clinic/join/start", { headers: { cookie: `queuezero-customer=${token}` } }), { params: Promise.resolve({ slug: "clinic" }) });

@@ -2,7 +2,22 @@
 Universal virtual queues for physical service businesses.
 
 ## Current scope
-Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, queue creation/management, printable QR codes, public queue landing pages, and atomic anonymous joining. Full ticket tracking, staff ticket operations, billing, and PWA are subsequent bounded tasks.
+Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, queue creation/management, printable QR codes, public queue landing pages, atomic anonymous joining, and customer ticket status/position/cancellation. Staff ticket operations, realtime, billing, and PWA are subsequent bounded tasks.
+
+## Quick local preview
+
+With Node.js and Docker running:
+
+```sh
+npm ci
+npm run preview
+```
+
+Open **http://localhost:3000/q/demo-clinic** to join a real local demo queue, view your ticket, refresh your place, and cancel. The homepage is at **http://localhost:3000**. Use `PORT=3001 npm run preview` if port 3000 is occupied. For a forwarded browser origin, set `PREVIEW_APP_URL` to that exact HTTP(S) origin.
+
+The preview launcher creates disposable PostgreSQL and PostgREST containers, applies migrations, and seeds a clearly labelled demo business with three waiting customers. It uses the same application routes, RLS, RPCs, and Server Actions as normal operation. It adds no authentication bypass. Business sign-in/onboarding/dashboard still require a real Clerk instance; the preview is for public customer screens. Docker downloads a small PostgREST image on first use. Local database/API ports bind only to localhost; the app listens on `0.0.0.0` for workspace preview access.
+
+Stop with Ctrl+C to remove the preview database and containers. Restarting creates fresh demo data and credentials; old ticket links become invalid. The generated local API tokens last 24 hours. No hosted database is contacted and no secrets are written to files. The preview SQL/bootstrap must never be applied to production. Normal development with your service credentials is below.
 
 ## Local development
 Requires Node.js 22.12+ (including the test tooling) and npm.
@@ -117,13 +132,13 @@ Real sign-in, verification, and logout require working Clerk credentials; those 
 ## Layout
 `app` contains marketing, auth, dashboard, and public route shells. `components/ui` is reserved for shadcn/ui-compatible components. Domain libraries live in `lib`; migrations in `supabase/migrations`; tests in `tests`.
 
-Next bounded task: full customer ticket experience (Prompt 10), including position, wait, permitted cancellation, and all ticket states.
+Next bounded task: deterministic wait-time engine (Prompt 11), including historical service averages and smoothing.
 
 ## Atomic customer joining
 
 Apply `20261001000005_atomic_queue_join.sql` and configure `SUPABASE_SERVICE_ROLE_KEY` and a private `QUEUE_JOIN_SECRET` (generate with `openssl rand -hex 32`). Public reads still use the anonymous key. Only the server action uses the privileged client; anonymous/authenticated database roles cannot invoke the join mutation directly. Never expose either secret in browser configuration.
 
-The flow is `/q/[slug]` → `/q/[slug]/join` → `/ticket/[opaqueToken]`. A short redirect sets a random HttpOnly, SameSite=Lax browser cookie before showing the form; this GET never creates tickets. Cookies are required. Forms collect a first name and a phone only when enabled, with country-code validation enforced against current database settings. The receipt confirms the actual number and status without exposing customer names, phones, or internal IDs. Full tracking and cancellation are the next task; realtime and notifications remain later tasks.
+The flow is `/q/[slug]` → `/q/[slug]/join` → `/ticket/[opaqueToken]`. A short redirect sets a random HttpOnly, SameSite=Lax browser cookie before showing the form; this GET never creates tickets. Cookies are required. Forms collect a first name and a phone only when enabled, with country-code validation enforced against current database settings. The ticket page confirms the actual number, status, position, and estimated wait without exposing customer names, phones, or internal IDs. Realtime and notifications remain later tasks.
 
 `join_public_queue` locks the queue and checks its current state, active location, phone settings, and 1,000-active-ticket safety ceiling. It allocates numbers transactionally using the location’s local date, writes the ticket, joined event, and request mapping together, and returns only the opaque token. Initial estimates count all waiting tickets across dates × configured service duration. Numbers beyond 999 retain all digits. Any failure rolls back allocation and audit writes.
 
@@ -132,3 +147,13 @@ A stable form nonce plus an HMAC of the browser cookie makes retries safe. Separ
 The database limits new joins to 60 per network address per 10 minutes, across queues. Retries/resuming an active ticket do not spend this allowance. Only on Vercel (`VERCEL=1`) does the action use the platform-controlled `x-vercel-forwarded-for` address; arbitrary forwarding headers are ignored. Other hosting/local development uses one conservative shared bucket until a trusted proxy adapter is supplied. Busy shared networks may reach this limit; tune it from pilot evidence. Address values are HMAC’d before persistence, never stored raw. Operational maintenance may delete rate rows whose window ended more than 10 minutes ago; request mappings must remain to preserve retry guarantees. Configure that cleanup before sustained production traffic.
 
 `npm run db:test:isolated` verifies allocation, phone rules, privacy, rate/capacity limits, timezone numbering, idempotency, and full rollback on downstream failure. Separate PostgreSQL sessions test 12 overlapping distinct joins, repeated requests/tabs, and a pause competing with a join. These local checks do not replace hosted Supabase/Clerk verification or physical phone testing.
+
+## Customer tickets
+
+Apply `20261001000006_customer_ticket.sql` for the full `/ticket/[token]` experience. The narrow anonymous `get_public_ticket` RPC returns that ticket’s number/status/joined time, public queue/business/location details, and aggregate waiting position. It never returns customer names, phone numbers, owner fields, or internal IDs. The token is a bearer capability: keep its link private. Pages are dynamic, disable indexing/referrer forwarding, and reject unexpected provider fields.
+
+People ahead counts earlier **waiting** tickets ordered by `(joined_at, id)`, including tickets from previous service dates. This avoids treating a new day’s A001 as ahead of yesterday’s customers. It matches the existing waiting-order index; future Call Next must use this ordering. Estimates use current configured service time × waiting people ahead and are shown as ranges. At the front, an existing serving customer is explicitly acknowledged. Paused/closed queues and inactive locations preserve the ticket but suppress an active wait promise. Times are displayed in the location’s timezone.
+
+Waiting customers can confirm “Leave queue.” The server validates the opaque token and confirmation, then invokes a service-role-only cancellation RPC. It locks queue then ticket, permits only `waiting → cancelled`, timestamps the transition, and appends one customer event in the same transaction. Repeated requests return the already-cancelled result without another event. Other terminal/serving states reject cancellation. Any audit failure rolls back the state change. No row is deleted, and refreshed position/estimates immediately reflect cancellation.
+
+The page handles waiting, serving, completed, no-show, cancelled, invalid links, loading, and error/retry states. **Refresh ticket** reads the current database snapshot. There is no polling or realtime yet. PostgreSQL tests include cross-date position, private projections, invalid transitions, rollback, simultaneous cancellations, and a serving/cancel race; browser verification uses a separate local fixture business so the demo queue remains available.

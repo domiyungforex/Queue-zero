@@ -722,6 +722,12 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
+            "cancel_public_ticket": {
+                Args: {
+                    "p_token": string;
+                };
+                Returns: Database["public"]['Enums']["ticket_status"];
+            };
             "create_queue": {
                 Args: {
                     "p_allow_phone": boolean;
@@ -764,6 +770,26 @@ export type Database = {
                     "slug": string;
                     "status": Database["public"]['Enums']["queue_status"];
                     "waiting_count": number;
+                }[];
+            };
+            "get_public_ticket": {
+                Args: {
+                    "p_token": string;
+                };
+                Returns: {
+                    "business_name": string;
+                    "display_number": string;
+                    "estimated_wait_seconds": number;
+                    "has_serving_customer": boolean;
+                    "joined_at": string;
+                    "location_active": boolean;
+                    "location_name": string;
+                    "location_timezone": string;
+                    "people_ahead": number;
+                    "queue_name": string;
+                    "queue_slug": string;
+                    "queue_status": Database["public"]['Enums']["queue_status"];
+                    "status": Database["public"]['Enums']["ticket_status"];
                 }[];
             };
             "get_public_ticket_receipt": {

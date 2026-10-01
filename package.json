@@ -13,7 +13,8 @@
     "db:migrate": "supabase migration up --local",
     "db:test": "supabase test db --local",
     "db:test:isolated": "node scripts/test-database.mjs",
-    "db:types": "node scripts/generate-database-types.mjs"
+    "db:types": "node scripts/generate-database-types.mjs",
+    "preview": "node scripts/preview.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.9",
