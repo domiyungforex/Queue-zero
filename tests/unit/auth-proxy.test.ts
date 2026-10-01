@@ -19,7 +19,7 @@ vi.mock("@clerk/nextjs/server", () => ({
 import { config } from "@/proxy";
 
 describe("dashboard request protection", () => {
-  it.each(["/dashboard", "/dashboard/queues", "/dashboard/queues/123", "/dashboard/settings", "/onboarding"])(
+  it.each(["/dashboard", "/dashboard/queues", "/dashboard/queues/123", "/dashboard/queues/123/qr", "/dashboard/settings", "/onboarding"])(
     "requires authentication for %s",
     async (path) => {
       const protect = vi.fn().mockResolvedValue({ userId: "user_verified" });

@@ -4,6 +4,8 @@ vi.mock("server-only", () => ({}));
 vi.mock("@clerk/nextjs/server", () => ({ auth: { protect: mocks.protect } }));
 vi.mock("@/lib/business/membership", () => ({ requireBusinessMembership: mocks.member }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
+import { isValidElement } from "react";
+import QueueQrPage from "@/app/dashboard/queues/[queueId]/qr/page";
 import { getManagedQueue } from "@/lib/queue/management";
 const queueId = "30000000-0000-4000-8000-000000000002";
 let rows: { id: string; name: string }[];
@@ -39,5 +41,22 @@ describe("queue detail data boundary", () => {
     responseStatus = 503;
     await expect(getManagedQueue(queueId)).rejects.toThrow("couldn’t load this queue");
     expect(mocks.notFound).not.toHaveBeenCalled();
+  });
+});
+
+describe("authorized QR print route", () => {
+  it("loads its queue through the same tenant-scoped boundary", async () => {
+    expect(isValidElement(await QueueQrPage({ params: Promise.resolve({ queueId }) }))).toBe(true);
+    expect(request?.searchParams.get("id")).toBe(`eq.${queueId}`);
+    expect(request?.searchParams.get("business_id")).toBe("eq.verified-business");
+  });
+  it("returns not found for an inaccessible queue before rendering QR content", async () => {
+    rows = [];
+    await expect(QueueQrPage({ params: Promise.resolve({ queueId }) })).rejects.toThrow("NOT_FOUND");
+  });
+  it("requires membership before reading any queue data", async () => {
+    mocks.member.mockRejectedValueOnce(new Error("Authentication required"));
+    await expect(QueueQrPage({ params: Promise.resolve({ queueId }) })).rejects.toThrow("Authentication required");
+    expect(request).toBeUndefined();
   });
 });

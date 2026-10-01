@@ -1,0 +1,65 @@
+.sheet {
+  margin: 0 auto;
+  max-width: 48rem;
+  border: 1px solid rgb(0 0 0 / 10%);
+  border-radius: 1.25rem;
+  background: white;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  text-align: center;
+}
+
+.qrImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 22rem;
+  margin: 0 auto;
+}
+
+@media print {
+  :global(body:has([data-queue-print-sheet])) {
+    background: white !important;
+    color: black !important;
+  }
+  :global(body:has([data-queue-print-sheet]) [data-dashboard-sidebar]),
+  :global(body:has([data-queue-print-sheet]) [data-dashboard-header]),
+  :global(body:has([data-queue-print-sheet]) > a[href="#main"]),
+  .screenOnly {
+    display: none !important;
+  }
+  :global(body:has([data-queue-print-sheet]) [data-dashboard-shell]) {
+    display: block !important;
+    min-height: 0 !important;
+  }
+  :global(body:has([data-queue-print-sheet]) main) {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .sheet {
+    width: 100%;
+    max-width: 180mm;
+    border: 0;
+    border-radius: 0;
+    padding: 4mm 0;
+    break-inside: avoid;
+  }
+  .qrImage {
+    width: 90mm;
+    max-width: 100%;
+  }
+  .businessName {
+    font-size: 14pt;
+    line-height: 1.2;
+    margin-top: 4mm;
+  }
+  .queueName {
+    font-size: 18pt;
+    line-height: 1.15;
+    margin-top: 2mm;
+  }
+  .publicUrl {
+    font-size: 9pt;
+    line-height: 1.3;
+  }
+}

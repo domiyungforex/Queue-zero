@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { QueueQr } from "@/components/queue/queue-qr";
 import { formatServiceDuration } from "@/lib/queue/format";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { getManagedQueue } from "@/lib/queue/management";
@@ -30,5 +32,8 @@ export default async function QueueDetailsPage({ params, searchParams }: {
       ["Notification threshold", `${queue.warning_threshold} people ahead`],
       ["Phone number", queue.require_phone ? "Required" : queue.allow_phone ? "Optional" : "Not collected"],
     ].map(([label,value]) => <div key={label} className="rounded-xl border border-black/10 bg-white p-5"><dt className="text-sm text-muted">{label}</dt><dd className="mt-2 font-semibold">{value}</dd></div>)}</dl>
+    <Suspense fallback={<p role="status" className="mt-8 text-muted">Preparing queue QR code…</p>}>
+      <QueueQr queueId={queue.id} slug={queue.slug} businessName={membership.businessName} queueName={queue.name} />
+    </Suspense>
   </>;
 }

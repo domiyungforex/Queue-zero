@@ -2,7 +2,7 @@
 Universal virtual queues for physical service businesses.
 
 ## Current scope
-Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, and queue creation/management. Customer joining, staff ticket operations, billing, and PWA are subsequent bounded tasks.
+Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, queue creation/management, and printable QR codes. Customer joining, staff ticket operations, billing, and PWA are subsequent bounded tasks.
 
 ## Local development
 Requires Node.js 22.12+ (including the test tooling) and npm.
@@ -70,6 +70,18 @@ With real Clerk/Supabase credentials configured, verify:
 4. Try direct manager routes/actions as staff and from another business; neither may change the queue.
 5. Retry a failed creation from the same form; it must not duplicate a committed queue.
 
+## Queue QR codes
+
+Queue details include a QR preview, PNG download, copyable public link, and an open-public-queue link. The print sheet at `/dashboard/queues/[queueId]/qr` uses the same authorized queue lookup; staff can access it only for assigned queues. The sheet includes QueueZero branding, business and queue names, and “Scan to join the queue.” Dashboard controls are hidden in print output.
+
+Set `NEXT_PUBLIC_APP_URL` to the exact public origin before building: `https://queuezero.vercel.app` for the initial deployment or `https://queuezero.com` once configured. Only HTTP/HTTPS origins without credentials, paths, queries, or fragments are accepted for QR generation. Local development can use `http://localhost:3000`; a phone cannot reach your laptop through its own `localhost`, so use a reachable development origin for physical scan testing.
+
+The QR contains only `${NEXT_PUBLIC_APP_URL}/q/${queue.slug}`. It never embeds a dashboard URL, internal queue ID, or customer information. Editing queue names/settings or pausing/closing does not change the QR. Changing the public origin or slug requires new printouts or a redirect from the old URL.
+
+PNGs are generated server-side with black modules, an opaque white background, a four-module quiet zone, and medium error correction. Generation uses `qrcode`; test-only `jsqr` and `pngjs` independently decode exported images. No external QR service receives queue data. Clipboard denial falls back to a selectable link; print waits for image decoding. Loading, encoding/image failure, retry, and copy/download/print feedback are included.
+
+The public destination remains the existing landing-page placeholder at this step. Customer joining is not implemented yet. Before a physical pilot, finish the public landing/join tasks, then scan a printed sheet with a phone and confirm it reaches the intended queue. Use the Print button to open the browser dialog; A4 and Letter are supported, and browser-added page headers/footers can be disabled there.
+
 ## Validation
 ```sh
 npm run lint
@@ -95,4 +107,4 @@ Real sign-in, verification, and logout require working Clerk credentials; those 
 ## Layout
 `app` contains marketing, auth, dashboard, and public route shells. `components/ui` is reserved for shadcn/ui-compatible components. Domain libraries live in `lib`; migrations in `supabase/migrations`; tests in `tests`.
 
-Next bounded task: QR preview, PNG download, print sheet, and public link tools (Prompt 7).
+Next bounded task: public queue landing page (Prompt 8).
