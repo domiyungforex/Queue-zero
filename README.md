@@ -2,7 +2,7 @@
 Universal virtual queues for physical service businesses.
 
 ## Current scope
-Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, queue creation/management, printable QR codes, and public queue landing pages. Customer joining, staff ticket operations, billing, and PWA are subsequent bounded tasks.
+Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, queue creation/management, printable QR codes, public queue landing pages, and atomic anonymous joining. Full ticket tracking, staff ticket operations, billing, and PWA are subsequent bounded tasks.
 
 ## Local development
 Requires Node.js 22.12+ (including the test tooling) and npm.
@@ -80,7 +80,7 @@ The QR contains only `${NEXT_PUBLIC_APP_URL}/q/${queue.slug}`. It never embeds a
 
 PNGs are generated server-side with black modules, an opaque white background, a four-module quiet zone, and medium error correction. Generation uses `qrcode`; test-only `jsqr` and `pngjs` independently decode exported images. No external QR service receives queue data. Clipboard denial falls back to a selectable link; print waits for image decoding. Loading, encoding/image failure, retry, and copy/download/print feedback are included.
 
-The public destination displays real queue details and aggregate waiting counts. Customer joining is not implemented yet. Before a physical pilot, finish the public landing/join tasks, then scan a printed sheet with a phone and confirm it reaches the intended queue. Use the Print button to open the browser dialog; A4 and Letter are supported, and browser-added page headers/footers can be disabled there.
+The public destination displays real queue details and aggregate waiting counts. Customer joining is available once its migration and private server configuration are applied. Before a physical pilot, finish staff operations and live ticket tracking, then scan a printed sheet with a phone and confirm it reaches the intended queue. Use the Print button to open the browser dialog; A4 and Letter are supported, and browser-added page headers/footers can be disabled there.
 
 ## Public queue landing
 
@@ -90,7 +90,7 @@ The public page uses a server-only anonymous Supabase client and the `get_public
 
 The initial estimate is waiting count × configured average service seconds, shown in rounded ranges. It counts waiting tickets across service dates and excludes completed/cancelled/no-show tickets. The remaining time of an in-progress service is not yet modeled; an empty waiting list with someone being served says “After the current customer” instead of promising zero wait. Historical smoothing belongs to the later wait-time engine.
 
-The Join Queue CTA is intentionally disabled with a customer-facing explanation until Prompt 9 supplies the atomic join transaction. No personal details are collected and no fake tickets are issued. Public business text is rendered as text. HTTPS logos load directly in the browser without a referrer or server-side image proxy, and broken/invalid logos fall back to an initial.
+Open queues link to the anonymous join form; paused/closed queues disable new joins. Public business text is rendered as text. HTTPS logos load directly in the browser without a referrer or server-side image proxy, and broken/invalid logos fall back to an initial.
 
 ## Validation
 ```sh
@@ -117,4 +117,18 @@ Real sign-in, verification, and logout require working Clerk credentials; those 
 ## Layout
 `app` contains marketing, auth, dashboard, and public route shells. `components/ui` is reserved for shadcn/ui-compatible components. Domain libraries live in `lib`; migrations in `supabase/migrations`; tests in `tests`.
 
-Next bounded task: atomic customer join transaction and form (Prompt 9).
+Next bounded task: full customer ticket experience (Prompt 10), including position, wait, permitted cancellation, and all ticket states.
+
+## Atomic customer joining
+
+Apply `20261001000005_atomic_queue_join.sql` and configure `SUPABASE_SERVICE_ROLE_KEY` and a private `QUEUE_JOIN_SECRET` (generate with `openssl rand -hex 32`). Public reads still use the anonymous key. Only the server action uses the privileged client; anonymous/authenticated database roles cannot invoke the join mutation directly. Never expose either secret in browser configuration.
+
+The flow is `/q/[slug]` → `/q/[slug]/join` → `/ticket/[opaqueToken]`. A short redirect sets a random HttpOnly, SameSite=Lax browser cookie before showing the form; this GET never creates tickets. Cookies are required. Forms collect a first name and a phone only when enabled, with country-code validation enforced against current database settings. The receipt confirms the actual number and status without exposing customer names, phones, or internal IDs. Full tracking and cancellation are the next task; realtime and notifications remain later tasks.
+
+`join_public_queue` locks the queue and checks its current state, active location, phone settings, and 1,000-active-ticket safety ceiling. It allocates numbers transactionally using the location’s local date, writes the ticket, joined event, and request mapping together, and returns only the opaque token. Initial estimates count all waiting tickets across dates × configured service duration. Numbers beyond 999 retain all digits. Any failure rolls back allocation and audit writes.
+
+A stable form nonce plus an HMAC of the browser cookie makes retries safe. Separate tabs resume the same active ticket; recorded request aliases still resolve to that ticket after completion. A new form can join again after the previous ticket ends. Clearing cookies, using another browser, or rotating `QUEUE_JOIN_SECRET` creates a new browser identity; this is basic duplicate protection, not proof of a person’s identity. Keep the secret stable across instances/deployments.
+
+The database limits new joins to 60 per network address per 10 minutes, across queues. Retries/resuming an active ticket do not spend this allowance. Only on Vercel (`VERCEL=1`) does the action use the platform-controlled `x-vercel-forwarded-for` address; arbitrary forwarding headers are ignored. Other hosting/local development uses one conservative shared bucket until a trusted proxy adapter is supplied. Busy shared networks may reach this limit; tune it from pilot evidence. Address values are HMAC’d before persistence, never stored raw. Operational maintenance may delete rate rows whose window ended more than 10 minutes ago; request mappings must remain to preserve retry guarantees. Configure that cleanup before sustained production traffic.
+
+`npm run db:test:isolated` verifies allocation, phone rules, privacy, rate/capacity limits, timezone numbering, idempotency, and full rollback on downstream failure. Separate PostgreSQL sessions test 12 overlapping distinct joins, repeated requests/tabs, and a pause competing with a join. These local checks do not replace hosted Supabase/Clerk verification or physical phone testing.

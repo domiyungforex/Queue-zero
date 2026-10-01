@@ -26,12 +26,12 @@ describe("public queue experience", () => {
     expect(screen.queryByRole("link", { name: /sign in|sign up|dashboard/i })).toBeNull();
     expect(screen.getByText("No app. No account.")).toBeTruthy();
   });
-  it("shows an honest join CTA without collecting personal details before the join engine exists", () => {
+  it("links open queues to the anonymous join form", () => {
     render(<PublicQueueView queue={fixture} />);
-    const join = screen.getByRole("button", { name: "Join queue" }) as HTMLButtonElement;
-    expect(join.disabled).toBe(true);
+    const join = screen.getByRole("link", { name: "Join queue" });
+    expect(join.getAttribute("href")).toBe(`/q/${fixture.slug}/join`);
     expect(join.getAttribute("aria-describedby")).toBe("join-availability");
-    expect(screen.getByText(/Online joining is not available yet/)).toBeTruthy();
+    expect(screen.getByText(/No download. No account./)).toBeTruthy();
     expect(screen.queryByRole("textbox")).toBeNull();
   });
   it.each(["paused", "closed"] as const)("displays %s without a join promise or misleading estimate", (status) => {

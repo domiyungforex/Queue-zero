@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { PublicQueue } from "@/lib/validation/public-queue";
 import { formatPublicWait } from "@/lib/queue/public-wait";
 import { PublicQueueShell } from "@/components/customer/public-queue-shell";
@@ -5,7 +6,7 @@ import { BusinessLogo } from "@/components/customer/business-logo";
 import { RefreshQueue } from "@/components/customer/refresh-queue";
 
 const states = {
-  open: { label: "Open", color: "bg-green-100 text-green-900", message: "Online joining is not available yet. Please speak to staff.", button: "Join queue" },
+  open: { label: "Open", color: "bg-green-100 text-green-900", message: "No download. No account. Keep your place without standing in line.", button: "Join queue" },
   paused: { label: "Paused", color: "bg-amber-100 text-amber-900", message: "New joins are paused. Please check with staff or refresh this page in a moment.", button: "Queue paused" },
   closed: { label: "Closed", color: "bg-neutral-100 text-neutral-700", message: "This queue is closed to new joins. Please check with staff for opening times.", button: "Queue closed" },
 } as const;
@@ -32,9 +33,8 @@ export function PublicQueueView({ queue }: { queue: PublicQueue }) {
     </section>
     {queue.waiting_count === 0 && <p className="mt-4 text-sm text-muted">No one is waiting right now.</p>}
     <div className="mt-6">
-      {/* Ticket creation is Prompt 9. Never collect details or fake a successful join here. */}
-      <button type="button" disabled aria-describedby="join-availability"
-        className={`min-h-14 w-full cursor-not-allowed rounded-xl px-6 py-4 text-lg font-semibold ${queue.status === "open" ? "bg-primary text-white opacity-60" : "bg-black/10 text-muted"}`}>{state.button}</button>
+      {queue.status === "open" ? <Link prefetch={false} href={`/q/${queue.slug}/join`} aria-describedby="join-availability" className="flex min-h-14 w-full items-center justify-center rounded-xl bg-primary px-6 py-4 text-lg font-semibold text-white">Join queue</Link> :
+        <button type="button" disabled aria-describedby="join-availability" className="min-h-14 w-full cursor-not-allowed rounded-xl bg-black/10 px-6 py-4 text-lg font-semibold text-muted">{state.button}</button>}
       <p id="join-availability" className="mt-3 text-center text-sm leading-relaxed text-muted">{state.message}</p>
     </div>
     <RefreshQueue />

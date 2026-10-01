@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 import { testQueueManagementConcurrency } from "../tests/database/queue-management-concurrency.mjs";
 import { testOnboardingConcurrency } from "../tests/database/onboarding-concurrency.mjs";
 
+import { testJoinConcurrency } from "../tests/database/join-concurrency.mjs";
+
 const root = fileURLToPath(new URL("..", import.meta.url));
 const container = `queuezero-test-${randomUUID()}`;
 const image = "queuezero-db-tests:local";
@@ -50,6 +52,7 @@ try {
   docker(["exec", container, "pg_prove", "-U", "postgres", "-d", "postgres", "--ext", ".sql", "--recurse", "/tmp/queuezero-tests"]);
   await testOnboardingConcurrency(container);
   await testQueueManagementConcurrency(container);
+  await testJoinConcurrency(container);
 } finally {
   // The randomly named test container is the only resource removed.
   spawnSync("docker", ["rm", "--force", container], { stdio: "ignore" });

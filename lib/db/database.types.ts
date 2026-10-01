@@ -307,6 +307,74 @@ export type Database = {
                     }
                 ];
             };
+            "queue_join_rate_limits": {
+                Row: {
+                    "joins": number;
+                    "key": string;
+                    "window_started_at": string;
+                };
+                Insert: {
+                    "joins": number;
+                    "key": string;
+                    "window_started_at": string;
+                };
+                Update: {
+                    "joins"?: number;
+                    "key"?: string;
+                    "window_started_at"?: string;
+                };
+                Relationships: [
+                ];
+            };
+            "queue_join_requests": {
+                Row: {
+                    "created_at": string;
+                    "customer_key": string;
+                    "id": string;
+                    "queue_id": string;
+                    "ticket_id": string;
+                };
+                Insert: {
+                    "created_at"?: string;
+                    "customer_key": string;
+                    "id": string;
+                    "queue_id": string;
+                    "ticket_id": string;
+                };
+                Update: {
+                    "created_at"?: string;
+                    "customer_key"?: string;
+                    "id"?: string;
+                    "queue_id"?: string;
+                    "ticket_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "queue_join_requests_queue_id_fkey";
+                        columns: [
+                            "queue_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "queues";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "queue_join_requests_ticket_id_queue_id_fkey";
+                        columns: [
+                            "ticket_id",
+                            "queue_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "tickets";
+                        referencedColumns: [
+                            "id",
+                            "queue_id"
+                        ];
+                    }
+                ];
+            };
             "queue_staff_assignments": {
                 Row: {
                     "business_id": string;
@@ -549,6 +617,7 @@ export type Database = {
                     "cancelled_at": string | null;
                     "completed_at": string | null;
                     "created_at": string;
+                    "customer_key": string | null;
                     "customer_name": string;
                     "display_number": string;
                     "estimated_wait_seconds": number;
@@ -568,6 +637,7 @@ export type Database = {
                     "cancelled_at"?: string | null;
                     "completed_at"?: string | null;
                     "created_at"?: string;
+                    "customer_key"?: string | null;
                     "customer_name": string;
                     "display_number": string;
                     "estimated_wait_seconds"?: number;
@@ -587,6 +657,7 @@ export type Database = {
                     "cancelled_at"?: string | null;
                     "completed_at"?: string | null;
                     "created_at"?: string;
+                    "customer_key"?: string | null;
                     "customer_name"?: string;
                     "display_number"?: string;
                     "estimated_wait_seconds"?: number;
@@ -665,6 +736,19 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "get_public_join_options": {
+                Args: {
+                    "p_slug": string;
+                };
+                Returns: {
+                    "allow_phone": boolean;
+                    "business_name": string;
+                    "queue_name": string;
+                    "require_phone": boolean;
+                    "slug": string;
+                    "status": Database["public"]['Enums']["queue_status"];
+                }[];
+            };
             "get_public_queue": {
                 Args: {
                     "p_slug": string;
@@ -681,6 +765,28 @@ export type Database = {
                     "status": Database["public"]['Enums']["queue_status"];
                     "waiting_count": number;
                 }[];
+            };
+            "get_public_ticket_receipt": {
+                Args: {
+                    "p_token": string;
+                };
+                Returns: {
+                    "business_name": string;
+                    "display_number": string;
+                    "queue_name": string;
+                    "status": Database["public"]['Enums']["ticket_status"];
+                }[];
+            };
+            "join_public_queue": {
+                Args: {
+                    "p_customer_key": string;
+                    "p_customer_name": string;
+                    "p_phone": string;
+                    "p_rate_key": string;
+                    "p_request_id": string;
+                    "p_slug": string;
+                };
+                Returns: string;
             };
             "onboard_business": {
                 Args: {
