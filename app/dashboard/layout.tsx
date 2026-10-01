@@ -1,6 +1,6 @@
-import { requireUserId } from "@/lib/auth/server";
+import { requireBusinessMembership } from "@/lib/business/membership";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  await requireUserId();
+  await requireBusinessMembership();
   return children;
 }

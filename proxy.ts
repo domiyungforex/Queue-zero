@@ -5,7 +5,8 @@ import { publicEnv } from "@/lib/env";
 export default clerkMiddleware(
   async (auth, request) => {
     const { pathname } = request.nextUrl;
-    if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+    if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")
+      || pathname === "/onboarding" || pathname.startsWith("/onboarding/")) {
       await auth.protect();
     }
   },

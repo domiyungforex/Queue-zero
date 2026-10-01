@@ -19,7 +19,7 @@ vi.mock("@clerk/nextjs/server", () => ({
 import { config } from "@/proxy";
 
 describe("dashboard request protection", () => {
-  it.each(["/dashboard", "/dashboard/queues", "/dashboard/queues/123", "/dashboard/settings"])(
+  it.each(["/dashboard", "/dashboard/queues", "/dashboard/queues/123", "/dashboard/settings", "/onboarding"])(
     "requires authentication for %s",
     async (path) => {
       const protect = vi.fn().mockResolvedValue({ userId: "user_verified" });
@@ -43,7 +43,7 @@ describe("dashboard request protection", () => {
     },
   );
 
-  it.each(["/dashboard", "/dashboard/queues", "/sign-in/sso-callback", "/q/demo", "/ticket/token", "/api/example"])(
+  it.each(["/dashboard", "/dashboard/queues", "/onboarding", "/sign-in/sso-callback", "/q/demo", "/ticket/token", "/api/example"])(
     "runs Clerk middleware on %s",
     (url) => expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(true),
   );

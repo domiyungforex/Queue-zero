@@ -1,6 +1,6 @@
 # QueueZero database foundation
 
-The migrations are authoritative. This step creates storage and tenant security; onboarding, public projections, queue mutations, notifications, billing handlers, and Realtime are later bounded tasks.
+The migrations are authoritative. Storage, tenant security, and atomic business onboarding are implemented. Public projections, queue mutations, notifications, billing handlers, and Realtime are later bounded tasks.
 
 ## Clerk identity and Supabase setup
 
@@ -8,7 +8,7 @@ The migrations are authoritative. This step creates storage and tenant security;
 2. Confirm Clerk session tokens include `role: "authenticated"`. Supabase verifies the token signature and issuer before PostgREST sets this database role. RLS reads the text `sub` claim; Clerk IDs cannot be cast through `auth.uid()`.
 3. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`. The latter supports a new publishable key or a legacy anon JWT. Configuration rejects service-role/secret keys in that field.
 4. For a full local Supabase stack, set `[auth.third_party.clerk]` to `enabled = true` with your exact Clerk domain in `config.toml`. It starts disabled because no real issuer has been configured. The SQL tests do not need Clerk.
-5. Apply both checked-in migrations through the Supabase CLI. Local commands below never target a hosted project. For a hosted project, link the intended project, inspect `npx supabase db push --dry-run`, then apply with `npx supabase db push` through your normal release process.
+5. Apply all checked-in migrations through the Supabase CLI. Local commands below never target a hosted project. For a hosted project, link the intended project, inspect `npx supabase db push --dry-run`, then apply with `npx supabase db push` through your normal release process.
 
 `createUserSupabaseClient()` is server-only and authenticates through Clerk before creating a request-scoped Supabase client. It passes the current session token via `accessToken`, uses the public project key, and does not use the service role. No deprecated JWT template or shared JWT signing secret is needed. Missing sessions fail closed.
 
@@ -24,10 +24,11 @@ Keep only `public` in the exposed API schemas. `private` contains narrowly scope
 | Queue assignments | Own tenant | Own tenant | Own assignments only | No direct access |
 | Subscription/billing records | Own tenant | No access | No access | No direct access |
 | Notification logs | Own tenant | Own tenant | No access | No direct access |
+| Business audit events | Own tenant | Own tenant | No access | No direct access |
 | User push keys | Own user only | Own user only | Own user only | No direct access |
 | Customer push keys, daily counters, raw webhooks | No direct access | No direct access | No direct access | No direct access |
 
-Every application table has forced RLS. Authenticated clients have only the listed SELECT grants; there are no direct mutation policies/grants. Controlled, authorized RPCs will implement changes in later tasks. Do not weaken RLS or add a service-role fallback when a query is denied. Never expose a ticket row directly from a public endpoint: future endpoints must resolve an opaque token and return a deliberate public projection without other customers' identities or phone numbers.
+Every application table has forced RLS. Authenticated clients have only the listed SELECT grants; there are no direct table mutation policies/grants. `onboard_business` is the only authenticated mutation RPC currently granted. Do not weaken RLS or add a service-role fallback when a query is denied. Never expose a ticket row directly from a public endpoint: future endpoints must resolve an opaque token and return a deliberate public projection without other customers' identities or phone numbers.
 
 The service role has explicit table DML grants for trusted background/server operations, but cannot truncate tables or mutate existing ticket events. It bypasses RLS, so future uses must derive authorization and queue ownership server-side. No service-role application client is provided in this step.
 
@@ -35,7 +36,7 @@ The service role has explicit table DML grants for trusted background/server ope
 
 - All primary keys are UUIDs. Queue/ticket relations use composite foreign keys where tenant/queue consistency must be enforced.
 - `queue_staff_assignments` is the additional relation needed for assigned-queue permissions. Neither a foreign business member nor a foreign queue can be assigned into another tenant.
-- A business must have exactly one matching owner membership. The owner foreign key and consistency triggers are deferred so the next onboarding task can create business, owner, and location atomically. Ownership transfers must update both representations in one transaction.
+- A business must have exactly one matching owner membership. The deferred owner foreign key and consistency triggers allow onboarding to create business, owner, and location atomically. Ownership transfers must update both representations in one transaction.
 - `tickets.service_date` and the daily counters' unique keys scope numbering to each queue's local service day. The future join RPC must derive the service date from the location timezone. It must lock/increment the counter transactionally. Uniqueness constraints alone do not implement allocation.
 - Ticket ordering indexes use `joined_at, id`; comparing sequence numbers alone across a midnight reset is incorrect. The future queue engine must account for service dates or chronological order.
 - Only one serving ticket is allowed per queue. Lifecycle timestamps must match status, including `no_show_at`. Atomic Call Next and allowed state transitions are not implemented by this migration.
@@ -45,6 +46,16 @@ The service role has explicit table DML grants for trusted background/server ope
 - Business/location timezones must exist in Postgres. Phone-required queues must enable phone collection. The future join RPC must enforce the queue's phone setting on submitted tickets.
 
 ## Local workflow
+
+### Onboarding transaction
+
+`public.onboard_business` takes six descriptive fields, never a user ID or business ID. It uses a fixed empty search path, validates direct RPC inputs, reads the verified JWT subject, acquires a transaction-scoped advisory lock for that user, and checks existing memberships after locking. Existing members receive their first workspace ID without any writes. Otherwise, business, owner membership, first location, and a `business_created` audit event commit together. The business slug has an independent random suffix and does not expose the internal row ID.
+
+The lock protects concurrent onboarding calls across app instances. Future membership-creation/invitation operations should coordinate with this same user lock if they must exclude onboarding. Do not change this function to accept ownership from client payloads. `business_events` is append-only, manager-readable, and has no client write grants. The service role has only SELECT/INSERT on that audit table.
+
+Industry/country options are validated in both the application and RPC. If the allowed lists change, update application validation and add a migration; do not edit an already-deployed migration.
+
+### Commands
 
 Requires Docker and the checked-in npm dependencies:
 
@@ -66,6 +77,8 @@ npm run db:test:isolated
 ```
 
 This builds a smaller PostgreSQL 17 + pgTAP image, starts a randomly named container without networking or published ports, applies every migration from scratch, runs the same tests through `pg_prove`, and removes that container. It does not touch an existing project database. `tests/database/bootstrap.sql` outside this directory is a **test-only** reproduction of Supabase roles, default grants, and `auth.jwt()`; never apply it to Supabase itself.
+
+The isolated runner also opens two overlapping PostgreSQL sessions to verify onboarding idempotency. The first keeps its transaction open while the second calls onboarding; both must return the same ID, with exactly one business, owner, location, and audit event. The pgTAP onboarding suite additionally forces a late location-insert failure to verify rollback leaves no partial state.
 
 ## Verification boundary
 

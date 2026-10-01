@@ -5,6 +5,45 @@ export type Json = string | number | boolean | null | {
 export type Database = {
     "public": {
         Tables: {
+            "business_events": {
+                Row: {
+                    "actor_user_id": string;
+                    "business_id": string;
+                    "created_at": string;
+                    "id": string;
+                    "metadata": NonNullable<Json>;
+                    "type": string;
+                };
+                Insert: {
+                    "actor_user_id": string;
+                    "business_id": string;
+                    "created_at"?: string;
+                    "id"?: string;
+                    "metadata"?: NonNullable<Json>;
+                    "type": string;
+                };
+                Update: {
+                    "actor_user_id"?: string;
+                    "business_id"?: string;
+                    "created_at"?: string;
+                    "id"?: string;
+                    "metadata"?: NonNullable<Json>;
+                    "type"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "business_events_business_id_fkey";
+                        columns: [
+                            "business_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    }
+                ];
+            };
             "business_members": {
                 Row: {
                     "business_id": string;
@@ -609,7 +648,17 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
-            [_ in never]: never;
+            "onboard_business": {
+                Args: {
+                    "p_business_name": string;
+                    "p_country_code": string;
+                    "p_industry": string;
+                    "p_location_address": string;
+                    "p_location_name": string;
+                    "p_timezone": string;
+                };
+                Returns: string;
+            };
         };
         Enums: {
             "business_role": "owner" | "admin" | "staff";
