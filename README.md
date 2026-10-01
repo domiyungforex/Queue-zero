@@ -2,7 +2,7 @@
 Universal virtual queues for physical service businesses.
 
 ## Current scope
-Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, queue creation/management, and printable QR codes. Customer joining, staff ticket operations, billing, and PWA are subsequent bounded tasks.
+Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, queue creation/management, printable QR codes, and public queue landing pages. Customer joining, staff ticket operations, billing, and PWA are subsequent bounded tasks.
 
 ## Local development
 Requires Node.js 22.12+ (including the test tooling) and npm.
@@ -80,7 +80,17 @@ The QR contains only `${NEXT_PUBLIC_APP_URL}/q/${queue.slug}`. It never embeds a
 
 PNGs are generated server-side with black modules, an opaque white background, a four-module quiet zone, and medium error correction. Generation uses `qrcode`; test-only `jsqr` and `pngjs` independently decode exported images. No external QR service receives queue data. Clipboard denial falls back to a selectable link; print waits for image decoding. Loading, encoding/image failure, retry, and copy/download/print feedback are included.
 
-The public destination remains the existing landing-page placeholder at this step. Customer joining is not implemented yet. Before a physical pilot, finish the public landing/join tasks, then scan a printed sheet with a phone and confirm it reaches the intended queue. Use the Print button to open the browser dialog; A4 and Letter are supported, and browser-added page headers/footers can be disabled there.
+The public destination displays real queue details and aggregate waiting counts. Customer joining is not implemented yet. Before a physical pilot, finish the public landing/join tasks, then scan a printed sheet with a phone and confirm it reaches the intended queue. Use the Print button to open the browser dialog; A4 and Letter are supported, and browser-added page headers/footers can be disabled there.
+
+## Public queue landing
+
+Apply `20261001000004_public_queue_landing.sql` before opening `/q/[slug]`. The page shows the business name/logo, location name, service description, open/paused/closed state, actual waiting count, and an approximate wait range. A refresh button reloads the current database snapshot; realtime is a later task. Closed/paused queues do not display active wait estimates. Inactive locations and unknown/malformed slugs show an unavailable page.
+
+The public page uses a server-only anonymous Supabase client and the `get_public_queue` projection. No Clerk account or service-role key is needed for this read. Anonymous table access remains blocked. Only the exact requested slug can be read: the RPC cannot list queues and exposes no internal IDs, ticket tokens, customer names/phones, ownership fields, private addresses, or historical analytics. Public response validation fails closed on unexpected fields. Requests bypass the Next.js fetch cache and the page is dynamically rendered.
+
+The initial estimate is waiting count × configured average service seconds, shown in rounded ranges. It counts waiting tickets across service dates and excludes completed/cancelled/no-show tickets. The remaining time of an in-progress service is not yet modeled; an empty waiting list with someone being served says “After the current customer” instead of promising zero wait. Historical smoothing belongs to the later wait-time engine.
+
+The Join Queue CTA is intentionally disabled with a customer-facing explanation until Prompt 9 supplies the atomic join transaction. No personal details are collected and no fake tickets are issued. Public business text is rendered as text. HTTPS logos load directly in the browser without a referrer or server-side image proxy, and broken/invalid logos fall back to an initial.
 
 ## Validation
 ```sh
@@ -107,4 +117,4 @@ Real sign-in, verification, and logout require working Clerk credentials; those 
 ## Layout
 `app` contains marketing, auth, dashboard, and public route shells. `components/ui` is reserved for shadcn/ui-compatible components. Domain libraries live in `lib`; migrations in `supabase/migrations`; tests in `tests`.
 
-Next bounded task: public queue landing page (Prompt 8).
+Next bounded task: atomic customer join transaction and form (Prompt 9).

@@ -665,6 +665,23 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "get_public_queue": {
+                Args: {
+                    "p_slug": string;
+                };
+                Returns: {
+                    "business_logo_url": string;
+                    "business_name": string;
+                    "description": string;
+                    "estimated_wait_seconds": number;
+                    "has_serving_customer": boolean;
+                    "location_name": string;
+                    "queue_name": string;
+                    "slug": string;
+                    "status": Database["public"]['Enums']["queue_status"];
+                    "waiting_count": number;
+                }[];
+            };
             "onboard_business": {
                 Args: {
                     "p_business_name": string;

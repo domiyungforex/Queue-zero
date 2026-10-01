@@ -1,6 +1,6 @@
 # QueueZero database foundation
 
-The migrations are authoritative. Storage, tenant security, atomic business onboarding, and queue management are implemented. Public projections, customer/ticket mutations, notifications, billing handlers, and Realtime are later bounded tasks.
+The migrations are authoritative. Storage, tenant security, atomic business onboarding, queue management, and a restricted public queue projection are implemented. Customer/ticket mutations, notifications, billing handlers, and Realtime are later bounded tasks.
 
 ## Clerk identity and Supabase setup
 
@@ -28,7 +28,7 @@ Keep only `public` in the exposed API schemas. `private` contains narrowly scope
 | User push keys | Own user only | Own user only | Own user only | No direct access |
 | Customer push keys, daily counters, raw webhooks | No direct access | No direct access | No direct access | No direct access |
 
-Every application table has forced RLS. Authenticated clients have only the listed SELECT grants; there are no direct table mutation policies/grants. `onboard_business`, `create_queue`, `update_queue`, and `set_queue_status` are the authenticated mutation RPCs currently granted. Queue management RPCs require owner/admin membership in the target business, independently of application checks. Do not weaken RLS or add a service-role fallback when a query is denied. Never expose a ticket row directly from a public endpoint: future endpoints must resolve an opaque token and return a deliberate public projection without other customers' identities or phone numbers.
+Every application table has forced RLS. Authenticated clients have only the listed SELECT grants; there are no direct table mutation policies/grants. `onboard_business`, `create_queue`, `update_queue`, and `set_queue_status` are the authenticated mutation RPCs currently granted. `get_public_queue` is a read-only projection granted to `anon` and `authenticated`; it adds no table access. Queue management RPCs require owner/admin membership in the target business, independently of application checks. Do not weaken RLS or add a service-role fallback when a query is denied. Never expose a ticket row directly from a public endpoint: future endpoints must resolve an opaque token and return a deliberate public projection without other customers' identities or phone numbers.
 
 The service role has explicit table DML grants for trusted background/server operations, but cannot truncate tables or mutate existing ticket events. It bypasses RLS, so future uses must derive authorization and queue ownership server-side. No service-role application client is provided in this step.
 
@@ -62,6 +62,14 @@ Industry/country options are validated in both the application and RPC. If the a
 `update_queue` and `set_queue_status` lock the selected business's queue row, compare `p_expected_revision`, and reject stale writes with SQLSTATE `40001`. A trigger advances the revision on every queue update. Name/location/settings edits never change the slug. A same-status request at the current revision is a no-op. Each committed change appends a business audit event inside the same transaction. No delete RPC or direct write grant is added. Staff management is deliberately denied here; assigned-staff operational RPCs are a later task.
 
 Future joining and ticket operations must coordinate with the same queue row lock when inspecting/changing queue state. An RLS policy or a frontend check alone cannot enforce open/paused/closed state during concurrent operations.
+
+### Public landing projection
+
+`get_public_queue(text)` validates a canonical exact slug and returns at most one row for an active location. Its fixed return shape contains public business/queue/location labels, optional logo/description, state, a waiting count, an initial wait estimate, and a boolean indicating whether a customer is being served. It returns no identifiers or ticket/customer data. Queue lookup uses the unique slug index; waiting count and serving presence use the existing partial ticket indexes. All aggregates come from one statement snapshot, and waiting tickets from previous service dates remain counted.
+
+The SECURITY DEFINER boundary uses an empty search path and explicit execute grants only to `anon` and `authenticated`. Raw table grants, RLS policies, and existing RPC permissions are unchanged. Public reads never use the service-role application key. Unknown/invalid slugs and inactive locations produce no rows. Paused/closed queues remain recognizable but return a null wait estimate.
+
+The public pgTAP suite checks the precise output shape, real aggregates, cross-queue isolation, anonymous and signed-in access, invalid input, inactive locations, and continued denial of raw table access. The application independently validates the response before rendering.
 
 ### Commands
 

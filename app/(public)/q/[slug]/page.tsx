@@ -1,2 +1,13 @@
-import { PageShell } from "@/components/ui/page-shell";
-export default function Page() { return <PageShell showAccount={false} title="Join a queue"><p className="max-w-xl leading-relaxed text-muted">Public queue access is being prepared. Customer joining is not available yet.</p></PageShell>; }
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getPublicQueue } from "@/lib/queue/public";
+import { PublicQueueView } from "@/components/customer/public-queue";
+
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Join a queue", robots: { index: false, follow: false } };
+
+export default async function PublicQueuePage({ params }: { params: Promise<{ slug: string }> }) {
+  const queue = await getPublicQueue((await params).slug);
+  if (!queue) notFound();
+  return <PublicQueueView queue={queue} />;
+}
