@@ -2,7 +2,7 @@
 Universal virtual queues for physical service businesses.
 
 ## Current scope
-Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, and atomic business onboarding. Queue operations, billing, and PWA are subsequent bounded tasks.
+Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, and a responsive business dashboard. Queue operations, billing, and PWA are subsequent bounded tasks.
 
 ## Local development
 Requires Node.js 22.12+ (including the test tooling) and npm.
@@ -46,7 +46,13 @@ Apply all migrations, including `20261001000002_business_onboarding.sql`, and co
 
 The server action authenticates and validates with Zod. The database RPC independently derives the owner from the verified Clerk subject and creates the business, owner membership, first location, and audit event in one transaction. A user-scoped advisory lock makes repeated or simultaneous submissions return the same business. Validation and service errors preserve form input; database failures never masquerade as missing membership.
 
-The first membership, ordered by creation time and ID, is the current workspace for this step. Business switching and dashboard navigation belong to the next bounded task.
+## Dashboard
+
+The dashboard provides responsive navigation, real queue summaries, locations, read-only business settings, and the current plan. Analytics and subscription management are explicitly upcoming; no synthetic metrics or nonfunctional queue controls are shown.
+
+Users with multiple memberships can switch workspaces. An HTTP-only cookie stores the preference; every request verifies it against the current Clerk user's memberships. Missing or revoked selections fall back to the first membership ordered by creation time and ID. Queries explicitly scope the selected business and retain RLS. Staff see only assigned queues; locations and analytics require owner/admin access; billing and settings require owner access, enforced server-side as well as in navigation.
+
+Queue creation and editing are the next task. Dashboard data has loading, empty, populated, and retryable error states. Business switching returns to the overview so a different role cannot strand a user on an inaccessible page.
 
 ## Validation
 ```sh
@@ -73,4 +79,4 @@ Real sign-in, verification, and logout require working Clerk credentials; those 
 ## Layout
 `app` contains marketing, auth, dashboard, and public route shells. `components/ui` is reserved for shadcn/ui-compatible components. Domain libraries live in `lib`; migrations in `supabase/migrations`; tests in `tests`.
 
-Next bounded task: business dashboard shell (Prompt 5).
+Next bounded task: queue creation and management (Prompt 6).

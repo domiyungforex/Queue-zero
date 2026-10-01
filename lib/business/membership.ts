@@ -1,26 +1,45 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireUserId } from "@/lib/auth/server";
 import { createUserSupabaseClient } from "@/lib/db/server";
 
-export const getCurrentMembership = cache(async () => {
+export const getMemberships = cache(async () => {
   const userId = await requireUserId();
   const db = await createUserSupabaseClient();
-  // Managers can read other memberships under RLS, so explicitly select self.
   const { data, error } = await db.from("business_members")
     .select("business_id,role,businesses!business_members_business_id_fkey(name)")
     .eq("clerk_user_id", userId)
-    .order("created_at", { ascending: true }).order("id", { ascending: true })
-    .limit(1).maybeSingle();
+    .order("created_at", { ascending: true }).order("id", { ascending: true });
   if (error) throw new Error("We couldn’t load your business. Please try again.");
-  if (!data) return null;
-  if (!data.businesses) throw new Error("Your business is temporarily unavailable.");
-  return { businessId: data.business_id, role: data.role, businessName: data.businesses.name };
+  return (data ?? []).map((membership) => {
+    if (!membership.businesses) throw new Error("Your business is temporarily unavailable.");
+    return { businessId: membership.business_id, role: membership.role, businessName: membership.businesses.name };
+  });
+});
+
+export const getCurrentMembership = cache(async () => {
+  const memberships = await getMemberships();
+  const selected = (await cookies()).get("queuezero-business")?.value;
+  // A cookie is a preference, never authorization. Revoked/stale selections fall back safely.
+  return memberships.find((membership) => membership.businessId === selected) ?? memberships[0] ?? null;
 });
 
 export const requireBusinessMembership = cache(async () => {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/onboarding");
+  return membership;
+});
+
+export const requireBusinessManager = cache(async () => {
+  const membership = await requireBusinessMembership();
+  if (membership.role === "staff") redirect("/dashboard");
+  return membership;
+});
+
+export const requireBusinessOwner = cache(async () => {
+  const membership = await requireBusinessMembership();
+  if (membership.role !== "owner") redirect("/dashboard");
   return membership;
 });
