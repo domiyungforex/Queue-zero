@@ -16,3 +16,12 @@ grant execute on function auth.jwt() to anon, authenticated, service_role;
 -- Reproduce Supabase's broad default grants so migrations must remove them.
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+
+-- Capture Broadcast calls in the isolated PostgreSQL harness. This records
+-- transport envelopes only and is never installed in the application database.
+create schema realtime;
+create table realtime.test_broadcasts(payload jsonb, event text, topic text, private boolean);
+create function realtime.send(payload jsonb,event text,topic text,private boolean default true)
+returns void language sql as $$
+ insert into realtime.test_broadcasts values(payload,event,topic,private);
+$$;

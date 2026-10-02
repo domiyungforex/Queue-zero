@@ -78,3 +78,7 @@ The final question is practical: **Can we place the QR on a real business's coun
 | Willingness to pay | Ask the owner after observed use; record actual checkout completion separately from stated interest. |
 
 Review these measures and staff/customer feedback each day. Run the product with actual businesses before expanding. Appointments, reservations, deposits, customer history, multiple counters, forecasting, AI wait prediction, discovery, service availability/maps, APIs and enterprise integrations remain future possibilities only after usage validates the queue system. Do not start AI development as the next automatic task.
+
+## Real records only
+
+Start with an empty business and create its actual location and services during onboarding. The product has no seeded queues, sample customers, simulated staff actions or placeholder analytics. Old `/demo` links open the authenticated workspace. Dashboard, console and customer screens refetch database records on live events and reconnect; a 15-second fallback recovers missed events. Check the connection indicator rather than assuming a disconnected screen is current. Apply the business-update migration before pilot testing. Automated fixtures belong only in disposable test databases.

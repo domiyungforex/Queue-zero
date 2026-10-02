@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect,useState } from "react";
 import { ClerkFailed, ClerkLoaded, ClerkLoading, SignIn, SignUp } from "@clerk/nextjs";
 
@@ -9,7 +10,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   return (
     <div className="flex min-h-80 w-full justify-center">
       <ClerkLoading>
-        <div className="auth-loading" role="status">{slow?<><p>Secure sign-in is taking longer than expected.</p><p>Please try again shortly. You can still explore QueueZero.</p><button className="button-secondary" onClick={()=>window.location.reload()}>Try again</button><a href="/demo" className="button-quiet">Explore the demo workspace</a></>:<><span className="loading-pulse"/><p>Loading secure sign-in…</p></>}</div>
+        <div className="auth-loading" role="status">{slow?<><p>Secure sign-in is taking longer than expected.</p><p>Please try again shortly. You can still explore QueueZero.</p><button className="button-secondary" onClick={()=>window.location.reload()}>Try again</button><Link href="/" className="button-quiet">Back to home</Link></>:<><span className="loading-pulse"/><p>Loading secure sign-in…</p></>}</div>
       </ClerkLoading>
       <ClerkFailed>
         <div role="alert" className="max-w-sm rounded-xl border border-black/10 p-6">

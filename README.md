@@ -7,12 +7,11 @@ QueueZero runs physical queues through a public customer web app and an authenti
 ## Explore
 
 - Website: https://queuezero.conchportal.com
-- Interactive workspace demo: https://queuezero.conchportal.com/demo
 - Business workspace: `/dashboard`
 - Public queue: `/q/{slug}`; private customer ticket: `/ticket/{opaque-token}`
 - Waiting-room display: `/display/{slug}`
 
-The demo is explicitly fictional and runs in browser memory. Real dashboard analytics always derive from the database.
+Product screens use database records only. Empty businesses stay empty until real queues and customers are created. Legacy `/demo` bookmarks redirect to the authenticated workspace.
 
 ## Implemented
 
@@ -38,7 +37,7 @@ For a disposable local customer-flow preview, with Docker running:
 npm run preview
 ```
 
-Open http://localhost:3000/demo for the visual workspace demo, or http://localhost:3000/q/demo-clinic for the real local customer flow. The preview applies migrations to disposable PostgreSQL/PostgREST containers and does not bypass business authentication. Stopping it removes those containers. It never contacts the hosted database. Use `PORT=3001` for a different port or `PREVIEW_APP_URL` for the browser’s forwarded origin.
+Open http://localhost:3000. The preview starts empty: it inserts no sample businesses, queues or customers. It has no working Clerk provider; use configured development credentials for authenticated onboarding. The preview applies migrations to disposable PostgreSQL/PostgREST containers and does not bypass business authentication. Stopping it removes those containers. It never contacts the hosted database. Use `PORT=3001` for a different port or `PREVIEW_APP_URL` for the browser’s forwarded origin.
 
 ## Correctness and privacy
 
@@ -63,7 +62,7 @@ npm run build
 npm run test:e2e
 ```
 
-Install the test browser with `npx playwright install chromium`. Set `E2E_BASE_URL` to an explicit deployed origin to run the read-only/demo browser suite there. The suite checks six workspace screens at four viewport widths, staff demo interactions, public navigation and PWA metadata. `PLAYWRIGHT_CHROMIUM_EXECUTABLE` can select an already-installed Chromium.
+Install the test browser with `npx playwright install chromium`. Set `E2E_BASE_URL` to an explicit deployed origin to run the public browser suite there. The suite checks public screens at four viewport widths, browser navigation and PWA metadata. The opt-in customer journey creates its own disposable test records. `PLAYWRIGHT_CHROMIUM_EXECUTABLE` can select an already-installed Chromium.
 
 The database suite requires Docker and creates an isolated PostgreSQL 17 database. It includes pgTAP authorization/state tests and overlapping real database sessions for race conditions. Unit/integration tests use fixture identities; production auth and actual phone notifications must also be checked independently.
 

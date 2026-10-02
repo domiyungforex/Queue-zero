@@ -37,7 +37,7 @@ Until credentials exist, paid checkout intentionally remains unavailable. Verify
 
 ## Release smoke test
 
-1. Verify landing/demo pages and Clerk sign-in, signup, logout, and protected redirects.
+1. Verify landing pages and the legacy `/demo` → authenticated workspace redirect and Clerk sign-in, signup, logout, and protected redirects.
 2. Create a business, location and queue; check QR destination equals the canonical origin.
 3. Join from separate signed-out browsers; confirm unique numbers and private ticket data.
 4. Open two staff consoles; call simultaneously and verify exactly one active serving customer.

@@ -5,7 +5,7 @@
 ## Release blockers
 
 - [ ] **Critical: shared production schema exposure.** Nine unrelated tables have RLS disabled and anonymous SELECT grants. The database owner must repair their access policies/grants or isolate QueueZero. Do not deploy guessed policies for another application. See `SECURITY_REVIEW.md` and the [Supabase advisory](https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public).
-- [ ] Apply `20261002200451_bound_join_retry_records.sql` and `20261002201358_recheck_staff_management_authorization.sql` through the controlled migration process, then deploy the reviewed application commits. Neither migration nor the new app commits was published during this task.
+- [ ] Apply `20261002200451_bound_join_retry_records.sql`, `20261002201358_recheck_staff_management_authorization.sql` and `20261002221819_publish_business_updates.sql` through the controlled migration process, then deploy the reviewed application commits. These migrations and the new app commits have not been published.
 - [ ] Run normal Clerk production signup → verification → onboarding → sign-out/sign-in with the intended account. Investigate the three dashboard membership-load errors observed in the last 24 hours. The old realtime endpoint also logged one expired/deleted-session error; its generic 401 fix is local.
 - [ ] Verify actual browser push on the target phones, including Home Screen installation on supported iPhones. An outbox event or successful worker registration is not device-delivery evidence.
 - [ ] Complete the laptop + five phones + printed QR acceptance in `PILOT_GUIDE.md`, including two receptionist windows calling concurrently.
@@ -18,15 +18,17 @@
 | --- | --- |
 | Lint | `npm run lint` passed. |
 | Strict TypeScript | `npm run typecheck` passed; `next build` also completed type generation/checking. |
-| Unit + integration | `npm test`: 353 tests across 42 files passed. Includes permissions, public projections, QR decoding, wait estimates, payment matching/signatures, realtime lifecycle and security regressions. Provider identities are fixtures. |
-| PostgreSQL | `npm run db:test:isolated`: 493 pgTAP assertions across 11 SQL files; overlapping onboarding, queue management, joins, cancellation, Call Next and access-revocation transactions. PostgreSQL 17 with all repository migrations. |
-| Browser | 11 Playwright tests passed against disposable local PostgreSQL/PostgREST preview: five customer contexts, unique numbers, staff transaction races, live polling/reconnect, cancel/no-show/pause/resume; six workspace views at 1440/768/390/320px; PWA metadata/offline/navigation checks. |
-| Production build | `npm run build` passed with synthetic local Clerk keys. All 10 PWA/workspace browser tests also passed against `next start`. This proves the optimized bundle, not live provider configuration. |
+| Unit + integration | `npm test`: 355 tests across 43 files passed. Includes permissions, public projections, QR decoding, wait estimates, payment matching/signatures, realtime lifecycle and security regressions. Provider identities are fixtures. |
+| PostgreSQL | `npm run db:test:isolated`: 503 pgTAP assertions across 12 SQL files; overlapping onboarding, queue management, joins, cancellation, Call Next and access-revocation transactions. PostgreSQL 17 with all repository migrations. |
+| Browser | Five-customer Playwright journey passed against disposable local PostgreSQL/PostgREST: unique numbers, staff transaction races, polling/reconnect, cancel/no-show/pause/resume. All 10 public/PWA browser tests passed against the final optimized build, including 1440/768/390/320px layouts, legacy redirect, offline recovery and normal navigation. |
+| Production build | `npm run build` passed with synthetic local Clerk keys. All 10 public/PWA browser tests passed against `next start`. This proves the optimized bundle, not live provider configuration. |
 | Dependencies | `npm audit --omit=dev`: zero known production dependency vulnerabilities. |
 | UI review | Mobile dark staff console, white cards, emerald controls, dark waiting ticket, status icons and mobile bottom navigation follow the supplied reference. No horizontal overflow in tested widths. |
 | PWA | Stable manifest ID/scope/start URL, standard 192/512 icons, opaque maskable icon, Apple icon, matching theme/background, worker registration and no-cache headers. Browser tests cover back navigation, offline fallback/recovery and uninstalled use. Worker tests cover push/click handling. Real OS installation and notch/home-indicator behavior remain physical checks. |
 
 The five-browser test uses real anonymous HTTP joins and ticket screens, with staff operations executed as fixture-authenticated SQL transactions. It does **not** claim a fresh end-to-end Clerk signup, a browser-authenticated staff session, Supabase Broadcast delivery or actual Web Push. Preview has PostgREST, not Supabase Realtime; browser updates exercised polling/reconnect recovery. The dedicated SQL race suite tests two distinct receptionist identities.
+
+The no-demo regression also confirmed the preview starts with zero businesses, queues and tickets. Two console tests enforce server-confirmed changes and honest failure states. Ten SQL assertions verify business/service/location invalidations and private payloads using a disposable transport capture; they do not prove hosted Broadcast delivery.
 
 The DB test harness now waits for PostgreSQL's final TCP listener rather than its temporary initialization socket. Docker Hub rate limiting was worked around using the official PostgreSQL image from its public ECR mirror and the official PostgREST release binary, without changing product dependencies.
 
@@ -60,7 +62,7 @@ Set these in the deployment's **production** environment, using matching provide
 ## Operational release gates
 
 - [ ] Review migration SQL, apply in order and compare migration history. Back up before release; roll back the application if needed without deleting audit/idempotency history.
-- [ ] Confirm no `supabase/seed.sql` or `scripts/fixtures/preview.sql` was applied to production. `/demo` stays explicitly fictional and in browser memory; production analytics derive from real database rows.
+- [ ] Confirm no historical seed files or automated test fixtures were applied to production. Product seeds and the simulated console are removed; `/demo` redirects to `/dashboard`. All business screens subscribe to real database invalidations with authoritative refetch and connection recovery.
 - [ ] Decode a downloaded/printed QR and confirm it contains the canonical public `/q/{slug}` URL, never a dashboard ID or private ticket token. Check existing printed codes after deployment.
 - [ ] Test phone portrait/landscape and tablet receptionist console; keyboard and focus remain usable, navigation is visible, and safe areas do not cover controls. Test installed and ordinary-browser modes.
 - [ ] Confirm user-visible failure/retry states for offline joins, provider failures, lost realtime connections and duplicate staff actions. Never treat stale offline state as a current turn.

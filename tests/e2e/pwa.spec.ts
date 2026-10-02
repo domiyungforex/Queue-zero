@@ -3,21 +3,23 @@ import { expect, test } from "@playwright/test";
 for (const width of [320, 390, 768]) {
   test(`PWA navigation works at ${width}px with or without a worker`, async ({ page, context }) => {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto('/demo');
+    await page.goto('/');
     await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
     await page.reload();
     expect(await page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
-    await page.getByRole('navigation', { name: 'Demo navigation' }).getByRole('link', { name: 'Staff console' }).click();
-    await expect(page.getByRole('button', { name: 'Call next', exact: true })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Footer' }).getByRole('link', { name: 'Plans' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page).toHaveURL(/\/pricing$/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.goBack();
-    await expect(page.getByRole('heading', { name: 'Your day, at a glance.' })).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await context.setOffline(true);
-    await page.goto('/demo?offline-check=1');
+    await page.goto('/?offline-check=1');
     await expect(page.getByRole('heading', { name: 'Let’s get you reconnected.' })).toBeVisible();
     await context.setOffline(false);
     await page.getByRole('link', { name: 'Try again' }).click();
-    await expect(page.getByRole('heading', { name: 'Your day, at a glance.' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     const cached = await page.evaluate(async () => {
       const names = (await caches.keys()).filter(name => name.startsWith('queuezero-shell-'));
       return (await Promise.all(names.map(async name => (await (await caches.open(name)).keys()).map(request => new URL(request.url).pathname)))).flat();

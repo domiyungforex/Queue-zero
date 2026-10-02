@@ -1,42 +1,19 @@
 import { expect, test } from "@playwright/test";
 
 for (const width of [1440, 768, 390, 320]) {
-  test(`workspace screens remain usable at ${width}px`, async ({ page }) => {
+  test(`public screens remain usable without sample data at ${width}px`, async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.setViewportSize({ width, height: 1000 });
-    for (const view of ["overview", "queue", "analytics", "locations", "billing", "settings"]) {
-      await page.goto(`/demo?view=${view}`);
+    for (const route of ["/", "/pricing", "/how-it-works"]) {
+      await page.goto(route);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(page.getByText("Interactive product demo.", { exact: false })).toBeVisible();
+      await expect(page.getByText(/A01[3-6]|Interactive product demo|Sample data/)).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
     }
     expect(errors).toEqual([]);
   });
 }
-
-test("staff console preserves one active customer and supports the operating cycle", async ({ page }) => {
-  await page.goto("/demo?view=queue");
-  const next = page.getByRole("button", { name: "Call next", exact: true });
-  await next.click();
-  await expect(page.getByRole("button", { name: "Complete service" })).toBeVisible();
-  await expect(next).toBeDisabled();
-  await page.getByRole("button", { name: "Recall", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("recall alert");
-  await page.getByRole("button", { name: "Complete service" }).click();
-  await next.click();
-  await expect(page.locator(".serving-card h2")).toHaveText("David");
-  await page.getByRole("button", { name: "No-show", exact: true }).click();
-  await page.getByRole("button", { name: "Keep ticket" }).click();
-  await expect(page.locator(".serving-card h2")).toHaveText("David");
-  await page.getByRole("button", { name: "No-show", exact: true }).click();
-  await page.getByRole("button", { name: "Confirm", exact: true }).click();
-  await expect(next).toBeEnabled();
-  await page.getByRole("button", { name: "Pause queue" }).click();
-  await expect(next).toBeDisabled();
-  await page.getByRole("button", { name: "Open queue" }).click();
-  await expect(next).toBeEnabled();
-});
 
 test("public navigation and unknown ticket handling", async ({ page }) => {
   for (const route of ["/", "/pricing", "/how-it-works", "/sign-in", "/sign-up"]) {
@@ -50,4 +27,11 @@ test("public navigation and unknown ticket handling", async ({ page }) => {
   const manifest = await page.goto("/manifest.webmanifest");
   expect(manifest?.ok()).toBe(true);
   expect((await manifest!.json()).display).toBe("standalone");
+});
+
+test('legacy demo URLs redirect to the real workspace without rendering fixtures', async ({ request }) => {
+  const response = await request.get('/demo?view=queue', { maxRedirects: 0 });
+  expect(response.status()).toBe(307);
+  expect(new URL(response.headers().location, 'http://localhost').pathname).toBe('/dashboard');
+  expect(await response.text()).not.toContain('Acacia Care');
 });

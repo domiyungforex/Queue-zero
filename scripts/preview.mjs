@@ -47,7 +47,7 @@ async function stop() {
 }
 for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => { void stop().then(() => process.exit(0)); });
 try {
-  console.log("Starting a disposable PostgreSQL + PostgREST demo. Data resets when stopped.");
+  console.log("Starting a disposable empty PostgreSQL + PostgREST workspace. Data resets when stopped.");
   docker(["build", "-t", "queuezero-db-tests:local", "tests/database"]);
   docker(["network", "create", network]);
   docker(["run", "--rm", "-d", "--name", database, "--network", network, "-e", `POSTGRES_PASSWORD=${password}`, "queuezero-db-tests:local"]);
@@ -62,7 +62,6 @@ try {
     sql(readFileSync(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8"));
   }
   sql(`create role preview_gateway login password '${password}' noinherit; grant anon,authenticated,service_role to preview_gateway;`);
-  sql(readFileSync(new URL("./fixtures/preview.sql", import.meta.url), "utf8"));
   docker(["run", "--rm", "-d", "--name", rest, "--network", network, "-p", "127.0.0.1::3000",
     "-e", `PGRST_DB_URI=postgres://preview_gateway:${password}@${database}:5432/postgres`,
     "-e", "PGRST_DB_SCHEMAS=public", "-e", "PGRST_DB_ANON_ROLE=anon", "-e", `PGRST_JWT_SECRET=${jwtSecret}`,
@@ -84,8 +83,8 @@ try {
   ready = false;
   for (let i = 0; i < 60; i++) {
     try {
-      const response = await fetch(`http://127.0.0.1:${proxyPort}/rest/v1/rpc/get_public_queue`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${publicKey}` }, body: JSON.stringify({ p_slug: "demo-clinic" }) });
-      if (response.ok && (await response.json()).length === 1) { ready = true; break; }
+      const response = await fetch(`http://127.0.0.1:${proxyPort}/rest/v1/rpc/get_public_queue`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${publicKey}` }, body: JSON.stringify({ p_slug: "readiness-probe" }) });
+      if (response.ok && (await response.json()).length === 0) { ready = true; break; }
     } catch { /* Wait for PostgREST startup. */ }
     await delay(500);
   }
@@ -100,7 +99,7 @@ try {
       QUEUE_JOIN_SECRET: randomBytes(32).toString("hex"),
     },
   });
-  console.log(`\nDemo queue: ${origin}/q/demo-clinic\nHomepage: ${origin}\nCustomer join/ticket/cancel use real local database transactions.\nBusiness sign-in needs real Clerk configuration. No hosted data is used.\nPress Ctrl+C to stop and remove this demo database.\n`);
+  console.log(`\nHomepage: ${origin}\nCustomer join/ticket/cancel use real local database transactions.\nBusiness sign-in needs real Clerk configuration. No hosted data is used.\nPress Ctrl+C to stop and remove this local database.\n`);
   await new Promise((resolve, reject) => { next.once("error", reject); next.once("exit", (code) => { if (code && !stopping) reject(new Error("Preview web server exited.")); else resolve(); }); });
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Local preview failed.");
