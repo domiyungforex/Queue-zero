@@ -183,3 +183,7 @@ Queues remain single-counter: an existing serving customer returns `already_serv
 Each staff intent supplies a UUID request ID. Retain it after an ambiguous network failure; generate a fresh ID only for a new acknowledged intent. Outcomes are retained per queue and bound to the original actor. An authorized retry returns `replayed: true` and the original ticket's current status, even after that ticket completes; an earlier empty outcome stays empty after new arrivals. Retries still require current access. Future announcements/notifications must treat only `called` with `replayed: false` as a new call. Do not delete request records while their retry guarantees are needed.
 
 Validation covers authorization, tenant isolation, revoked assignments, cross-date FIFO, terminal-ticket exclusion, audit rollback, retries, and empty/paused/closed/inactive queues. Separate PostgreSQL sessions exercise overlapping calls, same-request retries, and races with joining, cancellation, pausing, and access revocation. Local authenticated PostgREST requests verify one call for two simultaneous staff actions; browser checks verify customer status/position on refresh and mobile/tablet/desktop layouts. These tests use local identity fixtures and do not replace hosted Clerk/Supabase verification.
+
+## Deploying this build
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel environment setup, hosted database requirements, current credential checks, and the deployment smoke test. Local secret files are never included in Git pushes.
