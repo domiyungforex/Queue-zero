@@ -24,3 +24,51 @@ body{font-family:QueueManrope,Arial,sans-serif}button{cursor:pointer}button:disa
 /* Keep the receptionist’s primary action above secondary reporting metrics. */
 .staff-console{display:flex;flex-direction:column}.console-toolbar{order:0}.staff-console>.notice{order:1}.console-grid{order:2;margin-top:20px}.staff-console>.metrics-grid{order:3;margin-bottom:10px}.serving-card .eyebrow{margin-bottom:12px}.serving-number{font-size:clamp(65px,6vw,88px)}.serving-card h2{font-size:22px}.serving-card>p:not(.eyebrow){margin-bottom:20px}
 .loading-screen{max-width:600px;margin:12vh auto;padding:35px;display:flex;flex-direction:column;align-items:flex-start;gap:20px}.loading-screen h1{font-size:38px;line-height:1.2;font-weight:500}.loading-screen p{font-size:14px;line-height:1.9;color:#748264}.skeleton-heading{height:35px;width:55%;border-radius:6px;background:#e6eadb;margin:20px 0 30px}.skeleton-stat{height:135px;background:#f0f2e8}.skeleton-panel{height:260px;border-radius:12px;background:#ebeedf}.skeleton-stat,.skeleton-panel,.skeleton-heading{animation:queue-skeleton 1.7s ease-in-out infinite alternate}@keyframes queue-skeleton{to{opacity:.45}}
+
+/* Shared visual language from the mobile QueueZero reference. */
+@theme inline { --color-background:#f7f9fb; --color-foreground:#152421; --color-primary:#008f4c; --color-muted:#5e6d69; }
+html { background:#f7f9fb; scroll-padding-bottom:100px; }
+body { min-height:100dvh; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.button-primary,.call-next { background:linear-gradient(110deg,#008548,#00a95b); color:white; border-radius:999px; }
+.button-primary:hover,.call-next:hover:not(:disabled) { background:#007b42; }
+.panel,.stat-card,.queue-card,.waiting-panel,.billing-plan { background:#fff; border-color:#e3eae7; box-shadow:0 3px 16px #003d3205; }
+.workspace { background:#f7f9fb; }
+.workspace-sidebar,.auth-story { background:linear-gradient(155deg,#004a38,#001e1c); }
+.workspace-header,.auth-content { background:#fff; }
+.workspace-nav>a[aria-current=page] { background:#ddf9e9; color:#006c3a; }
+.status-open,.status-active,.status-owner { background:#e1f9eb; color:#00733d; }
+.tile-icon,.empty-icon,.notice,.overview-banner,.workspace-tip { background:#edf9f2; }
+.serving-card { background:linear-gradient(150deg,#063f35,#061f22); border-color:#164d42; color:#fff; }
+.serving-card .eyebrow,.serving-card>p:not(.eyebrow) { color:#c0d8cf; }
+.complete-button { background:#174d3d; border-color:#3e7960; color:#d4ffe5; }
+.serving-secondary button { background:#123b34; border-color:#3d6558; color:#f5fff9; }
+.queue-controls { border-color:#45685d; }
+.customer-shell { background:#f7f9fb; }
+.customer-shell>header { background:#fff; border-color:#e4ece8; }
+.customer-shell section[aria-label="Current queue"],.customer-ticket { background:#fff!important; border-color:#e0e9e4!important; box-shadow:0 8px 30px #003d3207; }
+.customer-ticket { border-radius:20px; }
+.customer-ticket>div:before,.customer-ticket>div:after { display:none; }
+.customer-ticket>p:nth-child(2) { font-weight:700; }
+.almost-turn { background:#e2faeb; border-color:#c1ecd3; }
+.ticket-alerts { background:#eef9f3; border-color:#d9ede2; }
+.customer-shell a.bg-primary { border-radius:999px; }
+@media(max-width:950px) {
+  .workspace { padding-bottom:calc(85px + env(safe-area-inset-bottom)); }
+  .workspace-nav { position:fixed; z-index:30; bottom:0; left:0; right:0; margin:0; padding:8px max(8px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left)); background:#fff; border-top:1px solid #e3eae7; gap:4px; box-shadow:0 -4px 20px #003d3208; }
+  .workspace-nav>a { flex:1 0 62px; flex-direction:column; justify-content:center; gap:5px; padding:8px 5px; font-size:10px; color:#5e6d69; border-radius:10px; }
+  .workspace-nav>a:hover { background:#edf9f2; }
+  .workspace-nav>a[aria-current=page] { background:#edf9f2; color:#00733d; }
+  .workspace-sidebar { padding-bottom:20px; }
+  .console-grid { grid-template-columns:1fr; }
+  input,select,textarea { font-size:16px; }
+}
+@media(display-mode:standalone) {
+  .workspace-sidebar { top:env(safe-area-inset-top); height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  @media(max-width:950px) { .workspace-sidebar { height:auto; } }
+}
+.ticket-state-icon{display:flex;align-items:center;justify-content:center;width:68px;height:68px;margin:28px auto 0;border-radius:50%;background:#ddf9e8;color:#008f4c}
+.ticket-state-serving,.ticket-state-completed{background:#008f4c;color:white;box-shadow:0 0 0 10px #edf9f2}
+.customer-ticket.ticket-waiting{background:linear-gradient(150deg,#004a38,#042523)!important;color:#fff;border-color:#174f42!important}
+.customer-ticket.ticket-waiting .text-muted{color:#c4dcd2}.customer-ticket.ticket-waiting>div{border-color:#52766a}
+.ticket-progress{display:flex;list-style:none;margin:25px 0;padding:0;gap:4px}.ticket-progress>li{position:relative;flex:1;text-align:center;font-size:10px;color:#697670}.ticket-progress>li:before{content:'';height:2px;background:#e0e8e3;position:absolute;left:0;right:0;top:11px}.ticket-progress>li:first-child:before{left:50%}.ticket-progress>li:last-child:before{right:50%}.ticket-progress span{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;margin:0 auto 8px;background:#e8eeeb}.ticket-progress .reached span{background:#008f4c;color:white}.ticket-progress [aria-current=step]{font-weight:700;color:#00723d}
+.customer-shell form button.bg-primary{border-radius:999px}

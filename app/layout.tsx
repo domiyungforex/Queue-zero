@@ -3,8 +3,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { publicEnv } from "@/lib/env";
 import "./globals.css";
 import { RegisterWorker } from "@/components/pwa/register";
-export const metadata: Metadata = { metadataBase: new URL(publicEnv.NEXT_PUBLIC_APP_URL), title: { default: "QueueZero — Leave the line", template: "%s | QueueZero" }, description: "Scan. Join. Leave the line. Come back when you’re almost next.", manifest: "/manifest.webmanifest", appleWebApp: { capable: true, statusBarStyle: "default", title: "QueueZero" }, icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" } };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#176b4d" };
+export const metadata: Metadata = { metadataBase: new URL(publicEnv.NEXT_PUBLIC_APP_URL), title: { default: "QueueZero — Leave the line", template: "%s | QueueZero" }, description: "Scan. Join. Leave the line. Come back when you’re almost next.", manifest: "/manifest.webmanifest", appleWebApp: { capable: true, statusBarStyle: "default", title: "QueueZero" }, icons: { icon: "/icons/icon-192.png", apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }] } };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#003d32", viewportFit: "cover" };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider
@@ -19,7 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         signUp: { start: { title: "Create your QueueZero account", titleCombined: "Create your QueueZero account" } },
       }}
       appearance={{
-        variables: { colorPrimary: "#173e31", borderRadius: "0.75rem", fontFamily: "QueueManrope, Arial, sans-serif" },
+        variables: { colorPrimary: "#008f4c", borderRadius: "0.75rem", fontFamily: "QueueManrope, Arial, sans-serif" },
       }}
     >
       <html lang="en">

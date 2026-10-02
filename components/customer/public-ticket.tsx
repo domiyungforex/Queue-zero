@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BellRing, Check, Ticket } from "lucide-react";
 import type { CancelTicketAction, PublicTicket } from "@/lib/validation/ticket";
 import { formatPublicWait } from "@/lib/queue/public-wait";
 import { PublicQueueShell } from "@/components/customer/public-queue-shell";
@@ -19,14 +20,20 @@ export function PublicTicketView({ ticket, cancelAction, extra }: { ticket: Publ
   const active = waiting || ticket.status === "serving";
   const unavailable = ticket.queue_status !== "open" || !ticket.location_active;
   const joined = new Intl.DateTimeFormat("en", { timeZone: ticket.location_timezone, month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(ticket.joined_at));
+  const StatusIcon = ticket.status === "serving" ? BellRing : ticket.status === "completed" ? Check : Ticket;
   return <PublicQueueShell>
     <p className="break-words text-lg font-semibold">{ticket.business_name}</p><p className="mt-1 break-words text-sm text-muted">{ticket.location_name}</p>
-    <h1 className={`mt-7 text-3xl font-semibold tracking-tight ${state.color}`}>{state.title}</h1><p className="mt-3 leading-relaxed text-muted">{state.message}</p>
-    <section aria-label="Your ticket" className={`customer-ticket mt-6 rounded-2xl border p-6 text-center ${ticket.status === "serving" ? "border-primary/30 bg-green-50" : "border-black/10 bg-white"}`}>
+    <div className={`ticket-state-icon ticket-state-${ticket.status}`} aria-hidden="true"><StatusIcon size={32} /></div>
+    <h1 aria-live="polite" className={`mt-7 text-3xl font-semibold tracking-tight ${state.color}`}>{state.title}</h1><p className="mt-3 leading-relaxed text-muted">{state.message}</p>
+    <section aria-label="Your ticket" className={`customer-ticket ticket-${ticket.status} mt-6 rounded-2xl border p-6 text-center ${ticket.status === "serving" ? "border-primary/30 bg-green-50" : "border-black/10 bg-white"}`}>
       <p className="text-sm font-medium text-muted">{ticket.status === "serving" ? "Now serving" : "Your queue number"}</p><p className="my-5 break-all text-6xl font-bold tracking-tight tabular-nums sm:text-7xl">{ticket.display_number}</p>
       <p className="break-words text-lg font-semibold">{ticket.queue_name}</p>
       {waiting && <div className="mt-6 grid grid-cols-2 gap-4 border-t border-black/10 pt-5 text-left"><div><p className="text-3xl font-semibold tabular-nums">{ticket.people_ahead?.toLocaleString("en")}</p><p className="mt-1 text-sm text-muted">{ticket.people_ahead === 1 ? "person before you" : "people before you"}</p></div><div><p className="text-sm text-muted">Estimated wait</p><p className="mt-1 text-lg font-semibold">{unavailable ? "Unavailable right now" : formatPublicWait({ status: ticket.queue_status, estimated_wait_seconds: ticket.estimated_wait_seconds, has_serving_customer: ticket.has_serving_customer })}</p></div></div>}
     </section>
+    {active && <ol className="ticket-progress" aria-label="Ticket progress">{["Waiting", "Almost next", "Your turn", "Completed"].map((label, index) => {
+      const stage = ticket.status === "serving" ? 2 : !unavailable && ticket.people_ahead !== null && ticket.people_ahead <= (ticket.warning_threshold ?? 3) ? 1 : 0;
+      return <li key={label} aria-current={stage === index ? "step" : undefined} className={index <= stage ? "reached" : undefined}><span aria-hidden="true">{index < stage ? "✓" : "•"}</span>{label}</li>;
+    })}</ol>}
     {waiting && !unavailable && <p className="mt-4 text-sm leading-relaxed text-muted">{ticket.people_ahead === 0 ? "You’re next in the waiting line. Wait for staff to call your number." : "Times are estimates and may change. Follow staff instructions when returning."}</p>}
     {active && unavailable && <div role="status" className="mt-5 rounded-xl bg-amber-50 p-4 text-amber-950"><p className="font-semibold">{!ticket.location_active ? "Location unavailable" : ticket.queue_status === "paused" ? "Queue paused" : "Queue closed to new joins"}</p><p className="mt-1 text-sm">Your ticket is still recorded. Please check with staff for service updates.</p></div>}
     {waiting && !unavailable && ticket.people_ahead!==null && ticket.people_ahead<=(ticket.warning_threshold??3) && <div className="almost-turn" role="status"><strong>Almost your turn</strong><p>Only {ticket.people_ahead} {ticket.people_ahead===1?'person is':'people are'} ahead of you. Please start returning to the service area.</p></div>}

@@ -24,7 +24,7 @@ describe("public queue experience", () => {
     expect(screen.getByText("8")).toBeTruthy();
     expect(screen.getByText("About 20–25 min")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /sign in|sign up|dashboard/i })).toBeNull();
-    expect(screen.getByText("No app. No account.")).toBeTruthy();
+    expect(screen.getByText("No account needed.")).toBeTruthy();
   });
   it("links open queues to the anonymous join form", () => {
     render(<PublicQueueView queue={fixture} />);

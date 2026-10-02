@@ -16,3 +16,4 @@
 /* Keep body copy readable on small screens and use SVG for directional icons. */
 .step p{font-size:14px}.sectionHeading>p{font-size:14px}.businessCopy>p:not(.eyebrow){font-size:14px}.place p{font-size:13px}.footer p,.footer nav{font-size:12px}.heroDescription{font-size:16px}.photoCaption>svg{width:22px;height:22px}.place h3>svg{flex-shrink:0}
 @media(max-width:760px){.hero h1{font-size:clamp(43px,13vw,64px);letter-spacing:-2.8px}.hero h1>span{letter-spacing:-2.5px}.heroDescription{font-size:15px}.heroFootnote{font-size:11px}.heroVisual{height:460px}}
+.brandAccent{color:#00a85a}.brand{gap:8px;font-weight:800;letter-spacing:-1px}.mark{color:#00a85a}
