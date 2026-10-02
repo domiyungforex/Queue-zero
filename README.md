@@ -18,7 +18,7 @@ The demo is explicitly fictional and runs in browser memory. Real dashboard anal
 
 Business authentication and onboarding; locations and staff assignments; queue creation, editing and stable printable/downloadable QR codes; anonymous transactional joining; daily unique numbering; private ticket status, cancellation and deterministic waiting estimates; a live staff console with atomic Call Next, complete, recall, no-show and removal; pause/reopen/close; reconnect recovery; aggregate analytics; owner billing; signed, idempotent Paystack webhooks; notification outbox and Web Push; installable PWA metadata, icons and offline fallback.
 
-The cream, forest-green and lime design spans marketing, auth, onboarding, dashboard, queue operations, analytics, locations, team, settings, billing, public tickets and displays. Public customer screens are mobile-first.
+The white, deep-green and emerald design spans marketing, auth, onboarding, dashboard, queue operations, analytics, locations, team, settings, billing, public tickets and displays. Public customer screens are mobile-first.
 
 ## Run locally
 
@@ -71,4 +71,4 @@ The database suite requires Docker and creates an isolated PostgreSQL 17 databas
 
 See [DEPLOYMENT.md](DEPLOYMENT.md), [database setup](supabase/README.md), [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md), [PILOT_GUIDE.md](PILOT_GUIDE.md), and [SECURITY_REVIEW.md](SECURITY_REVIEW.md).
 
-Paystack checkout remains disabled until actual secret and monthly plan codes are configured. SMS and WhatsApp are adapter boundaries, not active channels. Web Push depends on customer permission and browser support; the ticket remains usable without it. The laptop/five-phone/printed-QR pilot is a separate physical acceptance test.
+Paystack checkout remains disabled until actual secret and monthly plan codes are configured. SMS and WhatsApp are adapter boundaries, not active channels. Web Push depends on customer permission and browser support; the ticket remains usable without it. The laptop/five-phone/printed-QR pilot is a separate physical acceptance test. Current blockers and fresh validation evidence are tracked in PRODUCTION_CHECKLIST.md; local test success is not production approval.

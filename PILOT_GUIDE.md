@@ -1,24 +1,80 @@
-# Onboard a business in under ten minutes
+# QueueZero first-business pilot
 
-1. **Sign in (1 minute).** Open https://queuezero.conchportal.com and create a business account. Customers do not need accounts.
-2. **Set up (2 minutes).** Enter the business name, industry, country, reporting timezone, and first location/address. Confirm the timezone matches the service location.
-3. **Create a queue (1 minute).** Choose a service name, location, typical service duration, notification threshold, and phone collection setting. Keep optional phone collection off unless the business needs it.
-4. **Print the QR (2 minutes).** Open the queue's QR section, download PNG or print the sheet, and scan the printed code on a phone. Check the business/service and URL.
-5. **Operate (2 minutes).** Keep the staff console open on a laptop or tablet. Have two phones join. Press Call Next, then Complete service. The next call is available only after the current ticket ends. Use Recall if needed; No-show keeps an audit record.
-6. **Check recovery (1 minute).** Pause and resume the queue. Temporarily disconnect a phone, reconnect, and check its position. Enable alerts where the browser supports them.
-7. **Start small (1 minute).** Begin with one business and 20–50 actual joins. Keep a staff member watching the console; help customers who cannot use a phone. Keep a simple manual fallback if connectivity fails.
+Resolve the critical blockers in `PRODUCTION_CHECKLIST.md` before operating real customer queues. Use one business, one location and one active serving counter per queue. No new product scope is required.
 
-## Practical controls
+## Onboard a business in under ten minutes
 
-- **Staff:** create their account first. An owner/admin can add them by email under Team and assign queues. Staff cannot access billing or other businesses.
-- **Locations:** use Locations to add/edit branches. An inactive location stops new joins without erasing ticket history.
-- **Waiting-room screen:** open the display link from queue details. It shows ticket numbers only, never customer names or phones.
-- **Customer:** keep the private ticket link, enable alerts, and return near the service area as the turn approaches. Sharing the ticket link shares access to that ticket.
-- **Billing:** Free supports 3 queues, Starter 10 and Business 50. Paid checkout is disabled until provider plans are configured. A downgrade preserves existing queues but blocks creation beyond the plan limit.
-- **Demo:** /demo contains fictional sample data and an isolated interactive console. It never operates a real queue.
+This timing assumes production authentication and provider setup have already passed acceptance.
 
-## Measure after the pilot
+1. **Sign in — 1 minute.** Open https://queuezero.conchportal.com, create the business account and verify its email. Customers never need accounts.
+2. **Business and location — 2 minutes.** Enter name, industry, country, reporting timezone, first location and address. Confirm the timezone with staff.
+3. **Create a queue — 1 minute.** Set the service name, location, typical service duration and almost-turn threshold. Leave phone collection off unless operationally necessary.
+4. **Print the QR — 2 minutes.** Download the queue PNG or use Print. Check the printed code opens the business's canonical public queue URL on a phone. Place it where arriving customers can reach it.
+5. **Open the staff console — 1 minute.** Use the receptionist laptop/tablet. Add teammates only after they create accounts and verify the exact email; assign their queues.
+6. **Practice — 2 minutes.** Two phones join; each gets a different number. Call Next, then Complete service, then Call Next again. Try pause/resume and enable customer alerts where supported.
+7. **Begin small — 1 minute.** Name the staff member responsible, keep a manual fallback, and help customers without phones. Start with 20–50 joins and observe the full shift.
 
-Review joins, completed visits, average wait/service time, no-shows, cancellation rate, busy hours, notification failures, staff feedback and willingness to pay. Verify customer expectations before adding new scope.
+Installation is optional. Ordinary QR links work in a browser. On Android, use the browser's install action if desired. On supported iPhones, use Safari → Share → Add to Home Screen, open that installed app, then enable alerts; a browser tab still works for ticket tracking without push.
 
-Production configuration and physical-device checks are listed in PRODUCTION_CHECKLIST.md. The checked-in SQL seed is for an empty local development database only.
+## Launch-day physical acceptance: one laptop, five phones, one printed QR
+
+Record date, release commit, business/queue, tester, browser/OS versions, network and observed results. Use a dedicated acceptance queue with no unrelated customers. Record pass/fail for each step; do not substitute browser emulation for physical devices.
+
+| Step | Action | Required result |
+| --- | --- | --- |
+| 1 | Laptop receptionist opens the staff console. Print its queue QR. | QR resolves over HTTPS to the intended business/service. |
+| 2 | Phone 1 scans and joins; repeat in order for Phones 2–5. | Five unique ticket numbers and five distinct private links. No customer account prompt. Each sees its position and estimated wait. |
+| 3 | Enable alerts on the intended phones; keep one normal browser tab and one installed app. | Grant/deny paths both remain usable. Actual notification receipt must be observed, not inferred from an outbox row. |
+| 4 | Receptionist presses **Call Next** once. | Phone 1 shows **It’s your turn**. Phone 2 changes from one waiting person ahead to zero; it still waits for staff to call it while Phone 1 is served. All remaining positions update. |
+| 5 | Press **Complete service**, then **Call Next**. | Phone 1 shows completed; Phone 2 shows its turn; the queue advances once. Repeat through the remaining phones. |
+| 6 | Rejoin at least two phones and open a second receptionist window with another authorized staff account. Press **Call Next** in both windows almost simultaneously. | Exactly one ticket becomes serving and one call event is recorded. Both windows agree on that ticket. The second request must not advance to a different customer. |
+| 7 | Double-click Call Next and retry after briefly interrupting the request/network. | No duplicate call and no second customer advanced. Completing the current ticket remains explicit. |
+| 8 | Mark a called customer **No-show**; call the next. Cancel another waiting ticket from its phone. | Terminal tickets leave the active waiting list once; positions update; audit history remains. |
+| 9 | Pause the queue, scan QR on a spare browser, then resume. | New joins are blocked while paused; existing tickets remain visible; new joins resume afterward. |
+| 10 | Disconnect one waiting phone, advance the queue, reconnect it and return to its tab. | It refetches current status without a duplicate join. If Broadcast is unavailable, fallback polling catches up within roughly 15 seconds plus network latency. |
+| 11 | Open an invalid token and attempt another business's console using a second tenant account. | No customer details leaked; foreign business/queue access denied. |
+| 12 | Install/uninstall where supported; navigate back, open external browser links, rotate phones, use the tablet and open the keyboard. | No trapped navigation, covered controls or horizontal overflow. Product remains usable without installation or notification permission. |
+
+**Essential concurrency rule:** Never accept two distinct serving customers, two call events for one transition, or an unexplained second advancement. Stop the pilot and retain timestamps/audit evidence if any occurs. Do not keep pressing buttons to work around it.
+
+## Repeatable local regression
+
+Use Node 22.12+ and Docker. No live credentials or production database are needed for the customer acceptance test.
+
+```sh
+npm ci
+npx playwright install chromium
+npm run lint
+npx next typegen
+npm run typecheck
+npm test
+npm run db:test:isolated
+# In terminal 1 (disposable DB; stop with Ctrl+C):
+npm run preview
+# In terminal 2; exactly one local preview should be running:
+PREVIEW_DB_CONTAINER=$(docker ps --filter name=queuezero-preview --filter ancestor=queuezero-db-tests:local --format '{{.Names}}') npx playwright test
+```
+
+`customer-journey.spec.ts` refuses hosted origins and non-preview container names. It creates a fresh fixture business/queue and opens five independent customer contexts. SQL fixture identities execute receptionist operations; real anonymous browser joins and HTTP ticket updates are used. The standalone database suite also overlaps two different staff identities and twelve simultaneous joins. This does not replace Clerk signup, a browser-authenticated staff session, real Broadcast delivery, real push or printed-QR acceptance.
+
+Run `npm run build` separately with valid local/test environment configuration after stopping the preview. Keep test credentials out of Git. Production provider configuration must be checked separately.
+
+## Week-1 acceptance and measurement
+
+By Day 7, a real business must be able to register, create a location/queue, print and scan the QR, admit account-free customers, allocate unique numbers, show people ahead and estimated waits, update live, call/complete/no-show safely, receive notifications, pause/resume, use real analytics, upgrade when paid billing is offered, enforce tenant isolation and operate on phones from a verified deployed release.
+
+The final question is practical: **Can we place the QR on a real business's counter and operate its actual queue without touching code?** Record the answer from a real shift; do not mark it passed from automated checks.
+
+| Measure | Definition / collection |
+| --- | --- |
+| Businesses onboarded | Real businesses with completed setup; exclude QA/demo fixtures. |
+| Queue joins; joins/business/day | Count committed join events; exclude idempotent retries and QA. Report calendar-day and operating-day denominators explicitly. |
+| Average wait | Mean `called_at - joined_at` for called tickets; show sample count and date range. |
+| Completion / no-show rate | Completed or no-show tickets divided by joined tickets in a settled cohort; report cancellations separately. |
+| Weekly active businesses | Businesses with real queue joins or staff operations in the week. |
+| Staff actions/day; operating hours | Count audited operations by type; record opening/closing periods with the pilot operator. |
+| Notification success | Outbox sent/failed/skipped counts plus observed device receipt. “Sent” alone does not prove delivery. |
+| Retention | Track whether each business returns to operate queues in the following week. |
+| Willingness to pay | Ask the owner after observed use; record actual checkout completion separately from stated interest. |
+
+Review these measures and staff/customer feedback each day. Run the product with actual businesses before expanding. Appointments, reservations, deposits, customer history, multiple counters, forecasting, AI wait prediction, discovery, service availability/maps, APIs and enterprise integrations remain future possibilities only after usage validates the queue system. Do not start AI development as the next automatic task.
