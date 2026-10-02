@@ -1,2 +1,4 @@
-import { PageShell } from "@/components/ui/page-shell";
-export default function Page() { return <PageShell title="Pricing"><p className="max-w-xl leading-relaxed text-muted">FREE, STARTER and BUSINESS plans are planned. Pricing and billing are not available yet.</p></PageShell>; }
+import Link from "next/link";
+import { Arrow, MarketingFrame } from "@/components/marketing/site";
+import styles from "@/components/marketing/site.module.css";
+export default function Page() { return <MarketingFrame><main id="main" className={styles.subpage}><p className={styles.eyebrow}>ROOM TO GROW</p><h1>Better waiting.<br /><em>At your own pace.</em></h1><p className={styles.subpageLead}>We’re building QueueZero for everyday businesses. Paid plans and billing are still in development; prices and plan limits have not been announced.</p><div className={styles.planCards}>{["Free", "Starter", "Business"].map(plan=><article key={plan} className={styles.plan}><h2>{plan}</h2><p>Plan details will be published before subscriptions become available.</p><span>PLANNED</span></article>)}</div><Link href="/how-it-works" className={styles.button}>Explore how QueueZero works <Arrow /></Link></main></MarketingFrame>; }
