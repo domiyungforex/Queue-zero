@@ -28,5 +28,7 @@ export const config = {
     // Run on application routes, excluding Next internals and static assets.
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
+    // Clerk production auto-proxy serves JavaScript through this route.
+    "/__clerk/(.*)",
   ],
 };

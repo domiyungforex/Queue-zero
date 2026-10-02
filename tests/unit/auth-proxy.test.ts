@@ -43,7 +43,7 @@ describe("dashboard request protection", () => {
     },
   );
 
-  it.each(["/dashboard", "/dashboard/queues", "/onboarding", "/sign-in/sso-callback", "/q/demo", "/ticket/token", "/api/example"])(
+  it.each(["/dashboard", "/dashboard/queues", "/onboarding", "/sign-in/sso-callback", "/q/demo", "/ticket/token", "/api/example", "/__clerk/npm/@clerk/clerk-js@6/dist/clerk.browser.js", "/__clerk/npm/@clerk/ui@1/dist/ui.browser.js"])(
     "runs Clerk middleware on %s",
     (url) => expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(true),
   );
