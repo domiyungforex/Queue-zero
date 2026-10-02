@@ -8,6 +8,8 @@ import { testOnboardingConcurrency } from "../tests/database/onboarding-concurre
 
 import { testJoinConcurrency } from "../tests/database/join-concurrency.mjs";
 
+import { testCallNextConcurrency } from "../tests/database/call-next-concurrency.mjs";
+
 const root = fileURLToPath(new URL("..", import.meta.url));
 const container = `queuezero-test-${randomUUID()}`;
 const image = "queuezero-db-tests:local";
@@ -53,6 +55,7 @@ try {
   await testOnboardingConcurrency(container);
   await testQueueManagementConcurrency(container);
   await testJoinConcurrency(container);
+  await testCallNextConcurrency(container);
 } finally {
   // The randomly named test container is the only resource removed.
   spawnSync("docker", ["rm", "--force", container], { stdio: "ignore" });

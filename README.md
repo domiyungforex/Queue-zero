@@ -132,7 +132,7 @@ Real sign-in, verification, and logout require working Clerk credentials; those 
 ## Layout
 `app` contains marketing, auth, dashboard, and public route shells. `components/ui` is reserved for shadcn/ui-compatible components. Domain libraries live in `lib`; migrations in `supabase/migrations`; tests in `tests`.
 
-Next bounded task: atomic Call Next transaction (Prompt 12), using the shared queue lock and waiting order.
+Next bounded task: staff queue console (Prompt 13), using the atomic Call Next operation.
 
 ## Atomic customer joining
 
@@ -171,3 +171,15 @@ The private SQL helper is authoritative for atomic joins, public landing estimat
 Wait is `ceil(peopleAhead × effectiveServiceSeconds / activeServingCapacity)`. The pure engine supports explicit capacity and treats zero counters as unavailable; **database queues still enforce one serving customer**, and every current RPC uses capacity one. Multiple-counter UI/storage is not enabled by this task. People ahead counts earlier waiting tickets in the same queue by `(joined_at, id)`, including previous dates. Remaining service time for the current customer is not predicted; a customer at the front is told to wait for the current service/call rather than being promised immediate service. Paused/closed/inactive queues continue to suppress a wait estimate.
 
 Validation includes matching TypeScript/PostgreSQL reference cases (five 600-second samples from a 300-second default → 529 seconds; twenty recent 60-second samples → 61 seconds), sparse/invalid history, deterministic ordering, outliers, safe numeric bounds, privacy, and agreement among join/landing/ticket calculations. Realtime and automatic customer notifications remain later tasks.
+
+## Atomic Call Next
+
+Apply `20261002000001_atomic_call_next.sql`. The authenticated `call_next_ticket(queue_id, request_id)` RPC and server-only `lib/queue/call-next.ts` boundary implement the next-customer operation. The staff console controls follow in Prompt 13. No additional environment variables are required.
+
+The transaction locks the queue, rechecks and locks verified business membership and any required staff assignment, checks the active location and open queue, and selects the oldest waiting ticket by `(joined_at, id)`. It updates the ticket and writes a staff audit event and request outcome atomically. Owners/admins can operate their business queues; staff need an assignment. Anonymous and service-role callers cannot execute this RPC. Failures roll back the entire transition.
+
+Queues remain single-counter: an existing serving customer returns `already_serving`, without completing them or calling another customer. No waiting customer returns `empty`. Explicit completion/no-show operations arrive in Prompt 15. Public counts and wait estimates derive from committed ticket state; Call Next does not modify queue configuration revisions. Realtime and notifications are separate later tasks.
+
+Each staff intent supplies a UUID request ID. Retain it after an ambiguous network failure; generate a fresh ID only for a new acknowledged intent. Outcomes are retained per queue and bound to the original actor. An authorized retry returns `replayed: true` and the original ticket's current status, even after that ticket completes; an earlier empty outcome stays empty after new arrivals. Retries still require current access. Future announcements/notifications must treat only `called` with `replayed: false` as a new call. Do not delete request records while their retry guarantees are needed.
+
+Validation covers authorization, tenant isolation, revoked assignments, cross-date FIFO, terminal-ticket exclusion, audit rollback, retries, and empty/paused/closed/inactive queues. Separate PostgreSQL sessions exercise overlapping calls, same-request retries, and races with joining, cancellation, pausing, and access revocation. Local authenticated PostgREST requests verify one call for two simultaneous staff actions; browser checks verify customer status/position on refresh and mobile/tablet/desktop layouts. These tests use local identity fixtures and do not replace hosted Clerk/Supabase verification.

@@ -274,6 +274,58 @@ export type Database = {
                     }
                 ];
             };
+            "queue_call_requests": {
+                Row: {
+                    "actor_user_id": string;
+                    "created_at": string;
+                    "outcome": string;
+                    "queue_id": string;
+                    "request_id": string;
+                    "ticket_id": string | null;
+                };
+                Insert: {
+                    "actor_user_id": string;
+                    "created_at"?: string;
+                    "outcome": string;
+                    "queue_id": string;
+                    "request_id": string;
+                    "ticket_id"?: string | null;
+                };
+                Update: {
+                    "actor_user_id"?: string;
+                    "created_at"?: string;
+                    "outcome"?: string;
+                    "queue_id"?: string;
+                    "request_id"?: string;
+                    "ticket_id"?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "queue_call_requests_queue_id_fkey";
+                        columns: [
+                            "queue_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "queues";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "queue_call_requests_ticket_id_queue_id_fkey";
+                        columns: [
+                            "ticket_id",
+                            "queue_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "tickets";
+                        referencedColumns: [
+                            "id",
+                            "queue_id"
+                        ];
+                    }
+                ];
+            };
             "queue_daily_counters": {
                 Row: {
                     "id": string;
@@ -722,6 +774,21 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
+            "call_next_ticket": {
+                Args: {
+                    "p_queue_id": string;
+                    "p_request_id": string;
+                };
+                Returns: {
+                    "called_at": string;
+                    "customer_name": string;
+                    "display_number": string;
+                    "outcome": string;
+                    "replayed": boolean;
+                    "ticket_id": string;
+                    "ticket_status": Database["public"]['Enums']["ticket_status"];
+                }[];
+            };
             "cancel_public_ticket": {
                 Args: {
                     "p_token": string;
