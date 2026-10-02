@@ -1,4 +1,5 @@
 import "server-only";
+import { databaseTokenOptions } from "@/lib/auth/database-token";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 import { cache } from "react";
@@ -23,8 +24,9 @@ export const createUserSupabaseClient = cache(async () => {
         detectSessionInUrl: false,
       },
       accessToken: async () => {
-        // Native Clerk integration uses the session token, not a JWT template.
-        const token = await getToken();
+        // Both paths use Clerk issuer signatures, never a shared Supabase signing secret.
+        const options = databaseTokenOptions();
+        const token = options ? await getToken(options) : await getToken();
         if (!token) throw new Error("Your session has expired. Please sign in again.");
         return token;
       },

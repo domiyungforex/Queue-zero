@@ -10,6 +10,7 @@ const requests: Request[] = [];
 
 beforeEach(() => {
   requests.length = 0;
+  vi.stubEnv("CLERK_DATABASE_JWT_TEMPLATE", "");
   protect.mockReset().mockResolvedValue({ userId: "user_verified", getToken });
   getToken.mockReset().mockResolvedValue("clerk-session-token");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://queuezero.supabase.invalid");
@@ -38,6 +39,14 @@ describe("real Supabase SDK with mocked Clerk session and HTTP transport", () =>
     expect(requests[0].headers.get("Authorization")).toBe("Bearer clerk-session-token");
     expect(requests[0].headers.get("apikey")).toBe("sb_publishable_fixture");
     expect([...requests[0].headers.values()].join(" ")).not.toContain("server-only-secret-fixture");
+  });
+
+  it("uses the configured issuer-signed role template without using service credentials", async () => {
+    vi.stubEnv("CLERK_DATABASE_JWT_TEMPLATE", "queuezero_db");
+    const client = await createUserSupabaseClient();
+    await client.from("businesses").select("id");
+    expect(getToken).toHaveBeenCalledWith({ template: "queuezero_db" });
+    expect(requests[0].headers.get("apikey")).toBe("sb_publishable_fixture");
   });
 
   it("asks Clerk for the current token on subsequent queries", async () => {

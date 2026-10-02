@@ -46,3 +46,7 @@ Until credentials exist, paid checkout intentionally remains unavailable. Verify
 7. Run the physical acceptance procedure in the pilot guide before inviting real customers.
 
 Use the production checklist for outstanding provider and physical checks; deployment alone is not a production-readiness claim.
+
+## Shared Clerk instance role claim
+
+Production sets `CLERK_DATABASE_JWT_TEMPLATE=queuezero_db`. That isolated template contains `role: "authenticated"`, uses Clerk’s normal RS256 signing key and a 60-second lifetime, and retains the verified issuer/subject. Supabase verifies it through the registered third-party issuer. It does not use a legacy Supabase HS256 signing secret or change the shared instance’s default session claims. Server database reads and authenticated Realtime use the same token configuration. Leave the variable empty when native session tokens already include the required role.

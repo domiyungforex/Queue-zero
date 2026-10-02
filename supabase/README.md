@@ -48,3 +48,7 @@ npm run db:types
 `seed.sql` is explicitly local-only demo data and automatic seeding is disabled. The preview launcher creates disposable data. `/demo` uses fictional browser-memory data and does not read/write hosted customer records. None of these fixtures should be applied to production.
 
 Unit and isolated SQL tests cannot prove real identity-provider integration or physical notification delivery. Verify a real Clerk-issued token against hosted Supabase, two separate tenant identities, private realtime reconnect and actual phone alerts before a public pilot. See the root production checklist and pilot guide.
+
+## Shared Clerk instance role claim
+
+Production sets `CLERK_DATABASE_JWT_TEMPLATE=queuezero_db`. That isolated template contains `role: "authenticated"`, uses Clerk’s normal RS256 signing key and a 60-second lifetime, and retains the verified issuer/subject. Supabase verifies it through the registered third-party issuer. It does not use a legacy Supabase HS256 signing secret or change the shared instance’s default session claims. Server database reads and authenticated Realtime use the same token configuration. Leave the variable empty when native session tokens already include the required role.
