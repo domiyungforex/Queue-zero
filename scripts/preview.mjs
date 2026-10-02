@@ -53,7 +53,7 @@ try {
   docker(["run", "--rm", "-d", "--name", database, "--network", network, "-e", `POSTGRES_PASSWORD=${password}`, "queuezero-db-tests:local"]);
   let ready = false;
   for (let i = 0; i < 60; i++) {
-    if (spawnSync("docker", ["exec", database, "pg_isready", "-U", "postgres"], { stdio: "ignore" }).status === 0) { ready = true; break; }
+    if (spawnSync("docker", ["exec", database, "pg_isready", "-h", "127.0.0.1", "-U", "postgres"], { stdio: "ignore" }).status === 0) { ready = true; break; }
     await delay(500);
   }
   if (!ready) throw new Error("Preview database did not start.");

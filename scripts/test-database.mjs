@@ -40,7 +40,7 @@ try {
     "-e", "POSTGRES_HOST_AUTH_METHOD=trust", image], { capture: true });
   let ready = false;
   for (let attempt = 0; attempt < 60; attempt++) {
-    const result = spawnSync("docker", ["exec", container, "pg_isready", "-U", "postgres"], { stdio: "ignore" });
+    const result = spawnSync("docker", ["exec", container, "pg_isready", "-h", "127.0.0.1", "-U", "postgres"], { stdio: "ignore" });
     if (result.status === 0) { ready = true; break; }
     await setTimeout(500);
   }
