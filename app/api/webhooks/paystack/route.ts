@@ -1,3 +1,4 @@
+import { readLimitedBody, RequestBodyTooLarge } from "@/lib/security/request-body";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { NextResponse } from "next/server";
@@ -6,7 +7,7 @@ import { paystack,verifyCheckout } from "@/lib/paystack/server";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
 const eventSchema=z.object({event:z.string(),data:z.object({reference:z.string().optional(),subscription_code:z.string().optional(),subscription:z.object({subscription_code:z.string()}).optional()}).passthrough()});
 const subSchema=z.object({subscription_code:z.string(),status:z.string(),customer:z.object({customer_code:z.string()}),plan:z.object({plan_code:z.string()}),next_payment_date:z.string().nullable().optional()});
-export async function POST(request:Request){const secret=process.env.PAYSTACK_SECRET_KEY;if(!secret)return NextResponse.json({error:'Not configured'},{status:503});const raw=await request.text();if(raw.length>131072)return NextResponse.json({error:'Too large'},{status:413});if(!verifyPaystackSignature(raw,request.headers.get('x-paystack-signature'),secret))return NextResponse.json({error:'Invalid signature'},{status:401});
+export async function POST(request:Request){const secret=process.env.PAYSTACK_SECRET_KEY;if(!secret)return NextResponse.json({error:'Not configured'},{status:503});let raw:string;try{raw=await readLimitedBody(request,131072)}catch(error){return NextResponse.json({error:error instanceof RequestBodyTooLarge?'Too large':'Invalid body'},{status:error instanceof RequestBodyTooLarge?413:400})};if(!verifyPaystackSignature(raw,request.headers.get('x-paystack-signature'),secret))return NextResponse.json({error:'Invalid signature'},{status:401});
  try{const event=eventSchema.parse(JSON.parse(raw));if(event.event==='charge.success'&&event.data.reference){if(!z.uuid().safeParse(event.data.reference).success)return NextResponse.json({received:true});await verifyCheckout(event.data.reference)}else if(['subscription.create','subscription.disable','subscription.not_renew','invoice.payment_failed','invoice.update'].includes(event.event)){
   const code=event.data.subscription_code??event.data.subscription?.subscription_code;if(!code)return NextResponse.json({received:true});
   // Read the provider's current state: late webhooks cannot resurrect a cancelled plan.
