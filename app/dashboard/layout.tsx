@@ -1,24 +1,11 @@
 import Link from "next/link";
-import { getMemberships, requireBusinessMembership } from "@/lib/business/membership";
+import { ArrowUpRight,LifeBuoy,Leaf } from "lucide-react";
+import { getMemberships,requireBusinessMembership } from "@/lib/business/membership";
 import { AuthNavigation } from "@/components/auth/auth-navigation";
 import { DashboardNavigation } from "@/components/dashboard/navigation";
 import { BusinessSelector } from "@/components/dashboard/business-selector";
-
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const membership = await requireBusinessMembership();
-  const memberships = await getMemberships();
-  return <div data-dashboard-shell className="min-h-screen lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
-    <aside data-dashboard-sidebar className="border-b border-black/10 bg-white p-4 lg:min-h-screen lg:border-r lg:p-6">
-      <Link href="/dashboard" className="inline-flex min-h-12 items-center text-2xl font-bold tracking-tight">Queue<span className="text-primary">Zero</span></Link>
-      <div className="mt-4 lg:mt-10"><DashboardNavigation role={membership.role} /></div>
-      <BusinessSelector key={membership.businessId} businessId={membership.businessId} memberships={memberships} />
-    </aside>
-    <div className="min-w-0">
-      <header data-dashboard-header className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 bg-white px-5 py-4 lg:px-10">
-        <div className="min-w-0"><p className="break-words font-semibold">{membership.businessName}</p><p className="text-sm capitalize text-muted">{membership.role} workspace</p></div>
-        <AuthNavigation />
-      </header>
-      <main id="main" className="mx-auto max-w-7xl px-5 py-8 lg:px-10 lg:py-10">{children}</main>
-    </div>
-  </div>;
+import { Brand } from "@/components/marketing/site";
+export default async function DashboardLayout({children}:{children:React.ReactNode}){
+ const m=await requireBusinessMembership(),memberships=await getMemberships();
+ return <div data-dashboard-shell className="workspace"><aside data-dashboard-sidebar className="workspace-sidebar"><Brand/><p className="nav-caption">WORKSPACE</p><DashboardNavigation role={m.role}/><div className="sidebar-bottom"><div className="sidebar-note"><Leaf size={22}/><strong>Good service starts here.</strong><p>Give your customers a little more time for their day.</p></div><Link href="/how-it-works" className="sidebar-help"><LifeBuoy size={17}/>How QueueZero works<ArrowUpRight size={15}/></Link><BusinessSelector key={m.businessId} businessId={m.businessId} memberships={memberships}/></div></aside><div className="workspace-body"><header data-dashboard-header className="workspace-header"><div><p>{m.businessName}</p><span>{m.role} workspace</span></div><AuthNavigation/></header><main id="main" className="workspace-main">{children}</main><footer className="workspace-footer"><span>QueueZero · A calmer way to serve.</span><span>Your business. Your pace.</span></footer></div></div>
 }

@@ -1,189 +1,70 @@
 # QueueZero
-Universal virtual queues for physical service businesses.
 
-## Current scope
-Next.js App Router, strict TypeScript, Tailwind, Clerk business authentication, a Supabase schema with tenant isolation, atomic business onboarding, a responsive business dashboard, queue creation/management, printable QR codes, public queue landing pages, atomic anonymous joining, and customer ticket status/position/cancellation. Staff ticket operations, realtime, billing, and PWA are subsequent bounded tasks.
+Scan. Join. Leave the line. Come back when you’re almost next.
 
-## Quick local preview
+QueueZero runs physical queues through a public customer web app and an authenticated business workspace. The application uses Next.js App Router, strict TypeScript, Clerk, Supabase PostgreSQL/Realtime, Paystack, and Web Push.
 
-With Node.js and Docker running:
+## Explore
 
-```sh
-npm ci
-npm run preview
-```
+- Website: https://queuezero.conchportal.com
+- Interactive workspace demo: https://queuezero.conchportal.com/demo
+- Business workspace: `/dashboard`
+- Public queue: `/q/{slug}`; private customer ticket: `/ticket/{opaque-token}`
+- Waiting-room display: `/display/{slug}`
 
-Open **http://localhost:3000/q/demo-clinic** to join a real local demo queue, view your ticket, refresh your place, and cancel. The homepage is at **http://localhost:3000**. Use `PORT=3001 npm run preview` if port 3000 is occupied. For a forwarded browser origin, set `PREVIEW_APP_URL` to that exact HTTP(S) origin.
+The demo is explicitly fictional and runs in browser memory. Real dashboard analytics always derive from the database.
 
-The preview launcher creates disposable PostgreSQL and PostgREST containers, applies migrations, and seeds a clearly labelled demo business with three waiting customers. It uses the same application routes, RLS, RPCs, and Server Actions as normal operation. It adds no authentication bypass. Business sign-in/onboarding/dashboard still require a real Clerk instance; the preview is for public customer screens. Docker downloads a small PostgREST image on first use. Local database/API ports bind only to localhost; the app listens on `0.0.0.0` for workspace preview access.
+## Implemented
 
-Stop with Ctrl+C to remove the preview database and containers. Restarting creates fresh demo data and credentials; old ticket links become invalid. The generated local API tokens last 24 hours. No hosted database is contacted and no secrets are written to files. The preview SQL/bootstrap must never be applied to production. Normal development with your service credentials is below.
+Business authentication and onboarding; locations and staff assignments; queue creation, editing and stable printable/downloadable QR codes; anonymous transactional joining; daily unique numbering; private ticket status, cancellation and deterministic waiting estimates; a live staff console with atomic Call Next, complete, recall, no-show and removal; pause/reopen/close; reconnect recovery; aggregate analytics; owner billing; signed, idempotent Paystack webhooks; notification outbox and Web Push; installable PWA metadata, icons and offline fallback.
 
-## Local development
-Requires Node.js 22.12+ (including the test tooling) and npm.
+The cream, forest-green and lime design spans marketing, auth, onboarding, dashboard, queue operations, analytics, locations, team, settings, billing, public tickets and displays. Public customer screens are mobile-first.
+
+## Run locally
+
+Node.js 22.12+ is required.
 
 ```sh
 npm ci
 cp .env.example .env.local
+npm run dev
 ```
 
-Create a Clerk application, enable your preferred sign-in methods, and place its matching publishable and secret keys in `.env.local`. Set `NEXT_PUBLIC_APP_URL` to the exact browser origin, including the local port. Then run `npm run dev`.
+Fill the environment variables with matching provider credentials. Use Clerk development keys locally. Never commit `.env.local` or expose server keys through `NEXT_PUBLIC_` variables.
 
-Both `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` are required. Use Clerk development keys locally and production keys on your configured production domain. The publishable key is embedded at build time; rebuild after changing it. Never prefix private credentials with `NEXT_PUBLIC_` or commit `.env.local`.
-
-Remaining integration variables are placeholders until their integrations are implemented.
-
-## Database and tenancy
-
-See [the database guide](supabase/README.md) for native Clerk/Supabase setup, migrations, permissions, and generated types. The server-only `createUserSupabaseClient()` uses the verified Clerk session and the public project key, so PostgreSQL RLS remains active. It never falls back to the service role.
-
-All application tables have RLS. Owners/admins can read their tenant's operational data; staff customer access is limited to assigned queues. Billing is owner-only. Public customers have no direct table access. Direct client table writes are disabled; authenticated onboarding and queue-management RPCs provide controlled mutations.
-
-Run the PostgreSQL isolation suite without configuring hosted credentials:
+For a disposable local customer-flow preview, with Docker running:
 
 ```sh
-npm run db:test:isolated
+npm run preview
 ```
 
-This requires Docker, creates a disposable PostgreSQL 17 database, applies the migrations, runs pgTAP, and cleans up its container. It does not reset or modify an existing database.
+Open http://localhost:3000/demo for the visual workspace demo, or http://localhost:3000/q/demo-clinic for the real local customer flow. The preview applies migrations to disposable PostgreSQL/PostgREST containers and does not bypass business authentication. Stopping it removes those containers. It never contacts the hosted database. Use `PORT=3001` for a different port or `PREVIEW_APP_URL` for the browser’s forwarded origin.
 
-## Authentication
-- `/sign-in/[[...sign-in]]` and `/sign-up/[[...sign-up]]` use Clerk's hosted UI components, including verification and callback subroutes.
-- Successful sign-in and sign-up default to `/dashboard`. Logout returns to `/`.
-- `proxy.ts` is the Next.js 16 middleware entry point. It initializes Clerk and protects `/dashboard` and descendants. Session authorized parties are restricted to `NEXT_PUBLIC_APP_URL`.
-- Dashboard layout and page also call `requireUserId()`. Every future protected data entry point, Server Action, and API must call the helper and then enforce tenant authorization; a layout alone is insufficient.
-- `/q/*` and `/ticket/*` remain public and have no business account controls.
-- Signed-in users with no membership are redirected from `/dashboard` to `/onboarding`. Existing members are redirected from onboarding to their dashboard.
+## Correctness and privacy
 
-## Business onboarding
+Postgres is authoritative. Queue operations lock the queue, validate current membership/assignment, transition tickets and append audit events in one transaction. Call Next requires explicit completion of the current customer: simultaneous staff actions cannot silently advance two people. Actor-bound request IDs make ambiguous retries safe. Daily ticket allocation is transactional; ordering uses arrival time across midnight.
 
-Apply all migrations, including `20261001000002_business_onboarding.sql`, and configure the Clerk/Supabase integration before trying onboarding. The form collects business name, industry, country, timezone, first location name, and address. A successful submission redirects to the dashboard showing the business name.
+All application tables have forced RLS. Authenticated database clients pass verified Clerk identity and use the public Supabase key. Public customers receive deliberate projections through opaque tokens, never raw customer tables. Controlled joining/cancellation and background delivery use a server-only service client. Public displays expose ticket numbers only.
 
-The server action authenticates and validates with Zod. The database RPC independently derives the owner from the verified Clerk subject and creates the business, owner membership, first location, and audit event in one transaction. A user-scoped advisory lock makes repeated or simultaneous submissions return the same business. Validation and service errors preserve form input; database failures never masquerade as missing membership.
+Realtime broadcasts contain invalidation notices, not customer data. Clients refetch authoritative snapshots on events, reconnect and focus, with a 15-second polling fallback. Private topics authorize staff or opaque ticket capabilities. Notification delivery occurs after successful transactions, with durable deduplication, leases and retry limits.
 
-## Dashboard
-
-The dashboard provides responsive navigation, real queue summaries, locations, read-only business settings, and the current plan. Analytics and subscription management are explicitly upcoming; no synthetic metrics are shown.
-
-Users with multiple memberships can switch workspaces. An HTTP-only cookie stores the preference; every request verifies it against the current Clerk user's memberships. Missing or revoked selections fall back to the first membership ordered by creation time and ID. Queries explicitly scope the selected business and retain RLS. Staff see only assigned queues; locations and analytics require owner/admin access; billing and settings require owner access, enforced server-side as well as in navigation.
-
-Dashboard data has loading, empty, populated, and retryable error states. Business switching returns to the overview so a different role cannot strand a user on an inaccessible page.
-
-## Queue management
-
-Apply `20261001000003_queue_management.sql` before using these screens. Owners and admins can create a queue at `/dashboard/queues/new`, view its details, edit settings, and pause, close, resume, or reopen it. Staff can view only assigned queues and cannot use these management controls. Ticket operations come later.
-
-Forms validate queue name, optional description, active location, service time in minutes (stored as whole seconds), notification threshold, and phone collection. The server derives the selected business from verified membership. Database functions independently authorize the caller and check location ownership; direct table writes remain disabled.
-
-A stable random ID per creation form makes repeated submissions safe, including retries after an ambiguous network failure. This protects retries of the same form, not separately opened creation forms. Slugs have an independent random suffix and remain stable on edits. Queue revisions and row locks reject stale edits/status changes rather than overwriting a newer change. Reloading after a conflict replaces unsaved values with the latest settings. Queue changes and administrative audit events commit together. Closing a queue preserves its records and tickets.
-
-With real Clerk/Supabase credentials configured, verify:
-
-1. Create a queue at your onboarding location, then edit its settings.
-2. Pause → resume → close → reopen; check the list and detail status agree.
-3. Open the same edit page in two tabs, save in the first, then submit in the second. The second must show a conflict and offer to reload.
-4. Try direct manager routes/actions as staff and from another business; neither may change the queue.
-5. Retry a failed creation from the same form; it must not duplicate a committed queue.
-
-## Queue QR codes
-
-Queue details include a QR preview, PNG download, copyable public link, and an open-public-queue link. The print sheet at `/dashboard/queues/[queueId]/qr` uses the same authorized queue lookup; staff can access it only for assigned queues. The sheet includes QueueZero branding, business and queue names, and “Scan to join the queue.” Dashboard controls are hidden in print output.
-
-Set `NEXT_PUBLIC_APP_URL` to the exact public origin before building: `https://queuezero.vercel.app` for the initial deployment or `https://queuezero.com` once configured. Only HTTP/HTTPS origins without credentials, paths, queries, or fragments are accepted for QR generation. Local development can use `http://localhost:3000`; a phone cannot reach your laptop through its own `localhost`, so use a reachable development origin for physical scan testing.
-
-The QR contains only `${NEXT_PUBLIC_APP_URL}/q/${queue.slug}`. It never embeds a dashboard URL, internal queue ID, or customer information. Editing queue names/settings or pausing/closing does not change the QR. Changing the public origin or slug requires new printouts or a redirect from the old URL.
-
-PNGs are generated server-side with black modules, an opaque white background, a four-module quiet zone, and medium error correction. Generation uses `qrcode`; test-only `jsqr` and `pngjs` independently decode exported images. No external QR service receives queue data. Clipboard denial falls back to a selectable link; print waits for image decoding. Loading, encoding/image failure, retry, and copy/download/print feedback are included.
-
-The public destination displays real queue details and aggregate waiting counts. Customer joining is available once its migration and private server configuration are applied. Before a physical pilot, finish staff operations and live ticket tracking, then scan a printed sheet with a phone and confirm it reaches the intended queue. Use the Print button to open the browser dialog; A4 and Letter are supported, and browser-added page headers/footers can be disabled there.
-
-## Public queue landing
-
-Apply `20261001000004_public_queue_landing.sql` before opening `/q/[slug]`. The page shows the business name/logo, location name, service description, open/paused/closed state, actual waiting count, and an approximate wait range. A refresh button reloads the current database snapshot; realtime is a later task. Closed/paused queues do not display active wait estimates. Inactive locations and unknown/malformed slugs show an unavailable page.
-
-The public page uses a server-only anonymous Supabase client and the `get_public_queue` projection. No Clerk account or service-role key is needed for this read. Anonymous table access remains blocked. Only the exact requested slug can be read: the RPC cannot list queues and exposes no internal IDs, ticket tokens, customer names/phones, ownership fields, private addresses, or historical analytics. Public response validation fails closed on unexpected fields. Requests bypass the Next.js fetch cache and the page is dynamically rendered.
-
-The estimate is waiting count × effective average service seconds, shown in rounded ranges. It starts from the configured duration and adopts bounded recent completion history after five valid observations. It counts waiting tickets across service dates and excludes completed/cancelled/no-show tickets. The remaining time of an in-progress service is not yet modeled; an empty waiting list with someone being served says “After the current customer” instead of promising zero wait. Historical smoothing is shared with joining and ticket estimates.
-
-Open queues link to the anonymous join form; paused/closed queues disable new joins. Public business text is rendered as text. HTTPS logos load directly in the browser without a referrer or server-side image proxy, and broken/invalid logos fall back to an initial.
+Wait estimates use the configured duration until five valid completions exist, then a bounded window of the last 20 services with exponential smoothing. Estimates use coarse ranges. Week 1 supports one active serving counter per queue.
 
 ## Validation
+
 ```sh
 npm run lint
 npx next typegen
 npm run typecheck
 npm test
+npm run db:test:isolated
 npm run build
 ```
 
-The unit/integration tests use mocked Clerk sessions and inert configuration fixtures. They cover allowed/denied dashboard access, nested route protection, public routes, middleware matching, and missing/invalid server credentials. They do not exercise a real Clerk account.
+The database suite requires Docker and creates an isolated PostgreSQL 17 database. It includes pgTAP authorization/state tests and overlapping real database sessions for race conditions. Unit/integration tests use fixture identities; production auth and actual phone notifications must also be checked independently.
 
-With your Clerk instance configured, verify in a browser:
-1. An incognito visit to `/dashboard` redirects to `/sign-in`.
-2. Complete sign-up and required email verification; a new user should reach `/onboarding`.
-3. Submit business/location details and confirm the dashboard shows the business name. Revisit `/onboarding` and confirm it redirects back. Try duplicate submissions from two tabs and confirm only one business and location exist.
-4. Sign out, confirm the navigation changes, and confirm the dashboard is inaccessible.
-5. Sign back in and confirm dashboard access, including a direct reload.
-6. Open `/q/demo` and `/ticket/demo` while signed out; neither requires registration.
-7. Check sign-in/sign-up and onboarding on phone, tablet, and desktop, including invalid details and a failed connection.
+## Deployment and pilot
 
-Real sign-in, verification, and logout require working Clerk credentials; those checks cannot be replaced by the mocked tests.
+See [DEPLOYMENT.md](DEPLOYMENT.md), [database setup](supabase/README.md), [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md), [PILOT_GUIDE.md](PILOT_GUIDE.md), and [SECURITY_REVIEW.md](SECURITY_REVIEW.md).
 
-## Layout
-`app` contains marketing, auth, dashboard, and public route shells. `components/ui` is reserved for shadcn/ui-compatible components. Domain libraries live in `lib`; migrations in `supabase/migrations`; tests in `tests`.
-
-Next bounded task: staff queue console (Prompt 13), using the atomic Call Next operation.
-
-## Atomic customer joining
-
-Apply `20261001000005_atomic_queue_join.sql` and configure `SUPABASE_SERVICE_ROLE_KEY` and a private `QUEUE_JOIN_SECRET` (generate with `openssl rand -hex 32`). Public reads still use the anonymous key. Only the server action uses the privileged client; anonymous/authenticated database roles cannot invoke the join mutation directly. Never expose either secret in browser configuration.
-
-The flow is `/q/[slug]` → `/q/[slug]/join` → `/ticket/[opaqueToken]`. A short redirect sets a random HttpOnly, SameSite=Lax browser cookie before showing the form; this GET never creates tickets. Cookies are required. Forms collect a first name and a phone only when enabled, with country-code validation enforced against current database settings. The ticket page confirms the actual number, status, position, and estimated wait without exposing customer names, phones, or internal IDs. Realtime and notifications remain later tasks.
-
-`join_public_queue` locks the queue and checks its current state, active location, phone settings, and 1,000-active-ticket safety ceiling. It allocates numbers transactionally using the location’s local date, writes the ticket, joined event, and request mapping together, and returns only the opaque token. Initial estimates count all waiting tickets across dates × the effective service duration from the shared wait-time engine. Numbers beyond 999 retain all digits. Any failure rolls back allocation and audit writes.
-
-A stable form nonce plus an HMAC of the browser cookie makes retries safe. Separate tabs resume the same active ticket; recorded request aliases still resolve to that ticket after completion. A new form can join again after the previous ticket ends. Clearing cookies, using another browser, or rotating `QUEUE_JOIN_SECRET` creates a new browser identity; this is basic duplicate protection, not proof of a person’s identity. Keep the secret stable across instances/deployments.
-
-The database limits new joins to 60 per network address per 10 minutes, across queues. Retries/resuming an active ticket do not spend this allowance. Only on Vercel (`VERCEL=1`) does the action use the platform-controlled `x-vercel-forwarded-for` address; arbitrary forwarding headers are ignored. Other hosting/local development uses one conservative shared bucket until a trusted proxy adapter is supplied. Busy shared networks may reach this limit; tune it from pilot evidence. Address values are HMAC’d before persistence, never stored raw. Operational maintenance may delete rate rows whose window ended more than 10 minutes ago; request mappings must remain to preserve retry guarantees. Configure that cleanup before sustained production traffic.
-
-`npm run db:test:isolated` verifies allocation, phone rules, privacy, rate/capacity limits, timezone numbering, idempotency, and full rollback on downstream failure. Separate PostgreSQL sessions test 12 overlapping distinct joins, repeated requests/tabs, and a pause competing with a join. These local checks do not replace hosted Supabase/Clerk verification or physical phone testing.
-
-## Customer tickets
-
-Apply `20261001000006_customer_ticket.sql` for the full `/ticket/[token]` experience. The narrow anonymous `get_public_ticket` RPC returns that ticket’s number/status/joined time, public queue/business/location details, and aggregate waiting position. It never returns customer names, phone numbers, owner fields, or internal IDs. The token is a bearer capability: keep its link private. Pages are dynamic, disable indexing/referrer forwarding, and reject unexpected provider fields.
-
-People ahead counts earlier **waiting** tickets ordered by `(joined_at, id)`, including tickets from previous service dates. This avoids treating a new day’s A001 as ahead of yesterday’s customers. It matches the existing waiting-order index; future Call Next must use this ordering. Estimates use the shared effective service time × waiting people ahead and are shown as ranges. At the front, an existing serving customer is explicitly acknowledged. Paused/closed queues and inactive locations preserve the ticket but suppress an active wait promise. Times are displayed in the location’s timezone.
-
-Waiting customers can confirm “Leave queue.” The server validates the opaque token and confirmation, then invokes a service-role-only cancellation RPC. It locks queue then ticket, permits only `waiting → cancelled`, timestamps the transition, and appends one customer event in the same transaction. Repeated requests return the already-cancelled result without another event. Other terminal/serving states reject cancellation. Any audit failure rolls back the state change. No row is deleted, and refreshed position/estimates immediately reflect cancellation.
-
-The page handles waiting, serving, completed, no-show, cancelled, invalid links, loading, and error/retry states. **Refresh ticket** reads the current database snapshot. There is no polling or realtime yet. PostgreSQL tests include cross-date position, private projections, invalid transitions, rollback, simultaneous cancellations, and a serving/cancel race; browser verification uses a separate local fixture business so the demo queue remains available.
-
-## Deterministic wait-time engine
-
-Apply `20261002000000_wait_time_engine.sql`. `lib/wait-time/engine.ts` provides isolated, tested service-duration measurement, recent averages, exponential smoothing, queue-position calculation, and serving-capacity estimation. `lib/wait-time/format.ts` provides the existing coarse minute/hour/day ranges; the screen layouts are unchanged. No AI or external analytics service is used.
-
-Policy is explicit: use the business-configured duration until **five valid completed services** exist. Take the **latest 20 valid completions**, ordered by completion time then UUID, and replay them oldest first with `newAverage = 0.25 × duration + 0.75 × oldAverage`, seeded from the current configured default. Round up only the final average. The reference engine also returns the arithmetic mean of those samples. Replaying a bounded window makes late historical corrections and configuration changes deterministic, without an ever-growing query or mutable learned state. Older observations fall out of the window; history is not reset at midnight.
-
-Measure `completed_at - called_at`, excluding missing, reversed, and zero-length observations. Durations below one second count as one second; durations longer than 24 hours are capped at 24 hours to bound the effect of accidentally abandoned serving tickets. Raw ticket timestamps are preserved for audit/analytics. TypeScript ordering preserves PostgreSQL microseconds, including deterministic UUID ties.
-
-The private SQL helper is authoritative for atomic joins, public landing estimates, and public ticket estimates. It reads the same latest-20 window using the existing completed-ticket index and never overwrites `queues.average_service_seconds` or increments queue revisions. Direct execution is revoked for public/API roles; public projections still expose no customer history. Deployment does not require new environment variables or an application data backfill.
-
-Wait is `ceil(peopleAhead × effectiveServiceSeconds / activeServingCapacity)`. The pure engine supports explicit capacity and treats zero counters as unavailable; **database queues still enforce one serving customer**, and every current RPC uses capacity one. Multiple-counter UI/storage is not enabled by this task. People ahead counts earlier waiting tickets in the same queue by `(joined_at, id)`, including previous dates. Remaining service time for the current customer is not predicted; a customer at the front is told to wait for the current service/call rather than being promised immediate service. Paused/closed/inactive queues continue to suppress a wait estimate.
-
-Validation includes matching TypeScript/PostgreSQL reference cases (five 600-second samples from a 300-second default → 529 seconds; twenty recent 60-second samples → 61 seconds), sparse/invalid history, deterministic ordering, outliers, safe numeric bounds, privacy, and agreement among join/landing/ticket calculations. Realtime and automatic customer notifications remain later tasks.
-
-## Atomic Call Next
-
-Apply `20261002000001_atomic_call_next.sql`. The authenticated `call_next_ticket(queue_id, request_id)` RPC and server-only `lib/queue/call-next.ts` boundary implement the next-customer operation. The staff console controls follow in Prompt 13. No additional environment variables are required.
-
-The transaction locks the queue, rechecks and locks verified business membership and any required staff assignment, checks the active location and open queue, and selects the oldest waiting ticket by `(joined_at, id)`. It updates the ticket and writes a staff audit event and request outcome atomically. Owners/admins can operate their business queues; staff need an assignment. Anonymous and service-role callers cannot execute this RPC. Failures roll back the entire transition.
-
-Queues remain single-counter: an existing serving customer returns `already_serving`, without completing them or calling another customer. No waiting customer returns `empty`. Explicit completion/no-show operations arrive in Prompt 15. Public counts and wait estimates derive from committed ticket state; Call Next does not modify queue configuration revisions. Realtime and notifications are separate later tasks.
-
-Each staff intent supplies a UUID request ID. Retain it after an ambiguous network failure; generate a fresh ID only for a new acknowledged intent. Outcomes are retained per queue and bound to the original actor. An authorized retry returns `replayed: true` and the original ticket's current status, even after that ticket completes; an earlier empty outcome stays empty after new arrivals. Retries still require current access. Future announcements/notifications must treat only `called` with `replayed: false` as a new call. Do not delete request records while their retry guarantees are needed.
-
-Validation covers authorization, tenant isolation, revoked assignments, cross-date FIFO, terminal-ticket exclusion, audit rollback, retries, and empty/paused/closed/inactive queues. Separate PostgreSQL sessions exercise overlapping calls, same-request retries, and races with joining, cancellation, pausing, and access revocation. Local authenticated PostgREST requests verify one call for two simultaneous staff actions; browser checks verify customer status/position on refresh and mobile/tablet/desktop layouts. These tests use local identity fixtures and do not replace hosted Clerk/Supabase verification.
-
-## Deploying this build
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel environment setup, hosted database requirements, current credential checks, and the deployment smoke test. Local secret files are never included in Git pushes.
+Paystack checkout remains disabled until actual secret and monthly plan codes are configured. SMS and WhatsApp are adapter boundaries, not active channels. Web Push depends on customer permission and browser support; the ticket remains usable without it. The laptop/five-phone/printed-QR pilot is a separate physical acceptance test.

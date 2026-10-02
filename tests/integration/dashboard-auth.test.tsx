@@ -28,6 +28,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(new Request(input, init).url);
     requests.push(url);
+    if (url.pathname.endsWith("/business_metrics")) return new Response(JSON.stringify({timezone:"UTC",days:7,waiting:0,serving:0,joins:0,joins_today:0,completed:0,completed_today:0,no_shows:0,cancelled:0,average_wait_seconds:null,average_service_seconds:null,daily:[],hourly:[]}), {headers:{"Content-Type":"application/json"}});
     if (url.pathname.endsWith("/queues")) return new Response("[]", { headers: { "Content-Type": "application/json" } });
     return new Response(JSON.stringify(responseStatus === 200 ? rows : { message: "Unavailable" }), { status: responseStatus, headers: { "Content-Type": "application/json" } });
   }));

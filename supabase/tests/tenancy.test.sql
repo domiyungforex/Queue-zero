@@ -67,7 +67,7 @@ select is((select count(*) from locations), 1::bigint, 'owner sees their locatio
 select is((select count(*) from queues), 2::bigint, 'owner sees both queues in their tenant');
 select is((select count(*) from tickets), 2::bigint, 'owner sees tenant tickets only');
 select is((select count(*) from ticket_events), 2::bigint, 'owner sees tenant ticket history only');
-select is((select count(*) from notifications), 2::bigint, 'owner sees tenant notifications only');
+select is((select count(*) from notifications), 4::bigint, 'owner sees tenant notifications including generated alerts only');
 select is((select count(*) from subscriptions), 1::bigint, 'owner sees their billing record only');
 select is((select count(*) from queue_staff_assignments), 1::bigint, 'owner sees tenant assignments only');
 select is((select count(*) from push_subscriptions), 1::bigint, 'owner sees only their own push keys, not customer keys');
@@ -83,7 +83,7 @@ select set_config('request.jwt.claims', '{"sub":"user_admin_a","role":"authentic
 select is((select count(*) from queues), 2::bigint, 'admin sees tenant queues');
 select is((select count(*) from business_members), 4::bigint, 'admin sees tenant members');
 select is((select count(*) from subscriptions), 0::bigint, 'admin cannot view owner-only billing');
-select is((select count(*) from notifications), 2::bigint, 'admin can inspect tenant notification status');
+select is((select count(*) from notifications), 4::bigint, 'admin can inspect tenant notification status including generated alerts');
 select is((select count(*) from push_subscriptions), 0::bigint, 'admin cannot read other users push secrets');
 
 select set_config('request.jwt.claims', '{"sub":"user_staff_a","role":"authenticated"}', true);

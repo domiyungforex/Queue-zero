@@ -1,23 +1,8 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-export function DashboardNavigation({ role }: { role: "owner" | "admin" | "staff" }) {
-  const pathname = usePathname();
-  const links = [
-    { href: "/dashboard", label: "Overview", visible: true },
-    { href: "/dashboard/queues", label: "Queues", visible: true },
-    { href: "/dashboard/locations", label: "Locations", visible: role !== "staff" },
-    { href: "/dashboard/analytics", label: "Analytics", visible: role !== "staff" },
-    { href: "/dashboard/billing", label: "Billing", visible: role === "owner" },
-    { href: "/dashboard/settings", label: "Settings", visible: role === "owner" },
-  ];
-  return <nav aria-label="Business navigation" className="flex flex-wrap gap-1 lg:flex-col">
-    {links.filter((link) => link.visible).map((link) => {
-      const active = link.href === "/dashboard" ? pathname === link.href : pathname.startsWith(link.href);
-      return <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined}
-        className={`flex min-h-12 items-center rounded-xl px-4 text-sm font-semibold ${active ? "bg-primary text-white" : "text-muted hover:bg-black/5"}`}>{link.label}</Link>;
-    })}
-  </nav>;
+import { LayoutDashboard,ListOrdered,MapPin,ChartNoAxesCombined,CreditCard,Settings2,UsersRound } from "lucide-react";
+export function DashboardNavigation({role}:{role:'owner'|'admin'|'staff'}){
+ const pathname=usePathname();const links=[{href:'/dashboard',label:'Overview',icon:LayoutDashboard,visible:true},{href:'/dashboard/queues',label:'Queues',icon:ListOrdered,visible:true},{href:'/dashboard/locations',label:'Locations',icon:MapPin,visible:role!=='staff'},{href:'/dashboard/analytics',label:'Analytics',icon:ChartNoAxesCombined,visible:role!=='staff'},{href:'/dashboard/team',label:'Team',icon:UsersRound,visible:role!=='staff'},{href:'/dashboard/billing',label:'Billing',icon:CreditCard,visible:role==='owner'},{href:'/dashboard/settings',label:'Settings',icon:Settings2,visible:role==='owner'}];
+ return <nav aria-label="Business navigation" className="workspace-nav">{links.filter(l=>l.visible).map(l=><Link href={l.href} key={l.href} aria-current={(l.href==='/dashboard'?pathname===l.href:pathname.startsWith(l.href))?'page':undefined}><l.icon size={19}/>{l.label}</Link>)}</nav>
 }

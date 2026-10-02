@@ -1,1 +1,1 @@
-export default function Loading() { return <main id="main" className="p-8" role="status"><p>Loading QueueZero…</p></main>; }
+export default function Loading(){return <main id="main" role="status" className="loading-screen"><span className="loading-pulse"/><h1>Getting things ready.</h1><p>A calmer day is on its way.</p></main>}

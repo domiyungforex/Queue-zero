@@ -1,5 +1,5 @@
 import { getBusinessDetails } from "@/lib/dashboard/data";
-export default async function BillingPage() {
-  const business = await getBusinessDetails();
-  return <><h1 className="text-3xl font-semibold">Billing</h1><div className="mt-8 rounded-2xl border border-black/10 bg-white p-8"><p className="text-sm text-muted">Current plan</p><p className="mt-2 text-3xl font-semibold">{business.subscription_tier}</p><p className="mt-5 text-muted">Subscription management is coming soon.</p></div></>;
-}
+import { PageHeading } from "@/components/ui/workspace";
+import { Plans } from "@/components/billing/plans";
+import { billingConfigured,getPaidPlan } from "@/lib/paystack/server";
+export default async function BillingPage({searchParams}:{searchParams:Promise<{payment?:string}>}){const business=await getBusinessDetails();const prices:Record<string,string>={};let configured=billingConfigured();if(configured){try{for(const p of ['STARTER','BUSINESS'] as const){const v=await getPaidPlan(p);prices[p]=new Intl.NumberFormat('en',{style:'currency',currency:v.currency,maximumFractionDigits:0}).format(v.amount/100)}}catch{configured=false}}const status=(await searchParams).payment;return <><PageHeading eyebrow="BILLING & PLANS" title="A little more room to grow." description="Choose the capacity your business needs. Keep the same calm experience."/>{status&&<p className="notice" role="status">{status==='verified'?'Payment verified. Your plan has been updated.':'Payment is not confirmed yet. Your plan will update after secure provider verification.'}</p>}<Plans current={business.subscription_tier} prices={prices} configured={configured}/></>}

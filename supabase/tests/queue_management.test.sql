@@ -42,6 +42,8 @@ select set_config('request.jwt.claims', '{"role":"authenticated","sub":"queue_ow
 select throws_ok($$select public.create_queue('10000000-0000-4000-8000-000000000001',(select business_id from queue_test_ids where label = 'a'),(select location_id from queue_test_ids where label = 'a'),' Consultation ',' Description ',300,3,true,false)$$, '22023', null, 'inactive location rejected');
 reset role;
 update locations set is_active=true where id=(select location_id from queue_test_ids where label = 'a');
+-- Queue shape/slug tests use the paid capacity; free limits are tested separately.
+update businesses set subscription_tier='BUSINESS' where id=(select business_id from queue_test_ids where label='a');
 set local role authenticated;
 select set_config('request.jwt.claims', '{"role":"authenticated","sub":"queue_owner_a"}', true);
 select lives_ok($$select public.create_queue('10000000-0000-4000-8000-000000000001',(select business_id from queue_test_ids where label = 'a'),(select location_id from queue_test_ids where label = 'a'),' Consultation ',' Description ',300,3,true,false)$$, 'owner creates queue');

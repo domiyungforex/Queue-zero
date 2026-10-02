@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublicTicket } from "@/lib/queue/ticket";
-import { PublicTicketView } from "@/components/customer/public-ticket";
+import { LiveTicket } from "@/components/customer/live-ticket";
 import { cancelTicket } from "@/app/(public)/ticket/[token]/actions";
 
 export const dynamic = "force-dynamic";
@@ -10,5 +10,5 @@ export default async function TicketPage({ params }: { params: Promise<{ token: 
   const { token } = await params;
   const ticket = await getPublicTicket(token);
   if (!ticket) notFound();
-  return <PublicTicketView key={`${token}:${ticket.status}`} ticket={ticket} cancelAction={cancelTicket.bind(null, token)} />;
+  return <LiveTicket key={`${token}:${ticket.status}`} token={token} initial={ticket} cancelAction={cancelTicket.bind(null, token)} />;
 }

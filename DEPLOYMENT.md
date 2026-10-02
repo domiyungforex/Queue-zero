@@ -1,49 +1,48 @@
-# Deploy the current QueueZero build
+# QueueZero deployment
 
-Import `domiyungforex/Queue-zero` into Vercel, select the Next.js preset and repository root, and use `npm run build`. The lockfile is committed. No custom output directory is needed.
+The Vercel project `queue-zero` tracks `domiyungforex/Queue-zero`, branch `main`. The canonical production origin is **https://queuezero.conchportal.com**. Set the Next.js preset and default `npm run build`; do not specify a custom output directory.
 
-## Environment variables
+## Environment
 
-Add these in **Vercel → Project → Settings → Environment Variables** before building. Use `.env.example` for variable names; `.env.local` is intentionally ignored and is never pushed.
+Copy variable names from `.env.example` into Vercel’s encrypted environment settings. Git pushes never transfer local environment files.
 
-| Variable | Value source |
+| Configuration | Required values |
 | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | Exact deployed origin, such as `https://queuezero.vercel.app` if assigned to this project; QR links use it. |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk key for this deployment's instance/domain. |
-| `CLERK_SECRET_KEY` | Matching Clerk secret, server only. |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Valid publishable or legacy anon key from that same project. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase server secret for controlled customer joins/cancellation. |
-| `QUEUE_JOIN_SECRET` | Stable private random secret; generate with `openssl rand -hex 32`. |
+| Canonical origin | `NEXT_PUBLIC_APP_URL=https://queuezero.conchportal.com` |
+| Clerk | Matching publishable/secret keys; `CLERK_DISABLE_AUTO_PROXY=true` for direct frontend API on the configured custom domain |
+| Supabase | Matching project URL, public key, server-only service key |
+| Anonymous join protection | Stable random `QUEUE_JOIN_SECRET` |
+| Browser notifications | Matching public/private VAPID keys, `VAPID_SUBJECT`, random `CRON_SECRET` |
+| Paid plans | `PAYSTACK_SECRET_KEY`, STARTER/BUSINESS monthly plan codes and currency |
 
-Use production Clerk keys only on the production domains configured in Clerk. The supplied publishable key identifies `clerk.conchportal.com`; verify the intended QueueZero website domain is configured for that instance. For a separate preview deployment, use a compatible Clerk development instance. Changing public variables requires a rebuild. Never put a server secret in a `NEXT_PUBLIC_` variable or commit environment files.
+Production currently shares the existing Clerk primary domain `conchportal.com`. Do not rename that instance’s primary domain. The QueueZero subdomain must be authorized by Clerk. Supabase must trust the exact Clerk issuer `https://clerk.conchportal.com`, and verified session tokens must carry the authenticated database role. Use a separate Clerk development instance for unrelated preview origins.
 
-Paystack, push notification and webhook credentials are not required for the currently implemented screens; those features are not implemented yet.
+Public variables are embedded at build time; rebuild after changing them. Keep server keys out of browser code and Git. Replace credentials shared in chat through their providers before a public pilot.
 
-## Database and authentication
+## Database
 
-Follow [the database setup guide](supabase/README.md) to enable native Clerk integration in Supabase. Session tokens must include the authenticated role and verified Clerk subject.
+All checked-in migrations through `20261002000006_public_live.sql` were applied to the hosted project on 2026-10-02. Schema changes must remain migrations. For future releases, inspect `supabase db push --dry-run`, then apply pending migrations to the linked intended project. Never apply local test bootstrap/preview fixtures to production or weaken RLS to address an authentication error.
 
-Link the intended Supabase project using the CLI and authenticated database access. Inspect `npx supabase db push --dry-run`, then apply all checked-in migrations with `npx supabase db push`. A REST service-role key alone is not database migration access. Do not disable RLS to bypass errors.
+Clerk third-party issuer configuration was registered with Supabase. Verify actual authenticated onboarding, tenant reads and private Realtime after deploying; a successful build does not prove provider integration.
 
-## Current verification and blockers
+## Notifications
 
-On 2026-10-02, the supplied keys were saved only to the ignored local environment. Read-only hosted probes found:
+VAPID credentials and the notification cron secret are configured in production. Actions request delivery after commit; an outbox retains pending work. `vercel.json` schedules a daily retry sweep, compatible with a basic Vercel plan. Higher-volume operations should schedule the authenticated `/api/notifications/deliver` endpoint more frequently. Stale turn notifications are skipped. Customers must opt in, and iOS Web Push requires a supported installed home-screen app.
 
-- Clerk frontend configuration endpoint responded HTTP 200. Backend API requests returned a non-JSON HTTP 403, so server-key validity and matching-instance authentication remain unverified.
-- Supabase public key returned HTTP 401. Replace it with a working public key for the configured project.
-- Server-authenticated access to `queues` returned `PGRST205` (table absent from the API schema cache). Apply/verify migrations and schema-cache visibility before testing business flows.
-- This workspace has no configured Vercel project or Vercel deployment token. Local environment values are not automatically transferred by a Git push.
+## Billing
 
-A successful build is not evidence that hosted sign-in, onboarding or customer joining works. Resolve these blockers before calling the deployment functional.
+Create monthly Paystack plans in the configured currency and add their codes and secret. Configure the webhook as `/api/webhooks/paystack` and callback as `/api/billing/verify`. Signatures use Paystack’s secret-key HMAC-SHA512; activation requires server verification of the stored checkout’s business, plan, currency and amount. Browser return state alone cannot activate a plan.
 
-## Smoke test after deployment
+Until credentials exist, paid checkout intentionally remains unavailable. Verify test-mode success, cancellation, failed payment, duplicate webhook and renewal before accepting payments.
 
-1. Open the landing page and sign-in page without browser errors.
-2. Register, create a business/location, and open the dashboard.
-3. Create a queue and confirm its QR points to the deployed origin.
-4. Join from two signed-out browsers; confirm distinct ticket numbers and private ticket pages.
-5. Cancel one waiting ticket and refresh the other to verify its position.
-6. Confirm another business cannot read or modify the first business's queues.
+## Release smoke test
 
-The atomic Call Next backend is implemented and concurrency-tested locally. Staff-console controls, realtime, notifications and billing are still subsequent tasks. This build is for reviewing progress, not a completed production pilot.
+1. Verify landing/demo pages and Clerk sign-in, signup, logout, and protected redirects.
+2. Create a business, location and queue; check QR destination equals the canonical origin.
+3. Join from separate signed-out browsers; confirm unique numbers and private ticket data.
+4. Open two staff consoles; call simultaneously and verify exactly one active serving customer.
+5. Complete, recall, no-show, cancel, pause/resume and reconnect; confirm live customer changes.
+6. Test a second tenant, notification permission, public display, mobile layouts and billing configuration.
+7. Run the physical acceptance procedure in the pilot guide before inviting real customers.
+
+Use the production checklist for outstanding provider and physical checks; deployment alone is not a production-readiness claim.

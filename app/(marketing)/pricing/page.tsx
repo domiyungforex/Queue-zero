@@ -1,4 +1,6 @@
-import Link from "next/link";
-import { Arrow, MarketingFrame } from "@/components/marketing/site";
+import { MarketingFrame } from "@/components/marketing/site";
 import styles from "@/components/marketing/site.module.css";
-export default function Page() { return <MarketingFrame><main id="main" className={styles.subpage}><p className={styles.eyebrow}>ROOM TO GROW</p><h1>Better waiting.<br /><em>At your own pace.</em></h1><p className={styles.subpageLead}>We’re building QueueZero for everyday businesses. Paid plans and billing are still in development; prices and plan limits have not been announced.</p><div className={styles.planCards}>{["Free", "Starter", "Business"].map(plan=><article key={plan} className={styles.plan}><h2>{plan}</h2><p>Plan details will be published before subscriptions become available.</p><span>PLANNED</span></article>)}</div><Link href="/how-it-works" className={styles.button}>Explore how QueueZero works <Arrow /></Link></main></MarketingFrame>; }
+import { Plans } from "@/components/billing/plans";
+import { billingConfigured,getPaidPlan } from "@/lib/paystack/server";
+export const dynamic='force-dynamic';
+export default async function PricingPage(){const prices:Record<string,string>={};let configured=billingConfigured();if(configured){try{for(const p of ['STARTER','BUSINESS'] as const){const v=await getPaidPlan(p);prices[p]=new Intl.NumberFormat('en',{style:'currency',currency:v.currency,maximumFractionDigits:0}).format(v.amount/100)}}catch{configured=false}}return <MarketingFrame><main id="main" className={styles.subpage}><p className={styles.eyebrow}>ROOM TO GROW</p><h1>Better waiting.<br/><em>At your own pace.</em></h1><p className={styles.subpageLead}>Start with three queues, then add capacity as your business grows. No app downloads for your customers. No complicated setup for your team.</p><Plans current="FREE" prices={prices} configured={configured} publicPage/></main></MarketingFrame>}

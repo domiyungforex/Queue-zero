@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { scheduleNotifications } from "@/lib/notifications/schedule";
 import { CUSTOMER_COOKIE, customerSessionSchema, getJoinKeys } from "@/lib/security/customer-session";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { joinContextSchema, joinInputSchema, type JoinContext, type JoinState } from "@/lib/validation/join";
@@ -41,6 +42,7 @@ export async function joinQueue(context: JoinContext, _previous: JoinState, form
     unstable_rethrow(error);
     return { ...domainError(), values: retained };
   }
+  scheduleNotifications();
   revalidatePath(`/q/${parsedContext.data.slug}`);
   redirect(`/ticket/${token}`);
 }

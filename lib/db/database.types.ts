@@ -5,6 +5,54 @@ export type Json = string | number | boolean | null | {
 export type Database = {
     "public": {
         Tables: {
+            "billing_checkouts": {
+                Row: {
+                    "amount": number;
+                    "business_id": string;
+                    "created_at": string;
+                    "currency": string;
+                    "plan": Database["public"]['Enums']["subscription_plan"];
+                    "provider_plan_code": string;
+                    "reference": string;
+                    "status": string;
+                    "verified_at": string | null;
+                };
+                Insert: {
+                    "amount": number;
+                    "business_id": string;
+                    "created_at"?: string;
+                    "currency": string;
+                    "plan": Database["public"]['Enums']["subscription_plan"];
+                    "provider_plan_code": string;
+                    "reference": string;
+                    "status"?: string;
+                    "verified_at"?: string | null;
+                };
+                Update: {
+                    "amount"?: number;
+                    "business_id"?: string;
+                    "created_at"?: string;
+                    "currency"?: string;
+                    "plan"?: Database["public"]['Enums']["subscription_plan"];
+                    "provider_plan_code"?: string;
+                    "reference"?: string;
+                    "status"?: string;
+                    "verified_at"?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "billing_checkouts_business_id_fkey";
+                        columns: [
+                            "business_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    }
+                ];
+            };
             "business_events": {
                 Row: {
                     "actor_user_id": string;
@@ -183,11 +231,15 @@ export type Database = {
             };
             "notifications": {
                 Row: {
+                    "attempts": number;
                     "channel": Database["public"]['Enums']["notification_channel"];
                     "created_at": string;
                     "deduplication_key": string;
                     "error_message": string | null;
                     "id": string;
+                    "lease_token": string | null;
+                    "lease_until": string | null;
+                    "next_attempt_at": string;
                     "provider_reference": string | null;
                     "sent_at": string | null;
                     "status": Database["public"]['Enums']["notification_status"];
@@ -195,11 +247,15 @@ export type Database = {
                     "type": Database["public"]['Enums']["notification_type"];
                 };
                 Insert: {
+                    "attempts"?: number;
                     "channel": Database["public"]['Enums']["notification_channel"];
                     "created_at"?: string;
                     "deduplication_key": string;
                     "error_message"?: string | null;
                     "id"?: string;
+                    "lease_token"?: string | null;
+                    "lease_until"?: string | null;
+                    "next_attempt_at"?: string;
                     "provider_reference"?: string | null;
                     "sent_at"?: string | null;
                     "status"?: Database["public"]['Enums']["notification_status"];
@@ -207,11 +263,15 @@ export type Database = {
                     "type": Database["public"]['Enums']["notification_type"];
                 };
                 Update: {
+                    "attempts"?: number;
                     "channel"?: Database["public"]['Enums']["notification_channel"];
                     "created_at"?: string;
                     "deduplication_key"?: string;
                     "error_message"?: string | null;
                     "id"?: string;
+                    "lease_token"?: string | null;
+                    "lease_until"?: string | null;
+                    "next_attempt_at"?: string;
                     "provider_reference"?: string | null;
                     "sent_at"?: string | null;
                     "status"?: Database["public"]['Enums']["notification_status"];
@@ -427,6 +487,61 @@ export type Database = {
                     }
                 ];
             };
+            "queue_operation_requests": {
+                Row: {
+                    "actor_user_id": string;
+                    "created_at": string;
+                    "operation": string;
+                    "queue_id": string;
+                    "request_id": string;
+                    "result": NonNullable<Json>;
+                    "ticket_id": string | null;
+                };
+                Insert: {
+                    "actor_user_id": string;
+                    "created_at"?: string;
+                    "operation": string;
+                    "queue_id": string;
+                    "request_id": string;
+                    "result": NonNullable<Json>;
+                    "ticket_id"?: string | null;
+                };
+                Update: {
+                    "actor_user_id"?: string;
+                    "created_at"?: string;
+                    "operation"?: string;
+                    "queue_id"?: string;
+                    "request_id"?: string;
+                    "result"?: NonNullable<Json>;
+                    "ticket_id"?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "queue_operation_requests_queue_id_fkey";
+                        columns: [
+                            "queue_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "queues";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "queue_operation_requests_ticket_id_queue_id_fkey";
+                        columns: [
+                            "ticket_id",
+                            "queue_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "tickets";
+                        referencedColumns: [
+                            "id",
+                            "queue_id"
+                        ];
+                    }
+                ];
+            };
             "queue_staff_assignments": {
                 Row: {
                     "business_id": string;
@@ -571,9 +686,11 @@ export type Database = {
                     "created_at": string;
                     "current_period_end": string | null;
                     "id": string;
+                    "last_event_at": string | null;
                     "plan": Database["public"]['Enums']["subscription_plan"];
                     "provider": string;
                     "provider_customer_code": string | null;
+                    "provider_plan_code": string | null;
                     "provider_subscription_code": string | null;
                     "status": Database["public"]['Enums']["subscription_status"];
                     "updated_at": string;
@@ -583,9 +700,11 @@ export type Database = {
                     "created_at"?: string;
                     "current_period_end"?: string | null;
                     "id"?: string;
+                    "last_event_at"?: string | null;
                     "plan"?: Database["public"]['Enums']["subscription_plan"];
                     "provider"?: string;
                     "provider_customer_code"?: string | null;
+                    "provider_plan_code"?: string | null;
                     "provider_subscription_code"?: string | null;
                     "status"?: Database["public"]['Enums']["subscription_status"];
                     "updated_at"?: string;
@@ -595,9 +714,11 @@ export type Database = {
                     "created_at"?: string;
                     "current_period_end"?: string | null;
                     "id"?: string;
+                    "last_event_at"?: string | null;
                     "plan"?: Database["public"]['Enums']["subscription_plan"];
                     "provider"?: string;
                     "provider_customer_code"?: string | null;
+                    "provider_plan_code"?: string | null;
                     "provider_subscription_code"?: string | null;
                     "status"?: Database["public"]['Enums']["subscription_status"];
                     "updated_at"?: string;
@@ -774,6 +895,13 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
+            "business_metrics": {
+                Args: {
+                    "p_business_id": string;
+                    "p_days"?: number;
+                };
+                Returns: Json;
+            };
             "call_next_ticket": {
                 Args: {
                     "p_queue_id": string;
@@ -795,6 +923,44 @@ export type Database = {
                 };
                 Returns: Database["public"]['Enums']["ticket_status"];
             };
+            "claim_notifications": {
+                Args: {
+                    "p_limit"?: number;
+                };
+                Returns: {
+                    "attempts": number;
+                    "channel": Database["public"]['Enums']["notification_channel"];
+                    "created_at": string;
+                    "deduplication_key": string;
+                    "error_message": string | null;
+                    "id": string;
+                    "lease_token": string | null;
+                    "lease_until": string | null;
+                    "next_attempt_at": string;
+                    "provider_reference": string | null;
+                    "sent_at": string | null;
+                    "status": Database["public"]['Enums']["notification_status"];
+                    "ticket_id": string;
+                    "type": Database["public"]['Enums']["notification_type"];
+                }[];
+                SetofOptions: {
+                    from: "*";
+                    to: "notifications";
+                    isOneToOne: false;
+                    isSetofReturn: true;
+                };
+            };
+            "confirm_checkout": {
+                Args: {
+                    "p_customer_code": string;
+                    "p_event_id": string;
+                    "p_paid_at": string;
+                    "p_period_end": string;
+                    "p_reference": string;
+                    "p_subscription_code": string;
+                };
+                Returns: undefined;
+            };
             "create_queue": {
                 Args: {
                     "p_allow_phone": boolean;
@@ -808,6 +974,12 @@ export type Database = {
                     "p_warning_threshold": number;
                 };
                 Returns: string;
+            };
+            "get_public_display": {
+                Args: {
+                    "p_slug": string;
+                };
+                Returns: Json;
             };
             "get_public_join_options": {
                 Args: {
@@ -857,6 +1029,7 @@ export type Database = {
                     "queue_slug": string;
                     "queue_status": Database["public"]['Enums']["queue_status"];
                     "status": Database["public"]['Enums']["ticket_status"];
+                    "warning_threshold": number;
                 }[];
             };
             "get_public_ticket_receipt": {
@@ -869,6 +1042,12 @@ export type Database = {
                     "queue_name": string;
                     "status": Database["public"]['Enums']["ticket_status"];
                 }[];
+            };
+            "get_queue_console": {
+                Args: {
+                    "p_queue_id": string;
+                };
+                Returns: Json;
             };
             "join_public_queue": {
                 Args: {
@@ -892,6 +1071,68 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "operate_queue": {
+                Args: {
+                    "p_queue_id": string;
+                    "p_request_id": string;
+                    "p_status": Database["public"]['Enums']["queue_status"];
+                };
+                Returns: Json;
+            };
+            "operate_ticket": {
+                Args: {
+                    "p_operation": string;
+                    "p_queue_id": string;
+                    "p_request_id": string;
+                    "p_ticket_id": string;
+                };
+                Returns: Json;
+            };
+            "queuezero_receive_topic": {
+                Args: {
+                    "p_topic": string;
+                };
+                Returns: boolean;
+            };
+            "register_ticket_push": {
+                Args: {
+                    "p_auth": string;
+                    "p_endpoint": string;
+                    "p_p256dh": string;
+                    "p_token": string;
+                };
+                Returns: undefined;
+            };
+            "save_business": {
+                Args: {
+                    "p_business_id": string;
+                    "p_industry": string;
+                    "p_name": string;
+                    "p_timezone": string;
+                };
+                Returns: string;
+            };
+            "save_location": {
+                Args: {
+                    "p_active": boolean;
+                    "p_address": string;
+                    "p_business_id": string;
+                    "p_location_id": string;
+                    "p_name": string;
+                    "p_timezone": string;
+                };
+                Returns: string;
+            };
+            "save_staff": {
+                Args: {
+                    "p_business_id": string;
+                    "p_queue_ids": (string)[];
+                    "p_remove"?: boolean;
+                    "p_role": Database["public"]['Enums']["business_role"];
+                    "p_user_id": string;
+                };
+                Returns: string;
+            };
             "set_queue_status": {
                 Args: {
                     "p_business_id": string;
@@ -900,6 +1141,19 @@ export type Database = {
                     "p_status": Database["public"]['Enums']["queue_status"];
                 };
                 Returns: string;
+            };
+            "sync_subscription_event": {
+                Args: {
+                    "p_customer_code": string;
+                    "p_event_at": string;
+                    "p_event_id": string;
+                    "p_event_type": string;
+                    "p_period_end": string;
+                    "p_plan_code": string;
+                    "p_status": Database["public"]['Enums']["subscription_status"];
+                    "p_subscription_code": string;
+                };
+                Returns: undefined;
             };
             "update_queue": {
                 Args: {

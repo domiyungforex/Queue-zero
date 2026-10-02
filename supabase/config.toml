@@ -31,4 +31,4 @@ enabled = false
 domain = ""
 
 [realtime]
-enabled = false
+enabled = true

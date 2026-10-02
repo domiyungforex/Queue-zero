@@ -1,11 +1,11 @@
 import Link from "next/link";
+import { StaffConsole } from "@/components/queue/staff-console";
+import { getQueueConsole } from "@/lib/queue/console";
 import { Suspense } from "react";
 import { QueueQr } from "@/components/queue/queue-qr";
 import { formatServiceDuration } from "@/lib/queue/format";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { getManagedQueue } from "@/lib/queue/management";
-import { changeQueueStatus } from "@/app/dashboard/queues/actions";
-import { QueueStatusControls } from "@/components/queue/queue-status-controls";
 
 export default async function QueueDetailsPage({ params, searchParams }: {
   params: Promise<{ queueId: string }>;
@@ -13,6 +13,7 @@ export default async function QueueDetailsPage({ params, searchParams }: {
 }) {
   const membership = await requireBusinessMembership();
   const queue = await getManagedQueue((await params).queueId);
+  const consoleState = await getQueueConsole(queue.id);
   const saved = (await searchParams).saved;
   const message = saved === "created" ? "Queue created." : saved === "updated" ? "Queue settings saved." : saved === "status" ? `Queue is now ${queue.status}.` : null;
   const manager = membership.role !== "staff";
@@ -23,15 +24,13 @@ export default async function QueueDetailsPage({ params, searchParams }: {
       {manager && <Link href={`/dashboard/queues/${queue.id}/edit`} className="inline-flex min-h-12 items-center rounded-xl border border-black/20 px-5 font-semibold">Edit settings</Link>}</div>
     <p className="mt-3 break-words text-muted">{queue.locations?.name ?? "Location unavailable"}</p>
     {queue.description && <p className="mt-4 max-w-2xl whitespace-pre-wrap break-words text-muted">{queue.description}</p>}
-    <section aria-label="Queue status" className="mt-8 rounded-2xl border border-black/10 bg-white p-6 sm:p-8">
-      <p className="text-sm text-muted">Queue status</p><p className="mt-2 text-2xl font-semibold capitalize">{queue.status}</p>
-      {manager && <QueueStatusControls key={`${queue.id}:${queue.revision}`} status={queue.status} action={changeQueueStatus.bind(null, { businessId: membership.businessId, queueId: queue.id, revision: queue.revision })} />}
-    </section>
+    <StaffConsole initial={consoleState} manager={manager} />
     <dl className="mt-6 grid gap-4 sm:grid-cols-3">{[
       ["Typical service time", formatServiceDuration(queue.average_service_seconds)],
       ["Notification threshold", `${queue.warning_threshold} people ahead`],
       ["Phone number", queue.require_phone ? "Required" : queue.allow_phone ? "Optional" : "Not collected"],
     ].map(([label,value]) => <div key={label} className="rounded-xl border border-black/10 bg-white p-5"><dt className="text-sm text-muted">{label}</dt><dd className="mt-2 font-semibold">{value}</dd></div>)}</dl>
+    <Link href={`/display/${queue.slug}`} target="_blank" rel="noopener noreferrer" className="button-secondary mt-6">Open waiting-room display ↗</Link>
     <Suspense fallback={<p role="status" className="mt-8 text-muted">Preparing queue QR code…</p>}>
       <QueueQr queueId={queue.id} slug={queue.slug} businessName={membership.businessName} queueName={queue.name} />
     </Suspense>

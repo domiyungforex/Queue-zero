@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LiveRefresh } from "@/components/realtime/refresh";
 import type { PublicQueue } from "@/lib/validation/public-queue";
 import { formatPublicWait } from "@/lib/queue/public-wait";
 import { PublicQueueShell } from "@/components/customer/public-queue-shell";
@@ -37,6 +38,7 @@ export function PublicQueueView({ queue }: { queue: PublicQueue }) {
         <button type="button" disabled aria-describedby="join-availability" className="min-h-14 w-full cursor-not-allowed rounded-xl bg-black/10 px-6 py-4 text-lg font-semibold text-muted">{state.button}</button>}
       <p id="join-availability" className="mt-3 text-center text-sm leading-relaxed text-muted">{state.message}</p>
     </div>
+    <div className="mt-5"><LiveRefresh topic={`public-queue:${queue.slug}`} /></div>
     <RefreshQueue />
   </PublicQueueShell>;
 }

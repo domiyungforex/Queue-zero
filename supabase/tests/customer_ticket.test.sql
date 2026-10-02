@@ -33,7 +33,7 @@ select is((select count(*) from get_public_ticket(gen_random_uuid())),0::bigint,
 select is((select count(*) from get_public_ticket(current_setting('test.internal_id')::uuid)),0::bigint,'internal UUID cannot retrieve ticket');
 select is((select count(*) from get_public_ticket(null)),0::bigint,'null token reveals nothing');
 select is((select string_agg(key,',' order by key) from jsonb_object_keys((select to_jsonb(t) from get_public_ticket('81000000-0000-4000-8000-000000000003') t)) keys(key)),
- 'business_name,display_number,estimated_wait_seconds,has_serving_customer,joined_at,location_active,location_name,location_timezone,people_ahead,queue_name,queue_slug,queue_status,status','public detail contract excludes identity and internal IDs');
+ 'business_name,display_number,estimated_wait_seconds,has_serving_customer,joined_at,location_active,location_name,location_timezone,people_ahead,queue_name,queue_slug,queue_status,status,warning_threshold','public detail contract excludes identity and internal IDs');
 select ok((select to_jsonb(t)::text !~ 'PRIVATE_|233555|80000000|owner|subscription' from get_public_ticket('81000000-0000-4000-8000-000000000003') t),'projection contains no private fixture data');
 select throws_ok('select * from tickets','42501',null,'raw ticket table remains inaccessible');
 reset role;

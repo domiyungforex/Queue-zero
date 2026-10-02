@@ -1,14 +1,5 @@
 import type { Metadata } from "next";
 import { AuthForm } from "@/components/auth/auth-form";
-import { PageShell } from "@/components/ui/page-shell";
-
-export const metadata: Metadata = { title: "Sign in" };
-
-export default function SignInPage() {
-  return (
-    <PageShell title="Welcome back">
-      <p className="mb-8 text-muted">Sign in to your QueueZero business account.</p>
-      <AuthForm mode="sign-in" />
-    </PageShell>
-  );
-}
+import { AuthShell } from "@/components/auth/auth-shell";
+export const metadata:Metadata={title:"Sign in"};
+export default function Page(){return <AuthShell title="Welcome back." description="Good to see you. Let’s get your day moving."><AuthForm mode="sign-in"/></AuthShell>}

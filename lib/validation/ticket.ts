@@ -18,6 +18,7 @@ export const publicTicketSchema = z.object({
   people_ahead: z.number().int().nonnegative().safe().nullable(),
   estimated_wait_seconds: z.number().int().nonnegative().safe().nullable(),
   has_serving_customer: z.boolean(),
+  warning_threshold: z.number().int().min(0).max(100).optional(),
 }).strict().superRefine((ticket, context) => {
   if ((ticket.status === "waiting") !== (ticket.people_ahead !== null)) {
     context.addIssue({ code: "custom", message: "Invalid ticket position." });

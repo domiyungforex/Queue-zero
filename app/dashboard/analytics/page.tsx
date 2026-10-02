@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { requireBusinessManager } from "@/lib/business/membership";
-export default async function AnalyticsPage() {
-  await requireBusinessManager();
-  return <><h1 className="text-3xl font-semibold">Analytics</h1><div className="mt-8 rounded-2xl border border-black/10 bg-white p-8"><h2 className="text-xl font-semibold">Reports are coming soon</h2><p className="mt-3 text-muted">Queue volume, waiting times, and service reports will be available here.</p></div></>;
-}
+import { getBusinessMetrics } from "@/lib/queue/console";
+import { PageHeading } from "@/components/ui/workspace";
+import { AnalyticsView } from "@/components/dashboard/analytics-view";
+import { LiveRefresh } from "@/components/realtime/refresh";
+export default async function AnalyticsPage({searchParams}:{searchParams:Promise<{days?:string}>}){const m=await requireBusinessManager();const days=(await searchParams).days==='30'?30:7;const metrics=await getBusinessMetrics(days);return <><PageHeading title="See the rhythm of your day." eyebrow="ANALYTICS" description="Real arrivals, real waiting times, and clearer decisions." action={<div className="segmented"><Link aria-current={days===7?'page':undefined} href="?days=7">7 days</Link><Link aria-current={days===30?'page':undefined} href="?days=30">30 days</Link></div>}/><LiveRefresh authenticated topic={`business:${m.businessId}`}/><AnalyticsView metrics={metrics}/></>}

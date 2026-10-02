@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { scheduleNotifications } from "@/lib/notifications/schedule";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
@@ -19,6 +20,7 @@ export async function cancelTicket(token: string, _previous: CancelTicketState, 
     unstable_rethrow(error);
     return { status: "error", message: "We couldn’t confirm the cancellation. Retry to safely check or finish leaving the queue." };
   }
+  scheduleNotifications();
   revalidatePath(`/ticket/${parsed.data}`);
   redirect(`/ticket/${parsed.data}`);
 }

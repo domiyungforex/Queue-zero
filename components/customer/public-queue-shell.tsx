@@ -1,13 +1,3 @@
-import Link from "next/link";
-
-export function PublicQueueShell({ children }: { children: React.ReactNode }) {
-  return <>
-    <header className="border-b border-black/10 bg-white">
-      <div className="mx-auto flex max-w-lg flex-wrap items-center justify-between gap-3 px-5 py-3">
-        <Link href="/" className="inline-flex min-h-11 items-center text-xl font-bold tracking-tight">Queue<span className="text-primary">Zero</span></Link>
-        <p className="text-sm text-muted">No app. No account.</p>
-      </div>
-    </header>
-    <main id="main" className="mx-auto max-w-lg px-5 py-8 sm:py-10">{children}</main>
-  </>;
-}
+import { Brand } from "@/components/marketing/site";
+import { ShieldCheck } from "lucide-react";
+export function PublicQueueShell({children}:{children:React.ReactNode}){return <div className="customer-shell"><header><Brand/><span><ShieldCheck size={14}/>No app. No account.</span></header><main id="main">{children}</main><footer><span className="customer-flower" aria-hidden="true">✳</span><p>Your place, without the line.</p><small>Powered by QueueZero</small></footer></div>}
