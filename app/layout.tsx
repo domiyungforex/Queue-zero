@@ -14,6 +14,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       signInFallbackRedirectUrl="/dashboard"
       signUpFallbackRedirectUrl="/dashboard"
       afterSignOutUrl="/"
+      localization={{
+        signIn: { start: { title: "Sign in to QueueZero", titleCombined: "Sign in to QueueZero" } },
+        signUp: { start: { title: "Create your QueueZero account", titleCombined: "Create your QueueZero account" } },
+      }}
       appearance={{
         variables: { colorPrimary: "#173e31", borderRadius: "0.75rem", fontFamily: "QueueManrope, Arial, sans-serif" },
       }}

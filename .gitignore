@@ -5,3 +5,7 @@ out/
 !.env.example
 *.tsbuildinfo
 .vercel/
+
+# Browser regression artifacts
+/playwright-report/
+/test-results/

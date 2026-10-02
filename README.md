@@ -59,7 +59,11 @@ npm run typecheck
 npm test
 npm run db:test:isolated
 npm run build
+# With the app running and Playwright Chromium installed:
+npm run test:e2e
 ```
+
+Install the test browser with `npx playwright install chromium`. Set `E2E_BASE_URL` to an explicit deployed origin to run the read-only/demo browser suite there. The suite checks six workspace screens at four viewport widths, staff demo interactions, public navigation and PWA metadata. `PLAYWRIGHT_CHROMIUM_EXECUTABLE` can select an already-installed Chromium.
 
 The database suite requires Docker and creates an isolated PostgreSQL 17 database. It includes pgTAP authorization/state tests and overlapping real database sessions for race conditions. Unit/integration tests use fixture identities; production auth and actual phone notifications must also be checked independently.
 

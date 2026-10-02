@@ -44,3 +44,20 @@ This checklist distinguishes implemented software from provider setup and physic
 - [ ] Review pending/failed notification jobs and application logs during the pilot.
 
 Do not begin a paid real-business pilot while authentication or payment verification is blocked. No integrations for SMS/WhatsApp are advertised as active without provider credentials/templates.
+
+## Release verification — 2026-10-02
+
+- Lint and strict TypeScript validation passed; production build passed.
+- 329 unit/integration tests passed across 36 files.
+- 486 PostgreSQL assertions passed across 10 SQL files, plus real overlapping-session tests for onboarding, queue updates, joins, cancellation, call-next and access revocation.
+- Six committed Playwright browser tests passed against the hosted site, including all demo workspace pages at 1440, 768, 390 and 320 pixels with no horizontal overflow.
+- Real hosted Clerk sign-in with administrative QA sign-in tickets, native issuer verification in Supabase, onboarding and queue creation passed. This does not replace customer-facing signup/email verification testing.
+- Five separate anonymous browser contexts received A001–A005. Two staff windows calling concurrently selected one customer; completion, recall, no-show, pause/resume and live customer updates passed.
+- Customer cancellation and offline/reconnect refetch passed. Public API fields exclude customer names, phones and internal IDs. The production service worker registered successfully.
+- All actual business routes (overview, queues, analytics, locations, team, billing and settings) rendered at four viewport widths without browser errors. Business settings validation/save and additional location creation passed.
+- A second real Clerk tenant was denied the first tenant’s queue API/page. Unsigned notification-worker requests were denied.
+- Hosted notification events were recorded and skipped correctly when no browser push subscription existed. This is not evidence of actual device delivery.
+- The QA operating queue is closed; all five fixture tickets are terminal (three completed, one no-show, one cancelled). QA history is retained for audit, separated from real businesses.
+- The original queue-zero-flax.vercel.app alias redirects to the canonical custom domain.
+
+Remaining blockers for the full paid pilot: Paystack secret/plan setup and real payment testing; actual phone Web Push and printed-QR acceptance; normal signup/email verification testing; rotation of credentials shared in chat. Free queue operation has been exercised end to end on the hosted deployment.
