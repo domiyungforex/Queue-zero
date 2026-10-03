@@ -36,6 +36,6 @@ Scope: authentication, authorization, RLS, tenant isolation, public ticket capab
 - Staff email tests failed on the original code and pass after the fix.
 - Lint, strict TypeScript, 353 unit/integration tests, 493 SQL assertions and overlapping-session concurrency tests pass; full browser/build results are recorded in `PRODUCTION_CHECKLIST.md` after final validation.
 - `npm audit --omit=dev` reports zero known vulnerabilities in installed production dependencies.
-- Read-only hosted inspection confirmed the original 14 migrations and the private Realtime receive policy. The two new security migrations are local and pending deployment.
-- The canonical Vercel deployment is READY at original commit `02534e7`, not the new local commits. No production data/configuration was changed during this audit.
+- Read-only hosted inspection confirmed the original 14 migrations and the private Realtime receive policy. The two security migrations and business broadcast migration were subsequently deployed; all 17 migration records now match the repository.
+- The audit itself did not change production data/configuration. The subsequent authorized release deployed the fixes in `906adc2`; all 10 hosted read-only browser checks passed on 2026-10-03.
 - The shared-schema exposure remains a critical blocker. QueueZero must not be called production-ready on this evidence.

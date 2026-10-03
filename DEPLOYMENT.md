@@ -21,7 +21,7 @@ Public variables are embedded at build time; rebuild after changing them. Keep s
 
 ## Database
 
-All checked-in migrations through `20261002000006_public_live.sql` were applied to the hosted project on 2026-10-02. Schema changes must remain migrations. For future releases, inspect `supabase db push --dry-run`, then apply pending migrations to the linked intended project. Never apply local test bootstrap/preview fixtures to production or weaken RLS to address an authentication error.
+All checked-in migrations through `20261002223553_publish_business_updates.sql` are applied to the hosted project. The release was verified on the canonical Vercel domain on 2026-10-03. Schema changes must remain migrations. For future releases, inspect `supabase db push --dry-run`, then apply pending migrations to the linked intended project. Never apply local test bootstrap/preview fixtures to production or weaken RLS to address an authentication error.
 
 Clerk third-party issuer configuration was registered with Supabase. Verify actual authenticated onboarding, tenant reads and private Realtime after deploying; a successful build does not prove provider integration.
 

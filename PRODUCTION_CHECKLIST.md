@@ -1,12 +1,12 @@
 # QueueZero first-business pilot checklist
 
-**Status: blocked for production approval.** Local validation is strong, but the critical shared-database exposure and provider/device acceptance gates below remain open. These results supersede earlier readiness claims in this file. Checked on 2026-10-02.
+**Status: blocked for production approval.** Local validation is strong, but the critical shared-database exposure and provider/device acceptance gates below remain open. These results supersede earlier readiness claims in this file. Local validation on 2026-10-02; deployment and hosted smoke checks on 2026-10-03.
 
 ## Release blockers
 
 - [ ] **Critical: shared production schema exposure.** Nine unrelated tables have RLS disabled and anonymous SELECT grants. The database owner must repair their access policies/grants or isolate QueueZero. Do not deploy guessed policies for another application. See `SECURITY_REVIEW.md` and the [Supabase advisory](https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public).
-- [ ] Apply `20261002223535_bound_join_retry_records.sql`, `20261002223544_recheck_staff_management_authorization.sql` and `20261002223553_publish_business_updates.sql` through the controlled migration process, then deploy the reviewed application commits. The three migrations were applied through the authenticated Supabase connector; application deployment is in progress. Local filenames match the recorded remote versions.
-- [ ] Run normal Clerk production signup → verification → onboarding → sign-out/sign-in with the intended account. Investigate the three dashboard membership-load errors observed in the last 24 hours. The old realtime endpoint also logged one expired/deleted-session error; its generic 401 fix is local.
+- [x] Apply `20261002223535_bound_join_retry_records.sql`, `20261002223544_recheck_staff_management_authorization.sql` and `20261002223553_publish_business_updates.sql` through the controlled migration process, then deploy the reviewed application commits. All three migrations were applied through the authenticated Supabase connector; release `906adc2` deployed successfully to the canonical production domain. Local filenames match the recorded remote versions.
+- [ ] Run normal Clerk production signup → verification → onboarding → sign-out/sign-in with the intended account. Investigate the three dashboard membership-load errors observed in the last 24 hours. The old realtime endpoint also logged one expired/deleted-session error; its generic non-cacheable 401 fix is deployed and the signed-out endpoint check passes.
 - [ ] Verify actual browser push on the target phones, including Home Screen installation on supported iPhones. An outbox event or successful worker registration is not device-delivery evidence.
 - [ ] Complete the laptop + five phones + printed QR acceptance in `PILOT_GUIDE.md`, including two receptionist windows calling concurrently.
 - [ ] For paid upgrades: confirm Paystack secret, currency and monthly plan codes; run test-mode purchase, renewal, failure, cancellation and webhook replay. Existing notes said configuration was missing; current secret presence could not be independently inspected.
@@ -35,7 +35,10 @@ The DB test harness now waits for PostgreSQL's final TCP listener rather than it
 ## Read-only production observations
 
 - Canonical site `https://queuezero.conchportal.com` responds successfully over HTTPS.
-- Vercel project `queue-zero` (`prj_ChgtgY0WlNMzEcartohGeDm02Tp6`) is READY on **original commit `02534e7`**; this is not the new local release.
+- Vercel project `queue-zero` (`prj_ChgtgY0WlNMzEcartohGeDm02Tp6`) deployed release **`906adc2`** successfully as `dpl_DxJ9jGC7hGrZG1Jaha4k1QTb6Ls8`. The canonical domain serves the updated application.
+- All 10 read-only hosted browser checks passed: mobile/public layouts, PWA metadata/icons, offline recovery, browser navigation and the legacy demo redirect. The data-writing customer journey was intentionally skipped on production.
+- Hosted SQL catalog checks confirmed all 10 new triggers enabled, the manager-lock and join-limit helpers installed, Realtime Broadcast available, and anonymous execution of the private business helper denied. No sample records were inserted.
+- The workspace lacks Supabase CLI credentials; migration deployment used the authenticated connector after comparing remote history with the local files. Git HTTPS push authentication failed; GitHub Git Data API publishing preserved every original commit and verified identical tree hashes before a non-forced main update.
 - Supabase `wbvgorahtkiiwplsbnga` reports ACTIVE_HEALTHY (PostgreSQL 17). All original 14 migrations are recorded. All 18 QueueZero tables have enabled and forced RLS. Anonymous roles lack raw QueueZero table SELECT grants.
 - Realtime has the receive-only `queuezero_receive` policy on `realtime.messages`, gated by authorized topic access. Real subscribed client delivery was not revalidated here.
 - Production signup HTML references `https://clerk.conchportal.com` production scripts. This proves routing only; it does not prove email delivery, session issuance or database JWT configuration.
