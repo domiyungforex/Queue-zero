@@ -45,7 +45,7 @@ npm run db:types
 
 ## Demo and production separation
 
-Product seed files and the in-memory demo have been removed. Automatic seeding remains disabled; the preview starts with an empty database. Automated tests alone create isolated fixtures, never production customer records. Business-wide invalidations and service/location changes are published by `20261002221819_publish_business_updates.sql`; apply it before releasing the corresponding dashboard subscription.
+Product seed files and the in-memory demo have been removed. Automatic seeding remains disabled; the preview starts with an empty database. Automated tests alone create isolated fixtures, never production customer records. Business-wide invalidations and service/location changes are published by `20261002223553_publish_business_updates.sql`; apply it before releasing the corresponding dashboard subscription.
 
 Unit and isolated SQL tests cannot prove real identity-provider integration or physical notification delivery. Verify a real Clerk-issued token against hosted Supabase, two separate tenant identities, private realtime reconnect and actual phone alerts before a public pilot. See the root production checklist and pilot guide.
 
