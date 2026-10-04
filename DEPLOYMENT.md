@@ -50,3 +50,7 @@ Use the production checklist for outstanding provider and physical checks; deplo
 ## Shared Clerk instance role claim
 
 Production sets `CLERK_DATABASE_JWT_TEMPLATE=queuezero_db`. That isolated template contains `role: "authenticated"`, uses Clerk’s normal RS256 signing key and a 60-second lifetime, and retains the verified issuer/subject. Supabase verifies it through the registered third-party issuer. It does not use a legacy Supabase HS256 signing secret or change the shared instance’s default session claims. Server database reads and authenticated Realtime use the same token configuration. Leave the variable empty when native session tokens already include the required role.
+
+## TuRnMaRk deployment — 2026-10-04
+
+User authorized production deployment of `72eefa3`. Applied the additive presence and attendance migrations as `20261004015357_presence_domains` and `20261004015405_school_attendance`, matching provider-recorded versions. Existing queue-session links were checked, anonymous school RPC access is denied, and production raw-table RLS checks are performed before publishing. Application rollout is in progress; this is not a production-readiness certification. The unrelated shared-project exposure remains unresolved; no other application tables or records were changed.

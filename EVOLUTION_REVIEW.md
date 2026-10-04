@@ -12,10 +12,10 @@ The exact product brand is **TuRnMaRk** in UI, authentication, metadata, install
 
 Apply in order, after backup and staging verification:
 
-1. `20261003193433_presence_domains.sql`: organization/session/person/attendance enums and lecturer/student roles; existing businesses default to BUSINESS.
-2. `20261003193434_school_attendance.sql`: sessions/people/events, school hierarchy and enrollments, frozen class roster/lecturer names, attendance/flags/devices/nonces/retry ledger, forced RLS, protected RPCs, private realtime topics and queue authorization hardening.
+1. `20261004015357_presence_domains.sql`: organization/session/person/attendance enums and lecturer/student roles; existing businesses default to BUSINESS.
+2. `20261004015405_school_attendance.sql`: sessions/people/events, school hierarchy and enrollments, frozen class roster/lecturer names, attendance/flags/devices/nonces/retry ledger, forced RLS, protected RPCs, private realtime topics and queue authorization hardening.
 
-Existing queue tables, public slugs, ticket tokens, payment records and queue history are retained. Existing queues are linked to sessions; historical queue events are not synthesized as new arrivals. New migrations are locally verified but **not deployed**. Roll back application code if necessary; do not drop school/audit data to roll back a release.
+Existing queue tables, public slugs, ticket tokens, payment records and queue history are retained. Existing queues are linked to sessions; historical queue events are not synthesized as new arrivals. Both migrations were applied to production on 2026-10-04 under the versions listed above; the application release is in progress. Roll back application code if necessary; do not drop school/audit data to roll back a release.
 
 ## New school journey
 
@@ -34,7 +34,7 @@ Final command results are recorded below after verification. Tests use isolated 
 ## Known limitations and release blockers
 
 - **Critical existing production blocker:** unrelated shared Supabase tables were previously found accessible to anonymous roles without RLS. This change does not alter another application's tables. Resolve and independently verify that exposure before a real-business pilot.
-- New migrations and TuRnMaRk application changes are not deployed. Hosted Clerk email OTP, Supabase JWT/Broadcast behavior, real Web Push and Paystack lifecycle require staging/provider acceptance. Local tests do not establish production readiness.
+- Production migrations are applied; application deployment and hosted smoke checks are tracked in `DEPLOYMENT.md`. Hosted Clerk email OTP, Supabase JWT/Broadcast behavior, real Web Push and Paystack lifecycle require staging/provider acceptance. Local tests do not establish production readiness.
 - The physical one-laptop/five-phone/printed-QR acceptance test remains manual. Test two receptionist windows acting simultaneously, genuine realtime reconnect, installed/mobile behavior and notifications on actual devices.
 - Attendance QR plus identity/device signals do not prove physical presence. Optional WebAuthn, location and institutional-network verification are extension points only; none are falsely presented as enabled.
 - School confirmations are in-app. Existing queue Web Push remains available when configured; school SMS/WhatsApp/email/push delivery is not implemented.
