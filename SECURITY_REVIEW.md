@@ -42,7 +42,7 @@ Scope: authentication, authorization, RLS, tenant isolation, public ticket capab
 
 ## TuRnMaRk queue + school evolution (2026-10-04, local validation)
 
-The two additive presence/attendance migrations have **not** been applied to production. The earlier hosted findings above remain open until independently verified.
+The two additive presence/attendance migrations were applied to production on 2026-10-04. All TuRnMaRk raw tables retain forced RLS with anonymous access denied; school scan/register RPC grants were rechecked. The unrelated shared-schema exposure was rechecked and remains open. See DEPLOYMENT.md for the application release and hosted smoke checks.
 
 | Issue / threat | Severity | Fix / control | Remaining risk |
 | --- | --- | --- | --- |

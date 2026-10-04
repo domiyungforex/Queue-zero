@@ -15,7 +15,7 @@ Apply in order, after backup and staging verification:
 1. `20261004015357_presence_domains.sql`: organization/session/person/attendance enums and lecturer/student roles; existing businesses default to BUSINESS.
 2. `20261004015405_school_attendance.sql`: sessions/people/events, school hierarchy and enrollments, frozen class roster/lecturer names, attendance/flags/devices/nonces/retry ledger, forced RLS, protected RPCs, private realtime topics and queue authorization hardening.
 
-Existing queue tables, public slugs, ticket tokens, payment records and queue history are retained. Existing queues are linked to sessions; historical queue events are not synthesized as new arrivals. Both migrations were applied to production on 2026-10-04 under the versions listed above; the application release is in progress. Roll back application code if necessary; do not drop school/audit data to roll back a release.
+Existing queue tables, public slugs, ticket tokens, payment records and queue history are retained. Existing queues are linked to sessions; historical queue events are not synthesized as new arrivals. Both migrations were applied to production on 2026-10-04 under the versions listed above; application commit `2d65af6` is deployed and passed 14 hosted read-only browser checks. Roll back application code if necessary; do not drop school/audit data to roll back a release.
 
 ## New school journey
 
