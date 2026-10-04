@@ -1,4 +1,4 @@
-# QueueZero deployment
+# TuRnMaRk deployment
 
 The Vercel project `queue-zero` tracks `domiyungforex/Queue-zero`, branch `main`. The canonical production origin is **https://queuezero.conchportal.com**. Set the Next.js preset and default `npm run build`; do not specify a custom output directory.
 
@@ -15,7 +15,7 @@ Copy variable names from `.env.example` into Vercel’s encrypted environment se
 | Browser notifications | Matching public/private VAPID keys, `VAPID_SUBJECT`, random `CRON_SECRET` |
 | Paid plans | `PAYSTACK_SECRET_KEY`, STARTER/BUSINESS monthly plan codes and currency |
 
-Production currently shares the existing Clerk primary domain `conchportal.com`. Do not rename that instance’s primary domain. The QueueZero subdomain must be authorized by Clerk. Supabase must trust the exact Clerk issuer `https://clerk.conchportal.com`, and verified session tokens must carry the authenticated database role. Use a separate Clerk development instance for unrelated preview origins.
+Production currently shares the existing Clerk primary domain `conchportal.com`. Do not rename that instance’s primary domain. The TuRnMaRk subdomain must be authorized by Clerk. Supabase must trust the exact Clerk issuer `https://clerk.conchportal.com`, and verified session tokens must carry the authenticated database role. Use a separate Clerk development instance for unrelated preview origins.
 
 Public variables are embedded at build time; rebuild after changing them. Keep server keys out of browser code and Git. Replace credentials shared in chat through their providers before a public pilot.
 

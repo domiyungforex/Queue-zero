@@ -1,4 +1,4 @@
-# QueueZero first-business pilot
+# TuRnMaRk first-business pilot
 
 Resolve the critical blockers in `PRODUCTION_CHECKLIST.md` before operating real customer queues. Use one business, one location and one active serving counter per queue. No new product scope is required.
 
@@ -82,3 +82,17 @@ Review these measures and staff/customer feedback each day. Run the product with
 ## Real records only
 
 Start with an empty business and create its actual location and services during onboarding. The product has no seeded queues, sample customers, simulated staff actions or placeholder analytics. Old `/demo` links open the authenticated workspace. Dashboard, console and customer screens refetch database records on live events and reconnect; a 15-second fallback recovers missed events. Check the connection indicator rather than assuming a disconnected screen is current. Apply the business-update migration before pilot testing. Automated fixtures belong only in disposable test databases.
+
+## School staging pilot
+
+Keep the queue pilot first. Once the pending school release is deployed to staging and provider checks pass:
+
+1. Choose school or hybrid during onboarding (or owner Settings).
+2. In Courses, add faculty/department and course. Assign an existing lecturer by verified account email.
+3. Enroll students with real full name, verified school email, matric number and level; CSV imports are limited to 200 rows per submission.
+4. Create a class, check its UTC start time, and open attendance. Display its rotating QR.
+5. An enrolled student signs in, rescans the current QR if authentication outlasted it, and confirms arrival. Check the lecturer's live register.
+6. Close check-in, enable checkout if required, and scan a fresh QR for departure. Retrying the same scan must not create a departure.
+7. End the class and download PDF/CSV/XLSX. Review flags as signals, not automatic findings of misconduct.
+
+Use consenting test accounts in staging. School credentials and student records are never demo data in the product. The ten-minute business onboarding flow above stays independent of attendance.

@@ -7,7 +7,7 @@ import { QueueSummary } from "@/components/dashboard/queue-summary";
 afterEach(cleanup);
 it("shows owner navigation and marks the active route", () => {
   render(<DashboardNavigation role="owner" />);
-  expect(screen.getAllByRole("link")).toHaveLength(7);
+  expect(screen.getAllByRole("link")).toHaveLength(8);
   expect(screen.getByRole("link", { name: "Queues" }).getAttribute("aria-current")).toBe("page");
 });
 it("limits staff navigation and explains an empty assignment list", () => {
@@ -17,7 +17,7 @@ it("limits staff navigation and explains an empty assignment list", () => {
 });
 it("hides owner-only navigation for admins", () => {
   render(<DashboardNavigation role="admin" />);
-  expect(screen.getAllByRole("link")).toHaveLength(5);
+  expect(screen.getAllByRole("link")).toHaveLength(6);
   expect(screen.queryByText("Billing")).toBeNull();
 });
 it("renders real queue data and never invents waiting counts", () => {

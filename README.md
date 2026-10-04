@@ -1,8 +1,8 @@
-# QueueZero
+# TuRnMaRk
 
 Scan. Join. Leave the line. Come back when you’re almost next.
 
-QueueZero runs physical queues through a public customer web app and an authenticated business workspace. The application uses Next.js App Router, strict TypeScript, Clerk, Supabase PostgreSQL/Realtime, Paystack, and Web Push.
+TuRnMaRk runs physical queues through a public customer web app and an authenticated business workspace. The application uses Next.js App Router, strict TypeScript, Clerk, Supabase PostgreSQL/Realtime, Paystack, and Web Push.
 
 ## Explore
 
@@ -71,3 +71,7 @@ The database suite requires Docker and creates an isolated PostgreSQL 17 databas
 See [DEPLOYMENT.md](DEPLOYMENT.md), [database setup](supabase/README.md), [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md), [PILOT_GUIDE.md](PILOT_GUIDE.md), and [SECURITY_REVIEW.md](SECURITY_REVIEW.md).
 
 Paystack checkout remains disabled until actual secret and monthly plan codes are configured. SMS and WhatsApp are adapter boundaries, not active channels. Web Push depends on customer permission and browser support; the ticket remains usable without it. The laptop/five-phone/printed-QR pilot is a separate physical acceptance test. Current blockers and fresh validation evidence are tracked in PRODUCTION_CHECKLIST.md; local test success is not production approval.
+
+## Queue-first school evolution
+
+See [EVOLUTION_REVIEW.md](EVOLUTION_REVIEW.md) for architecture, additive migrations, security controls, exact validation evidence and release blockers. Product branding is TuRnMaRk; existing public URLs remain compatible. School modes use real authorized database records, with no production demo data.

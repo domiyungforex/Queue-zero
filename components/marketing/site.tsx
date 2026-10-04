@@ -5,13 +5,13 @@ export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={diagonal ? "M6 18 18 6M6 6h12v12" : "M4 12h16m-6-6 6 6-6 6"} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 export function Brand() {
-  return <Link href="/" className={styles.brand} aria-label="QueueZero home"><span className={styles.mark} aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M22 24a11 11 0 1 1 4-8M18 20l8 8M26 22v6h-6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span>Queue<span className={styles.brandAccent}>Zero</span></span></Link>;
+  return <Link href="/" className={styles.brand} aria-label="TuRnMaRk home"><span className={styles.mark} aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M6 8h20M16 8v18M22 21l4 5 4-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg></span><span>TuRn<span className={styles.brandAccent}>MaRk</span></span></Link>;
 }
 export function MarketingHeader() {
   return <header className={styles.header}><Brand /><nav className={styles.desktopNav} aria-label="Main"><Link href="/how-it-works">How it works</Link><Link href="/#for-business">For businesses</Link><Link href="/pricing">Plans</Link><Link href="/dashboard">Workspace</Link></nav><div className={styles.headerActions}><Link href="/sign-in" className={styles.signIn}>Log in</Link><Link href="/sign-up" className={styles.smallButton}>Get started <Arrow diagonal /></Link></div><details className={styles.mobileNav}><summary>Menu <span aria-hidden="true">＋</span></summary><nav aria-label="Mobile"><Link href="/how-it-works">How it works</Link><Link href="/#for-business">For businesses</Link><Link href="/pricing">Plans</Link><Link href="/sign-in">Log in</Link></nav></details></header>;
 }
 export function MarketingFooter() {
-  return <footer className={styles.footer}><div><Brand /><p>A little less waiting.<br />A lot more living.</p></div><nav aria-label="Footer"><Link href="/how-it-works">How it works</Link><Link href="/pricing">Plans</Link><Link href="/sign-in">Business login</Link></nav><p className={styles.footerNote}>Made for the people<br />on both sides of the counter.</p><div className={styles.footerBottom}><span>© {new Date().getFullYear()} QueueZero</span><span>Your place, without the line.</span></div></footer>;
+  return <footer className={styles.footer}><div><Brand /><p>A little less waiting.<br />A lot more living.</p></div><nav aria-label="Footer"><Link href="/how-it-works">How it works</Link><Link href="/pricing">Plans</Link><Link href="/sign-in">Business login</Link></nav><p className={styles.footerNote}>Made for the people<br />on both sides of the counter.</p><div className={styles.footerBottom}><span>© {new Date().getFullYear()} TuRnMaRk</span><span>Your place, without the line.</span></div></footer>;
 }
 export function MarketingFrame({ children }: { children: React.ReactNode }) {
   return <div className={styles.site}><MarketingHeader />{children}<MarketingFooter /></div>;

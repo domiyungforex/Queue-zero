@@ -1,0 +1,16 @@
+// @vitest-environment jsdom
+import {cleanup,fireEvent,render,screen,waitFor} from "@testing-library/react";
+import {afterEach,beforeEach,describe,expect,it,vi} from "vitest";
+const mocks=vi.hoisted(()=>({record:vi.fn()}));
+vi.mock("@/lib/school-student/actions",()=>({recordAttendance:mocks.record}));
+import {StudentScan} from "@/components/school/student-scan";
+beforeEach(()=>{sessionStorage.clear();mocks.record.mockResolvedValue({ok:true,action:"CHECK_IN",message:"Recorded"})});
+afterEach(cleanup);
+describe("student scan confirmation and retry",()=>{
+ it("does not mutate on render and submits only explicit confirmation",async()=>{render(<StudentScan token="signed-token"/>);expect(mocks.record).not.toHaveBeenCalled();fireEvent.click(screen.getByRole("button",{name:"Confirm attendance scan"}));await screen.findByRole("status");expect(mocks.record).toHaveBeenCalledWith({token:"signed-token",requestId:expect.any(String)});expect(screen.queryByRole("button")).toBeNull()});
+ it("reuses request ID after lost response and page reload",async()=>{mocks.record.mockRejectedValueOnce(new Error("connection"));const view=render(<StudentScan token="signed-token"/>);fireEvent.click(screen.getByRole("button",{name:"Confirm attendance scan"}));await screen.findByRole("alert");const first=mocks.record.mock.calls[0][0];view.unmount();render(<StudentScan token="signed-token"/>);fireEvent.click(screen.getByRole("button",{name:"Confirm attendance scan"}));await screen.findByRole("status");expect(mocks.record.mock.calls[1][0]).toEqual(first)});
+ it("blocks duplicate click while server response is pending",async()=>{let finish!:(value:unknown)=>void;mocks.record.mockReturnValueOnce(new Promise(resolve=>{finish=resolve}));render(<StudentScan token="signed-token"/>);const button=screen.getByRole("button",{name:"Confirm attendance scan"});fireEvent.click(button);fireEvent.click(button);expect(mocks.record).toHaveBeenCalledTimes(1);finish({ok:true,action:"CHECK_OUT"});await waitFor(()=>expect(screen.getByRole("status").textContent).toContain("departure"))});
+ it("recovers an expired previous request after reload without creating an action",async()=>{const requestId=crypto.randomUUID();sessionStorage.setItem("attendance-request:expired-token",requestId);render(<StudentScan token="expired-token" expired/>);fireEvent.click(screen.getByRole("button",{name:"Check previous scan"}));await screen.findByRole("status");expect(mocks.record).toHaveBeenCalledWith({token:"expired-token",requestId})});
+ it("does not submit an expired QR when no prior request exists",async()=>{render(<StudentScan token="expired-token" expired/>);fireEvent.click(screen.getByRole("button",{name:"Check previous scan"}));await screen.findByRole("alert");expect(mocks.record).not.toHaveBeenCalled()});
+ it("directs expired QR to fresh scan rather than a repeated mutation",async()=>{mocks.record.mockResolvedValueOnce({ok:false,expired:true,message:"Expired QR"});render(<StudentScan token="expired-token"/>);fireEvent.click(screen.getByRole("button",{name:"Confirm attendance scan"}));await screen.findByRole("alert");expect(screen.queryByRole("button")).toBeNull();expect(screen.getByText(/sign-in remains active/)).toBeTruthy()});
+});

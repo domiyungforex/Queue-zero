@@ -58,7 +58,14 @@ export function OnboardingForm({ action, countries, timezones }: {
       )}
       <fieldset disabled={pending} className="rounded-2xl border border-black/10 bg-white p-5 sm:p-8">
         <legend className="sr-only">Business and first location details</legend>
-        <h2 className="text-xl font-semibold">About your business</h2>
+        <label htmlFor="organizationMode" className="block text-xl font-semibold">How will you use TuRnMaRk?</label>
+        <select id="organizationMode" name="organizationMode" defaultValue={state.values?.organizationMode ?? "BUSINESS"} className={controlClass} required>
+          <option value="BUSINESS">Manage customer queues</option>
+          <option value="SCHOOL">Manage school queues &amp; attendance</option>
+          <option value="HYBRID">Both</option>
+        </select>
+        <p className="mt-2 mb-6 text-sm text-muted">Every workspace includes queues. School attendance is available when you need it.</p>
+        <h2 className="text-xl font-semibold">About your organization</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">A few details to make this workspace yours. All fields are required.</p>
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
@@ -89,7 +96,7 @@ export function OnboardingForm({ action, countries, timezones }: {
         </div>
         <div className="my-8 border-t border-black/10" />
         <h2 className="text-xl font-semibold">Your first location</h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted">Where will your customers visit?</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">Where will people arrive?</p>
         <div className="mt-6 grid gap-5">
           <Field name="locationName" label="Location name" error={state.fieldErrors?.locationName?.[0]}>
             <input {...inputProps("locationName")} maxLength={160} placeholder="e.g. Main Branch" />

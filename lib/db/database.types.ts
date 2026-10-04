@@ -5,6 +5,297 @@ export type Json = string | number | boolean | null | {
 export type Database = {
     "public": {
         Tables: {
+            "attendance_device_uses": {
+                Row: {
+                    "class_session_id": string;
+                    "created_at": string;
+                    "device_hash": string;
+                    "organization_id": string;
+                    "student_id": string;
+                };
+                Insert: {
+                    "class_session_id": string;
+                    "created_at"?: string;
+                    "device_hash": string;
+                    "organization_id": string;
+                    "student_id": string;
+                };
+                Update: {
+                    "class_session_id"?: string;
+                    "created_at"?: string;
+                    "device_hash"?: string;
+                    "organization_id"?: string;
+                    "student_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "attendance_device_uses_class_session_id_organization_id_fkey";
+                        columns: [
+                            "class_session_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "class_sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "attendance_device_uses_student_id_organization_id_fkey";
+                        columns: [
+                            "student_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "school_profiles";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "attendance_flags": {
+                Row: {
+                    "class_session_id": string;
+                    "created_at": string;
+                    "id": string;
+                    "organization_id": string;
+                    "reason": string;
+                    "resolution": string | null;
+                    "resolved_at": string | null;
+                    "resolved_by": string | null;
+                    "student_id": string;
+                };
+                Insert: {
+                    "class_session_id": string;
+                    "created_at"?: string;
+                    "id"?: string;
+                    "organization_id": string;
+                    "reason": string;
+                    "resolution"?: string | null;
+                    "resolved_at"?: string | null;
+                    "resolved_by"?: string | null;
+                    "student_id": string;
+                };
+                Update: {
+                    "class_session_id"?: string;
+                    "created_at"?: string;
+                    "id"?: string;
+                    "organization_id"?: string;
+                    "reason"?: string;
+                    "resolution"?: string | null;
+                    "resolved_at"?: string | null;
+                    "resolved_by"?: string | null;
+                    "student_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "attendance_flags_class_session_id_organization_id_fkey";
+                        columns: [
+                            "class_session_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "class_sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "attendance_flags_student_id_organization_id_fkey";
+                        columns: [
+                            "student_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "school_profiles";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "attendance_qr_nonces": {
+                Row: {
+                    "class_session_id": string;
+                    "created_at": string;
+                    "expires_at": string;
+                    "nonce": string;
+                    "organization_id": string;
+                };
+                Insert: {
+                    "class_session_id": string;
+                    "created_at"?: string;
+                    "expires_at": string;
+                    "nonce": string;
+                    "organization_id": string;
+                };
+                Update: {
+                    "class_session_id"?: string;
+                    "created_at"?: string;
+                    "expires_at"?: string;
+                    "nonce"?: string;
+                    "organization_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "attendance_qr_nonces_class_session_id_organization_id_fkey";
+                        columns: [
+                            "class_session_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "class_sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "attendance_records": {
+                Row: {
+                    "check_in_at": string | null;
+                    "check_out_at": string | null;
+                    "class_session_id": string;
+                    "created_at": string;
+                    "flag_reason": string | null;
+                    "id": string;
+                    "organization_id": string;
+                    "status": Database["public"]['Enums']["attendance_status"];
+                    "student_id": string;
+                    "updated_at": string;
+                    "verification_score": number | null;
+                };
+                Insert: {
+                    "check_in_at"?: string | null;
+                    "check_out_at"?: string | null;
+                    "class_session_id": string;
+                    "created_at"?: string;
+                    "flag_reason"?: string | null;
+                    "id"?: string;
+                    "organization_id": string;
+                    "status": Database["public"]['Enums']["attendance_status"];
+                    "student_id": string;
+                    "updated_at"?: string;
+                    "verification_score"?: number | null;
+                };
+                Update: {
+                    "check_in_at"?: string | null;
+                    "check_out_at"?: string | null;
+                    "class_session_id"?: string;
+                    "created_at"?: string;
+                    "flag_reason"?: string | null;
+                    "id"?: string;
+                    "organization_id"?: string;
+                    "status"?: Database["public"]['Enums']["attendance_status"];
+                    "student_id"?: string;
+                    "updated_at"?: string;
+                    "verification_score"?: number | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "attendance_records_class_session_id_organization_id_fkey";
+                        columns: [
+                            "class_session_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "class_sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "attendance_records_class_session_id_student_id_fkey";
+                        columns: [
+                            "class_session_id",
+                            "student_id"
+                        ];
+                        isOneToOne: true;
+                        referencedRelation: "class_roster";
+                        referencedColumns: [
+                            "class_session_id",
+                            "student_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "attendance_records_student_id_organization_id_fkey";
+                        columns: [
+                            "student_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "school_profiles";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "attendance_scan_requests": {
+                Row: {
+                    "class_session_id": string;
+                    "created_at": string;
+                    "nonce": string;
+                    "organization_id": string;
+                    "request_id": string;
+                    "result": NonNullable<Json>;
+                    "student_id": string;
+                };
+                Insert: {
+                    "class_session_id": string;
+                    "created_at"?: string;
+                    "nonce": string;
+                    "organization_id": string;
+                    "request_id": string;
+                    "result": NonNullable<Json>;
+                    "student_id": string;
+                };
+                Update: {
+                    "class_session_id"?: string;
+                    "created_at"?: string;
+                    "nonce"?: string;
+                    "organization_id"?: string;
+                    "request_id"?: string;
+                    "result"?: NonNullable<Json>;
+                    "student_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "attendance_scan_requests_class_session_id_organization_id_fkey";
+                        columns: [
+                            "class_session_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "class_sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "attendance_scan_requests_student_id_organization_id_fkey";
+                        columns: [
+                            "student_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "school_profiles";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
             "billing_checkouts": {
                 Row: {
                     "amount": number;
@@ -136,6 +427,7 @@ export type Database = {
                     "industry": string;
                     "logo_url": string | null;
                     "name": string;
+                    "organization_mode": Database["public"]['Enums']["organization_mode"];
                     "owner_user_id": string;
                     "slug": string;
                     "subscription_tier": Database["public"]['Enums']["subscription_plan"];
@@ -149,6 +441,7 @@ export type Database = {
                     "industry": string;
                     "logo_url"?: string | null;
                     "name": string;
+                    "organization_mode"?: Database["public"]['Enums']["organization_mode"];
                     "owner_user_id": string;
                     "slug": string;
                     "subscription_tier"?: Database["public"]['Enums']["subscription_plan"];
@@ -162,6 +455,7 @@ export type Database = {
                     "industry"?: string;
                     "logo_url"?: string | null;
                     "name"?: string;
+                    "organization_mode"?: Database["public"]['Enums']["organization_mode"];
                     "owner_user_id"?: string;
                     "slug"?: string;
                     "subscription_tier"?: Database["public"]['Enums']["subscription_plan"];
@@ -180,6 +474,373 @@ export type Database = {
                         referencedColumns: [
                             "business_id",
                             "clerk_user_id"
+                        ];
+                    }
+                ];
+            };
+            "class_lecturers": {
+                Row: {
+                    "class_session_id": string;
+                    "clerk_user_id": string;
+                    "display_name": string;
+                    "organization_id": string;
+                };
+                Insert: {
+                    "class_session_id": string;
+                    "clerk_user_id": string;
+                    "display_name": string;
+                    "organization_id": string;
+                };
+                Update: {
+                    "class_session_id"?: string;
+                    "clerk_user_id"?: string;
+                    "display_name"?: string;
+                    "organization_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "class_lecturers_class_session_id_organization_id_fkey";
+                        columns: [
+                            "class_session_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "class_sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "class_roster": {
+                Row: {
+                    "class_session_id": string;
+                    "organization_id": string;
+                    "student_id": string;
+                };
+                Insert: {
+                    "class_session_id": string;
+                    "organization_id": string;
+                    "student_id": string;
+                };
+                Update: {
+                    "class_session_id"?: string;
+                    "organization_id"?: string;
+                    "student_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "class_roster_class_session_id_organization_id_fkey";
+                        columns: [
+                            "class_session_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "class_sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "class_roster_student_id_organization_id_fkey";
+                        columns: [
+                            "student_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "school_profiles";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "class_sessions": {
+                Row: {
+                    "arrival_open": boolean;
+                    "checkout_enabled": boolean;
+                    "course_id": string;
+                    "created_at": string;
+                    "departure_required": boolean;
+                    "id": string;
+                    "late_after_minutes": number;
+                    "opened_at": string | null;
+                    "organization_id": string;
+                    "planned_ends_at": string | null;
+                };
+                Insert: {
+                    "arrival_open"?: boolean;
+                    "checkout_enabled"?: boolean;
+                    "course_id": string;
+                    "created_at"?: string;
+                    "departure_required"?: boolean;
+                    "id": string;
+                    "late_after_minutes"?: number;
+                    "opened_at"?: string | null;
+                    "organization_id": string;
+                    "planned_ends_at"?: string | null;
+                };
+                Update: {
+                    "arrival_open"?: boolean;
+                    "checkout_enabled"?: boolean;
+                    "course_id"?: string;
+                    "created_at"?: string;
+                    "departure_required"?: boolean;
+                    "id"?: string;
+                    "late_after_minutes"?: number;
+                    "opened_at"?: string | null;
+                    "organization_id"?: string;
+                    "planned_ends_at"?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "class_sessions_course_id_organization_id_fkey";
+                        columns: [
+                            "course_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "courses";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "class_sessions_id_organization_id_fkey";
+                        columns: [
+                            "id",
+                            "organization_id"
+                        ];
+                        isOneToOne: true;
+                        referencedRelation: "sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "course_lecturers": {
+                Row: {
+                    "clerk_user_id": string;
+                    "course_id": string;
+                    "display_name": string;
+                    "organization_id": string;
+                };
+                Insert: {
+                    "clerk_user_id": string;
+                    "course_id": string;
+                    "display_name": string;
+                    "organization_id": string;
+                };
+                Update: {
+                    "clerk_user_id"?: string;
+                    "course_id"?: string;
+                    "display_name"?: string;
+                    "organization_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "course_lecturers_course_id_organization_id_fkey";
+                        columns: [
+                            "course_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "courses";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "course_lecturers_organization_id_clerk_user_id_fkey";
+                        columns: [
+                            "organization_id",
+                            "clerk_user_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "business_members";
+                        referencedColumns: [
+                            "business_id",
+                            "clerk_user_id"
+                        ];
+                    }
+                ];
+            };
+            "course_students": {
+                Row: {
+                    "course_id": string;
+                    "created_at": string;
+                    "organization_id": string;
+                    "student_id": string;
+                };
+                Insert: {
+                    "course_id": string;
+                    "created_at"?: string;
+                    "organization_id": string;
+                    "student_id": string;
+                };
+                Update: {
+                    "course_id"?: string;
+                    "created_at"?: string;
+                    "organization_id"?: string;
+                    "student_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "course_students_course_id_organization_id_fkey";
+                        columns: [
+                            "course_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "courses";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "course_students_student_id_organization_id_fkey";
+                        columns: [
+                            "student_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "school_profiles";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "courses": {
+                Row: {
+                    "code": string;
+                    "department_id": string;
+                    "id": string;
+                    "organization_id": string;
+                    "title": string;
+                };
+                Insert: {
+                    "code": string;
+                    "department_id": string;
+                    "id"?: string;
+                    "organization_id": string;
+                    "title": string;
+                };
+                Update: {
+                    "code"?: string;
+                    "department_id"?: string;
+                    "id"?: string;
+                    "organization_id"?: string;
+                    "title"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "courses_department_id_organization_id_fkey";
+                        columns: [
+                            "department_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "departments";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "courses_organization_id_fkey";
+                        columns: [
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    }
+                ];
+            };
+            "departments": {
+                Row: {
+                    "faculty_id": string;
+                    "id": string;
+                    "name": string;
+                    "organization_id": string;
+                };
+                Insert: {
+                    "faculty_id": string;
+                    "id"?: string;
+                    "name": string;
+                    "organization_id": string;
+                };
+                Update: {
+                    "faculty_id"?: string;
+                    "id"?: string;
+                    "name"?: string;
+                    "organization_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "departments_faculty_id_organization_id_fkey";
+                        columns: [
+                            "faculty_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "faculties";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "departments_organization_id_fkey";
+                        columns: [
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    }
+                ];
+            };
+            "faculties": {
+                Row: {
+                    "id": string;
+                    "name": string;
+                    "organization_id": string;
+                };
+                Insert: {
+                    "id"?: string;
+                    "name": string;
+                    "organization_id": string;
+                };
+                Update: {
+                    "id"?: string;
+                    "name"?: string;
+                    "organization_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "faculties_organization_id_fkey";
+                        columns: [
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
                         ];
                     }
                 ];
@@ -288,6 +949,115 @@ export type Database = {
                         referencedRelation: "tickets";
                         referencedColumns: [
                             "id"
+                        ];
+                    }
+                ];
+            };
+            "people": {
+                Row: {
+                    "clerk_user_id": string | null;
+                    "created_at": string;
+                    "email": string | null;
+                    "full_name": string;
+                    "id": string;
+                    "organization_id": string;
+                    "type": Database["public"]['Enums']["person_type"];
+                    "updated_at": string;
+                };
+                Insert: {
+                    "clerk_user_id"?: string | null;
+                    "created_at"?: string;
+                    "email"?: string | null;
+                    "full_name": string;
+                    "id"?: string;
+                    "organization_id": string;
+                    "type": Database["public"]['Enums']["person_type"];
+                    "updated_at"?: string;
+                };
+                Update: {
+                    "clerk_user_id"?: string | null;
+                    "created_at"?: string;
+                    "email"?: string | null;
+                    "full_name"?: string;
+                    "id"?: string;
+                    "organization_id"?: string;
+                    "type"?: Database["public"]['Enums']["person_type"];
+                    "updated_at"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "people_organization_id_fkey";
+                        columns: [
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    }
+                ];
+            };
+            "presence_events": {
+                Row: {
+                    "actor_id": string | null;
+                    "actor_type": string;
+                    "created_at": string;
+                    "event_type": string;
+                    "id": string;
+                    "metadata": NonNullable<Json>;
+                    "occurred_at": string;
+                    "organization_id": string;
+                    "session_id": string;
+                    "subject_id": string | null;
+                };
+                Insert: {
+                    "actor_id"?: string | null;
+                    "actor_type": string;
+                    "created_at"?: string;
+                    "event_type": string;
+                    "id"?: string;
+                    "metadata"?: NonNullable<Json>;
+                    "occurred_at"?: string;
+                    "organization_id": string;
+                    "session_id": string;
+                    "subject_id"?: string | null;
+                };
+                Update: {
+                    "actor_id"?: string | null;
+                    "actor_type"?: string;
+                    "created_at"?: string;
+                    "event_type"?: string;
+                    "id"?: string;
+                    "metadata"?: NonNullable<Json>;
+                    "occurred_at"?: string;
+                    "organization_id"?: string;
+                    "session_id"?: string;
+                    "subject_id"?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "presence_events_organization_id_fkey";
+                        columns: [
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "presence_events_session_id_organization_id_fkey";
+                        columns: [
+                            "session_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
                         ];
                     }
                 ];
@@ -616,6 +1386,7 @@ export type Database = {
                     "name": string;
                     "require_phone": boolean;
                     "revision": number;
+                    "session_id": string | null;
                     "slug": string;
                     "status": Database["public"]['Enums']["queue_status"];
                     "updated_at": string;
@@ -632,6 +1403,7 @@ export type Database = {
                     "name": string;
                     "require_phone"?: boolean;
                     "revision"?: number;
+                    "session_id"?: string | null;
                     "slug": string;
                     "status"?: Database["public"]['Enums']["queue_status"];
                     "updated_at"?: string;
@@ -648,6 +1420,7 @@ export type Database = {
                     "name"?: string;
                     "require_phone"?: boolean;
                     "revision"?: number;
+                    "session_id"?: string | null;
                     "slug"?: string;
                     "status"?: Database["public"]['Enums']["queue_status"];
                     "updated_at"?: string;
@@ -676,6 +1449,187 @@ export type Database = {
                         referencedColumns: [
                             "id",
                             "business_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "queues_session_id_fkey";
+                        columns: [
+                            "session_id"
+                        ];
+                        isOneToOne: true;
+                        referencedRelation: "sessions";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    }
+                ];
+            };
+            "registered_devices": {
+                Row: {
+                    "device_hash": string;
+                    "first_seen_at": string;
+                    "id": string;
+                    "last_seen_at": string;
+                    "organization_id": string;
+                    "student_id": string;
+                };
+                Insert: {
+                    "device_hash": string;
+                    "first_seen_at"?: string;
+                    "id"?: string;
+                    "last_seen_at"?: string;
+                    "organization_id": string;
+                    "student_id": string;
+                };
+                Update: {
+                    "device_hash"?: string;
+                    "first_seen_at"?: string;
+                    "id"?: string;
+                    "last_seen_at"?: string;
+                    "organization_id"?: string;
+                    "student_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "registered_devices_student_id_organization_id_fkey";
+                        columns: [
+                            "student_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "school_profiles";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "school_profiles": {
+                Row: {
+                    "created_at": string;
+                    "department_id": string;
+                    "id": string;
+                    "level": string;
+                    "matric_number": string;
+                    "organization_id": string;
+                };
+                Insert: {
+                    "created_at"?: string;
+                    "department_id": string;
+                    "id": string;
+                    "level": string;
+                    "matric_number": string;
+                    "organization_id": string;
+                };
+                Update: {
+                    "created_at"?: string;
+                    "department_id"?: string;
+                    "id"?: string;
+                    "level"?: string;
+                    "matric_number"?: string;
+                    "organization_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "school_profiles_department_id_organization_id_fkey";
+                        columns: [
+                            "department_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "departments";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "school_profiles_id_organization_id_fkey";
+                        columns: [
+                            "id",
+                            "organization_id"
+                        ];
+                        isOneToOne: true;
+                        referencedRelation: "people";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "school_profiles_organization_id_fkey";
+                        columns: [
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    }
+                ];
+            };
+            "sessions": {
+                Row: {
+                    "created_at": string;
+                    "created_by": string | null;
+                    "ends_at": string | null;
+                    "id": string;
+                    "location_id": string | null;
+                    "organization_id": string;
+                    "starts_at": string | null;
+                    "status": Database["public"]['Enums']["session_status"];
+                    "type": Database["public"]['Enums']["session_type"];
+                    "updated_at": string;
+                };
+                Insert: {
+                    "created_at"?: string;
+                    "created_by"?: string | null;
+                    "ends_at"?: string | null;
+                    "id"?: string;
+                    "location_id"?: string | null;
+                    "organization_id": string;
+                    "starts_at"?: string | null;
+                    "status"?: Database["public"]['Enums']["session_status"];
+                    "type": Database["public"]['Enums']["session_type"];
+                    "updated_at"?: string;
+                };
+                Update: {
+                    "created_at"?: string;
+                    "created_by"?: string | null;
+                    "ends_at"?: string | null;
+                    "id"?: string;
+                    "location_id"?: string | null;
+                    "organization_id"?: string;
+                    "starts_at"?: string | null;
+                    "status"?: Database["public"]['Enums']["session_status"];
+                    "type"?: Database["public"]['Enums']["session_type"];
+                    "updated_at"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "sessions_location_id_organization_id_fkey";
+                        columns: [
+                            "location_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "locations";
+                        referencedColumns: [
+                            "id",
+                            "business_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "sessions_organization_id_fkey";
+                        columns: [
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
                         ];
                     }
                 ];
@@ -1071,6 +2025,18 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "onboard_organization": {
+                Args: {
+                    "p_business_name": string;
+                    "p_country_code": string;
+                    "p_industry": string;
+                    "p_location_address": string;
+                    "p_location_name": string;
+                    "p_mode": Database["public"]['Enums']["organization_mode"];
+                    "p_timezone": string;
+                };
+                Returns: string;
+            };
             "operate_queue": {
                 Args: {
                     "p_queue_id": string;
@@ -1087,6 +2053,12 @@ export type Database = {
                     "p_ticket_id": string;
                 };
                 Returns: Json;
+            };
+            "queuezero_receive_queue_topic": {
+                Args: {
+                    "p_topic": string;
+                };
+                Returns: boolean;
             };
             "queuezero_receive_topic": {
                 Args: {
@@ -1133,6 +2105,65 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "school_claim_student": {
+                Args: {
+                    "p_organization_id": string;
+                    "p_user_id": string;
+                    "p_verified_email": string;
+                };
+                Returns: Json;
+            };
+            "school_issue_qr": {
+                Args: {
+                    "p_class_id": string;
+                    "p_expires_at": string;
+                    "p_nonce": string;
+                };
+                Returns: Json;
+            };
+            "school_manage": {
+                Args: {
+                    "p_action": string;
+                    "p_payload": Json;
+                };
+                Returns: Json;
+            };
+            "school_replay": {
+                Args: {
+                    "p_class_id": string;
+                    "p_nonce": string;
+                    "p_organization_id": string;
+                    "p_request_id": string;
+                    "p_user_id": string;
+                };
+                Returns: Json;
+            };
+            "school_scan": {
+                Args: {
+                    "p_class_id": string;
+                    "p_device_hash": string;
+                    "p_nonce": string;
+                    "p_organization_id": string;
+                    "p_request_id": string;
+                    "p_user_id": string;
+                };
+                Returns: Json;
+            };
+            "school_snapshot": {
+                Args: {
+                    "p_class_id"?: string;
+                    "p_course_id"?: string;
+                    "p_organization_id": string;
+                };
+                Returns: Json;
+            };
+            "set_organization_mode": {
+                Args: {
+                    "p_mode": Database["public"]['Enums']["organization_mode"];
+                    "p_organization_id": string;
+                };
+                Returns: undefined;
+            };
             "set_queue_status": {
                 Args: {
                     "p_business_id": string;
@@ -1172,11 +2203,16 @@ export type Database = {
             };
         };
         Enums: {
-            "business_role": "owner" | "admin" | "staff";
+            "attendance_status": "PRESENT" | "LATE" | "ABSENT" | "EARLY_LEAVE" | "INCOMPLETE" | "EXCUSED" | "FLAGGED";
+            "business_role": "owner" | "admin" | "staff" | "lecturer" | "student";
             "notification_channel": "web_push" | "sms" | "whatsapp";
             "notification_status": "pending" | "sent" | "failed" | "skipped";
             "notification_type": "almost_your_turn" | "your_turn" | "queue_paused";
+            "organization_mode": "BUSINESS" | "SCHOOL" | "HYBRID";
+            "person_type": "CUSTOMER" | "STUDENT" | "EMPLOYEE" | "VISITOR" | "GUEST";
             "queue_status": "open" | "paused" | "closed";
+            "session_status": "DRAFT" | "SCHEDULED" | "OPEN" | "PAUSED" | "CLOSED" | "COMPLETED";
+            "session_type": "QUEUE" | "CLASS" | "VISIT" | "APPOINTMENT" | "EVENT" | "SHIFT";
             "subscription_plan": "FREE" | "STARTER" | "BUSINESS";
             "subscription_status": "pending" | "active" | "past_due" | "cancelled" | "expired";
             "ticket_actor_type": "customer" | "staff" | "system";
@@ -1240,7 +2276,7 @@ export type CompositeTypes<PublicCompositeTypeNameOrOptions extends keyof Defaul
 export const Constants = {
     "public": {
         Enums: {
-            "business_role": ["owner", "admin", "staff"], "notification_channel": ["web_push", "sms", "whatsapp"], "notification_status": ["pending", "sent", "failed", "skipped"], "notification_type": ["almost_your_turn", "your_turn", "queue_paused"], "queue_status": ["open", "paused", "closed"], "subscription_plan": ["FREE", "STARTER", "BUSINESS"], "subscription_status": ["pending", "active", "past_due", "cancelled", "expired"], "ticket_actor_type": ["customer", "staff", "system"], "ticket_event_type": ["joined", "called", "recalled", "completed", "no_show", "cancelled"], "ticket_status": ["waiting", "serving", "completed", "no_show", "cancelled"]
+            "attendance_status": ["PRESENT", "LATE", "ABSENT", "EARLY_LEAVE", "INCOMPLETE", "EXCUSED", "FLAGGED"], "business_role": ["owner", "admin", "staff", "lecturer", "student"], "notification_channel": ["web_push", "sms", "whatsapp"], "notification_status": ["pending", "sent", "failed", "skipped"], "notification_type": ["almost_your_turn", "your_turn", "queue_paused"], "organization_mode": ["BUSINESS", "SCHOOL", "HYBRID"], "person_type": ["CUSTOMER", "STUDENT", "EMPLOYEE", "VISITOR", "GUEST"], "queue_status": ["open", "paused", "closed"], "session_status": ["DRAFT", "SCHEDULED", "OPEN", "PAUSED", "CLOSED", "COMPLETED"], "session_type": ["QUEUE", "CLASS", "VISIT", "APPOINTMENT", "EVENT", "SHIFT"], "subscription_plan": ["FREE", "STARTER", "BUSINESS"], "subscription_status": ["pending", "active", "past_due", "cancelled", "expired"], "ticket_actor_type": ["customer", "staff", "system"], "ticket_event_type": ["joined", "called", "recalled", "completed", "no_show", "cancelled"], "ticket_status": ["waiting", "serving", "completed", "no_show", "cancelled"]
         }
     }
 } as const;

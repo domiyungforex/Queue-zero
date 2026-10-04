@@ -27,7 +27,7 @@ describe("exported QR images", () => {
     const decoded = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
     expect(decoded?.data).toBe(`https://queuezero.vercel.app/q/${queueSlug}`);
     expect(artifact.publicUrl).toBe(decoded?.data);
-    expect(artifact.filename).toBe(`queuezero-${queueSlug}.png`);
+    expect(artifact.filename).toBe(`turnmark-${queueSlug}.png`);
     expect(png.width).toBe(png.height);
     // Four-module white quiet zone at sixteen pixels per module.
     for (let x = 0; x < png.width; x++) {

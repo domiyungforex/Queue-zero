@@ -1,36 +1,60 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect,useState } from "react";
-import { ClerkFailed, ClerkLoaded, ClerkLoading, SignIn, SignUp } from "@clerk/nextjs";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { ClerkFailed, ClerkLoaded, ClerkLoading, SignIn, SignUp, useSignIn, useSignUp, useAuth } from "@clerk/nextjs";
+import { safeAuthReturn } from "@/lib/school-student/return-url";
 
+function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+  const { isSignedIn } = useAuth();
+  const { signIn } = useSignIn();
+  const { signUp } = useSignUp();
+  const search = useSearchParams();
+  const returnTo = safeAuthReturn(search.get("redirect_url"), mode === "sign-up" ? "/onboarding" : "/dashboard");
+  const [email, setEmail] = useState("");
+  const [channel, setChannel] = useState<"email" | "phone">("email");
+  const [code, setCode] = useState("");
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [advanced, setAdvanced] = useState(false);
+  const other = mode === "sign-in" ? "sign-up" : "sign-in";
+  async function send() {
+    if (mode === "sign-in") {
+      const result = channel === "phone" ? await signIn.phoneCode.sendCode({ phoneNumber: email }) : await signIn.emailCode.sendCode({ emailAddress: email });
+      if (result.error) throw new Error(result.error.message);
+    } else {
+      if (!sent) { const result = await signUp.create(channel === "phone" ? { phoneNumber: email } : { emailAddress: email }); if (result.error) throw new Error(result.error.message); }
+      const result = channel === "phone" ? await signUp.verifications.sendPhoneCode() : await signUp.verifications.sendEmailCode();
+      if (result.error) throw new Error(result.error.message);
+    }
+    setSent(true);
+  }
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (busy) return; setBusy(true); setError("");
+    try {
+      if (!sent) { await send(); return; }
+      const flow = mode === "sign-in" ? signIn : signUp;
+      const result = mode === "sign-in" ? (channel === "phone" ? await signIn.phoneCode.verifyCode({ code }) : await signIn.emailCode.verifyCode({ code })) : (channel === "phone" ? await signUp.verifications.verifyPhoneCode({ code }) : await signUp.verifications.verifyEmailCode({ code }));
+      if (result.error) throw new Error(result.error.message);
+      if (flow.status === "complete") {
+        const finalized = await flow.finalize({ navigate: ({ session, decorateUrl }) => {
+          if (session.currentTask) { setAdvanced(true); return; }
+          window.location.assign(decorateUrl(returnTo));
+        } });
+        if (finalized.error) throw new Error(finalized.error.message);
+      } else { setAdvanced(true); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to sign in. Please try again."); }
+    finally { setBusy(false); }
+  }
+  if (isSignedIn && !advanced) return <Link className="button-primary" href={returnTo}>Continue to TuRnMaRk</Link>;
+  // Preserve configured MFA, account recovery and pending session requirements.
+  if (advanced) return mode === "sign-in" ? <SignIn routing="path" path="/sign-in" forceRedirectUrl={returnTo} /> : <SignUp routing="path" path="/sign-up" forceRedirectUrl={returnTo} />;
+  return <div className="w-full max-w-sm space-y-5"><form onSubmit={submit} className="space-y-4">{process.env.NEXT_PUBLIC_CLERK_PHONE_AUTH_ENABLED === "true" && !sent && <label className="block text-sm">Sign in using<select aria-label="Sign in using" value={channel} disabled={busy} onChange={event => {setChannel(event.target.value === "phone" ? "phone" : "email");setEmail("")}} className="min-h-12 w-full rounded-xl border border-line px-3"><option value="email">Email code</option><option value="phone">Phone code</option></select></label>}<label className="block text-sm font-medium" htmlFor="auth-email">{channel === "phone" ? "Phone number (with country code)" : "Email address"}</label><input id="auth-email" className="min-h-12 w-full rounded-xl border border-line px-3" type={channel === "phone" ? "tel" : "email"} autoComplete={channel === "phone" ? "tel" : "email"} required disabled={sent || busy} value={email} onChange={event => setEmail(event.target.value)} />{sent && <><p className="text-sm text-muted">Enter the code sent to your {channel === "phone" ? "phone" : "email"}.</p><label className="block text-sm font-medium" htmlFor="auth-code">Verification code</label><input id="auth-code" className="min-h-12 w-full rounded-xl border border-line px-3" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={event => setCode(event.target.value)} /></>}{error && <p role="alert" className="text-sm text-red-700">{error}</p>}<button disabled={busy} className="button-primary w-full" type="submit">{busy ? "Please wait…" : sent ? "Verify and continue" : channel === "phone" ? "Text me a code" : "Email me a code"}</button>{mode === "sign-up" && <div id="clerk-captcha" />}</form>{sent && <button disabled={busy} className="button-quiet" onClick={async () => {setBusy(true);setError("");try{await send()}catch{setError("Could not resend the code. Please try again shortly.")}finally{setBusy(false)}}}>Resend code</button>}<p className="text-sm text-muted">No password required. Students: use your enrolled school email.</p><Link className="text-primary underline" href={`/${other}?redirect_url=${encodeURIComponent(returnTo)}`}>{mode === "sign-in" ? "Create an account" : "Already have an account? Sign in"}</Link><button className="button-quiet block" onClick={() => setAdvanced(true)}>Other sign-in options</button></div>;
+}
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
-  const [slow,setSlow]=useState(false);
-  useEffect(()=>{const timer=setTimeout(()=>setSlow(true),12000);return()=>clearTimeout(timer)},[]);
-  return (
-    <div className="flex min-h-80 w-full justify-center">
-      <ClerkLoading>
-        <div className="auth-loading" role="status">{slow?<><p>Secure sign-in is taking longer than expected.</p><p>Please try again shortly. You can still explore QueueZero.</p><button className="button-secondary" onClick={()=>window.location.reload()}>Try again</button><Link href="/" className="button-quiet">Back to home</Link></>:<><span className="loading-pulse"/><p>Loading secure sign-in…</p></>}</div>
-      </ClerkLoading>
-      <ClerkFailed>
-        <div role="alert" className="max-w-sm rounded-xl border border-black/10 p-6">
-          <p className="font-semibold">Sign-in is temporarily unavailable</p>
-          <p className="mt-2 text-muted">Please check your connection and try again.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 min-h-11 rounded-lg bg-primary px-4 text-white"
-          >
-            Try again
-          </button>
-        </div>
-      </ClerkFailed>
-      <ClerkLoaded>
-        {mode === "sign-in" ? (
-          <SignIn routing="path" path="/sign-in" />
-        ) : (
-          <SignUp routing="path" path="/sign-up" />
-        )}
-      </ClerkLoaded>
-    </div>
-  );
+  const [slow, setSlow] = useState(false);
+  useEffect(() => { const timer = setTimeout(() => setSlow(true), 12000); return () => clearTimeout(timer); }, []);
+  return <div className="flex min-h-80 w-full justify-center"><ClerkLoading><div className="auth-loading" role="status">{slow ? <><p>Secure sign-in is taking longer than expected.</p><button className="button-secondary" onClick={() => window.location.reload()}>Try again</button><Link href="/" className="button-quiet">Back to home</Link></> : <><span className="loading-pulse" /><p>Loading secure sign-in…</p></>}</div></ClerkLoading><ClerkFailed><div role="alert"><p>Sign-in is temporarily unavailable</p><button className="button-secondary" onClick={() => window.location.reload()}>Try again</button></div></ClerkFailed><ClerkLoaded><Suspense fallback={<p role="status">Loading secure sign-in…</p>}><CodeForm mode={mode} /></Suspense></ClerkLoaded></div>;
 }

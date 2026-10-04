@@ -7,7 +7,7 @@ import { QueueQrCard, QueueQrUnavailable } from "@/components/queue/queue-qr-car
 const props = { queueId: "private-id", slug: "public-slug", businessName: "Clinic", queueName: "Consultation" };
 beforeEach(() => { generate.mockReset(); });
 it("encodes only the configured app origin and public slug", async () => {
-  generate.mockResolvedValue({ publicUrl: "http://localhost:3000/q/public-slug", pngDataUrl: "data:image/png;base64,fixture", filename: "queuezero-public-slug.png" });
+  generate.mockResolvedValue({ publicUrl: "http://localhost:3000/q/public-slug", pngDataUrl: "data:image/png;base64,fixture", filename: "turnmark-public-slug.png" });
   expect((await QueueQr(props)).type).toBe(QueueQrCard);
   expect(generate).toHaveBeenCalledWith("http://localhost:3000", "public-slug");
 });

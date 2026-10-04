@@ -11,7 +11,7 @@ vi.mock("next/image", () => ({ default: ({ unoptimized, ...props }: ComponentPro
   return <img {...props} alt={props.alt} />;
 } }));
 import { QueueQrCard, QueueQrUnavailable } from "@/components/queue/queue-qr-card";
-const artifact = { publicUrl: "https://queuezero.vercel.app/q/consultation-abc", pngDataUrl: "data:image/png;base64,fixture", filename: "queuezero-consultation-abc.png" };
+const artifact = { publicUrl: "https://queuezero.vercel.app/q/consultation-abc", pngDataUrl: "data:image/png;base64,fixture", filename: "turnmark-consultation-abc.png" };
 const props = { artifact, queueId: "private-queue-id", businessName: "Main Clinic", queueName: "Doctor Consultation" };
 beforeEach(() => {
   mocks.writeText.mockReset().mockResolvedValue(undefined);

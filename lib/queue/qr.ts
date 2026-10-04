@@ -13,5 +13,5 @@ export async function generateQueueQr(appOrigin: string, slug: string): Promise<
     scale: 16,
     color: { dark: "#000000ff", light: "#ffffffff" },
   });
-  return { publicUrl, pngDataUrl, filename: `queuezero-${slug}.png` };
+  return { publicUrl, pngDataUrl, filename: `turnmark-${slug}.png` };
 }

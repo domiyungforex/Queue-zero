@@ -1,6 +1,6 @@
-# QueueZero Engineering Rules
+# TuRnMaRk Engineering Rules
 ## Mission
-Build QueueZero as reliable production software for real businesses managing real physical queues. Prioritize correctness, speed, simplicity, accessibility, security and operational reliability.
+Build TuRnMaRk as reliable production software for real businesses managing real physical queues. Prioritize correctness, speed, simplicity, accessibility, security and operational reliability.
 ## Required workflow
 Before making any change: read this file completely, inspect the implementation, understand the task, identify relevant files, and make the smallest coherent change. Do not begin unrelated work.
 ## Scope discipline

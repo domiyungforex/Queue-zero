@@ -1,5 +1,5 @@
 /* Cache only the generic offline page, never tickets, authentication or API data. */
-const CACHE = 'queuezero-shell-v2';
+const CACHE = 'turnmark-shell-v3';
 const OFFLINE = '/offline.html';
 
 self.addEventListener('install', event => {
@@ -7,7 +7,7 @@ self.addEventListener('install', event => {
 });
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(key => key.startsWith('queuezero-shell-') && key !== CACHE).map(key => caches.delete(key))))
+    .then(keys => Promise.all(keys.filter(key => (key.startsWith('queuezero-shell-') || key.startsWith('turnmark-shell-')) && key !== CACHE).map(key => caches.delete(key))))
     .then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', event => {

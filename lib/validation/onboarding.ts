@@ -17,12 +17,13 @@ const countryCodes = new Set(COUNTRY_CODES);
 
 export const ONBOARDING_FIELDS = ["businessName", "industry", "country", "timezone", "locationName", "locationAddress"] as const;
 export type OnboardingField = (typeof ONBOARDING_FIELDS)[number];
-export type OnboardingValues = Record<OnboardingField, string>;
+export type OnboardingValues = Record<OnboardingField, string> & { organizationMode?: string };
 
 const requiredText = (label: string, max: number) => z.string().trim()
   .min(1, `${label} is required.`).max(max, `Use ${max} characters or fewer.`);
 
 export const onboardingSchema = z.object({
+  organizationMode: z.enum(["BUSINESS", "SCHOOL", "HYBRID"]).optional(),
   businessName: requiredText("Business name", 160),
   industry: z.string().refine((value) => INDUSTRIES.some((industry) => industry.value === value), "Choose an industry."),
   country: z.string().trim().toUpperCase().refine((value) => countryCodes.has(value), "Choose a country."),

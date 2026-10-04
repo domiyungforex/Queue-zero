@@ -4,7 +4,7 @@ import { Bell,BellRing } from "lucide-react";
 export function TicketAlerts({token}:{token:string}){
  const [busy,setBusy]=useState(false),[enabled,setEnabled]=useState(false),[message,setMessage]=useState('');
  async function enable(){
-  if(!('Notification'in window)||!('serviceWorker'in navigator)||!('PushManager'in window)){setMessage('Alerts are not supported in this browser. On iPhone, add QueueZero to your Home Screen and open it there. Keep your ticket open for updates.');return}
+  if(!('Notification'in window)||!('serviceWorker'in navigator)||!('PushManager'in window)){setMessage('Alerts are not supported in this browser. On iPhone, add TuRnMaRk to your Home Screen and open it there. Keep your ticket open for updates.');return}
   const key=process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;if(!key){setMessage('Browser alerts are not available yet. Keep this ticket open for live updates.');return}
   setBusy(true);
   try{const permission=await Notification.requestPermission();if(permission!=='granted'){setMessage('Notifications are off. You can enable them in your browser settings.');return}

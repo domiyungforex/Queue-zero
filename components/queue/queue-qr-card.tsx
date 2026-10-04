@@ -72,7 +72,7 @@ export function QueueQrCard({ artifact, queueId, businessName, queueName, sheet 
     {sheet ? <>
       <style media="print">{"@page { size: auto; margin: 12mm; }"}</style>
       <div className={styles.sheet}>
-        <p className="text-2xl font-bold tracking-tight">Queue<span className="text-primary">Zero</span></p>
+        <p className="text-2xl font-bold tracking-tight">TuRn<span className="text-primary">MaRk</span></p>
         <p className={`mt-6 break-words text-xl font-medium ${styles.businessName}`}>{businessName}</p>
         <h1 className={`mt-3 break-words text-3xl font-semibold ${styles.queueName}`}>{queueName}</h1>
         <div className="my-5">{qrImage}</div>

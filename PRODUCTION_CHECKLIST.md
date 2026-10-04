@@ -1,10 +1,10 @@
-# QueueZero first-business pilot checklist
+# TuRnMaRk first-business pilot checklist
 
 **Status: blocked for production approval.** Local validation is strong, but the critical shared-database exposure and provider/device acceptance gates below remain open. These results supersede earlier readiness claims in this file. Local validation on 2026-10-02; deployment and hosted smoke checks on 2026-10-03.
 
 ## Release blockers
 
-- [ ] **Critical: shared production schema exposure.** Nine unrelated tables have RLS disabled and anonymous SELECT grants. The database owner must repair their access policies/grants or isolate QueueZero. Do not deploy guessed policies for another application. See `SECURITY_REVIEW.md` and the [Supabase advisory](https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public).
+- [ ] **Critical: shared production schema exposure.** Nine unrelated tables have RLS disabled and anonymous SELECT grants. The database owner must repair their access policies/grants or isolate TuRnMaRk. Do not deploy guessed policies for another application. See `SECURITY_REVIEW.md` and the [Supabase advisory](https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public).
 - [x] Apply `20261002223535_bound_join_retry_records.sql`, `20261002223544_recheck_staff_management_authorization.sql` and `20261002223553_publish_business_updates.sql` through the controlled migration process, then deploy the reviewed application commits. All three migrations were applied through the authenticated Supabase connector; release `906adc2` deployed successfully to the canonical production domain. Local filenames match the recorded remote versions.
 - [ ] Run normal Clerk production signup → verification → onboarding → sign-out/sign-in with the intended account. Investigate the three dashboard membership-load errors observed in the last 24 hours. The old realtime endpoint also logged one expired/deleted-session error; its generic non-cacheable 401 fix is deployed and the signed-out endpoint check passes.
 - [ ] Verify actual browser push on the target phones, including Home Screen installation on supported iPhones. An outbox event or successful worker registration is not device-delivery evidence.
@@ -39,7 +39,7 @@ The DB test harness now waits for PostgreSQL's final TCP listener rather than it
 - All 10 read-only hosted browser checks passed: mobile/public layouts, PWA metadata/icons, offline recovery, browser navigation and the legacy demo redirect. The data-writing customer journey was intentionally skipped on production.
 - Hosted SQL catalog checks confirmed all 10 new triggers enabled, the manager-lock and join-limit helpers installed, Realtime Broadcast available, and anonymous execution of the private business helper denied. No sample records were inserted.
 - The workspace lacks Supabase CLI credentials; migration deployment used the authenticated connector after comparing remote history with the local files. Git HTTPS push authentication failed; GitHub Git Data API publishing preserved every original commit and verified identical tree hashes before a non-forced main update.
-- Supabase `wbvgorahtkiiwplsbnga` reports ACTIVE_HEALTHY (PostgreSQL 17). All original 14 migrations are recorded. All 18 QueueZero tables have enabled and forced RLS. Anonymous roles lack raw QueueZero table SELECT grants.
+- Supabase `wbvgorahtkiiwplsbnga` reports ACTIVE_HEALTHY (PostgreSQL 17). All original 14 migrations are recorded. All 18 TuRnMaRk tables have enabled and forced RLS. Anonymous roles lack raw TuRnMaRk table SELECT grants.
 - Realtime has the receive-only `queuezero_receive` policy on `realtime.messages`, gated by authorized topic access. Real subscribed client delivery was not revalidated here.
 - Production signup HTML references `https://clerk.conchportal.com` production scripts. This proves routing only; it does not prove email delivery, session issuance or database JWT configuration.
 - Vercel grouped runtime errors were inspected through the connected app. The project-detail endpoint returned a connector argument-validation error, and no environment-variable listing tool was available. Secret names/values and provider dashboard settings therefore remain unverified.
@@ -52,7 +52,7 @@ Set these in the deployment's **production** environment, using matching provide
 | Configuration | Required verification |
 | --- | --- |
 | `NEXT_PUBLIC_APP_URL` | Exactly `https://queuezero.conchportal.com`; no path/query/credentials. Print QR only from this configured origin. |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Matching production instance; allowed origin and sign-in/up redirects point to QueueZero. Preserve other applications using the shared instance. |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Matching production instance; allowed origin and sign-in/up redirects point to TuRnMaRk. Preserve other applications using the shared instance. |
 | `CLERK_DATABASE_JWT_TEMPLATE` | If needed, issuer-signed template supplies the authenticated role and correct subject; Supabase trusts the matching Clerk issuer. Verify using two genuine tenant sessions. |
 | `CLERK_DISABLE_AUTO_PROXY` | Confirm the configured direct Clerk custom-domain script path works. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Match the intended project; use only publishable/anon keys in public variables. Confirm API and private Broadcast access. |
@@ -74,3 +74,14 @@ Set these in the deployment's **production** environment, using matching provide
 - [ ] Keep a manual queue fallback and named pilot owner. Pause new joins during an operational incident; retain audit history.
 
 Full Week-1 success requires every user outcome in the pilot guide, including real signup, notification receipt, safe concurrent staff actions, paid upgrade where offered, and a verified deployed release. Passing local tests alone does not meet that definition.
+
+## Pending TuRnMaRk school release
+
+- [ ] Resolve the existing shared-project RLS exposure before production pilot.
+- [ ] Review `EVOLUTION_REVIEW.md` and apply the two new additive migrations in staging first.
+- [ ] Configure Clerk email OTP and verify the custom sign-up/sign-in journey with genuine accounts. Phone OTP stays hidden unless explicitly configured and enabled.
+- [ ] Optionally set server-only `ATTENDANCE_QR_SECRET` (32+ characters); otherwise attendance derives a domain-separated key from `QUEUE_JOIN_SECRET`.
+- [ ] Test two schools, assigned/unassigned lecturers and students, private Broadcast reconnect and denied exports using actual signed-in sessions.
+- [ ] Agree school privacy/retention policies and explicit UTC register timestamps; test real student import and printable PDF/CSV/XLSX.
+- [ ] Verify TuRnMaRk installed name/icon and existing printed queue URLs after release. Current canonical domain is unchanged.
+- [ ] Complete genuine five-phone/laptop queue and school acceptance before claiming production readiness.
