@@ -1,59 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), user: vi.fn(), rpc: vi.fn(), device: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), device: vi.fn(), network: vi.fn() }));
 vi.mock("server-only", () => ({}));
-vi.mock("@clerk/nextjs/server", () => ({ auth: mocks.auth, currentUser: mocks.user }));
 vi.mock("@/lib/db/join-server", () => ({ createJoinSupabaseClient: () => ({ rpc: mocks.rpc }) }));
-vi.mock("@/lib/school-student/device", () => ({ attendanceDeviceHash: mocks.device }));
+vi.mock("@/lib/school-student/device", () => ({ attendanceDeviceHash: mocks.device, attendanceNetworkHash: mocks.network }));
 import { recordAttendance } from "@/lib/school-student/actions";
 import { attendanceSecret } from "@/lib/qr/secret";
-import { newAttendanceToken } from "@/lib/qr/rotation";
 import { signAttendanceToken } from "@/lib/qr/signing";
-const organization = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", session = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
-function input(now?: number) { const payload = newAttendanceToken(organization,session,now); return { token: signAttendanceToken(payload,attendanceSecret()), requestId: payload.nonce }; }
-beforeEach(() => {
-  vi.stubEnv("ATTENDANCE_QR_SECRET", "s".repeat(64));
-  mocks.auth.mockResolvedValue({ userId: "user_verified" });
-  mocks.user.mockResolvedValue({ id: "user_verified", emailAddresses: [{emailAddress:"student@school.test",verification:{status:"verified"}}] });
-  mocks.device.mockResolvedValue("opaque-device");
-  mocks.rpc.mockImplementation(async (name: string) => ({ error:null,data:name === "school_claim_student" ? {id:"student-db"} : {ok:true,action:"CHECK_IN",status:"PRESENT",message:"Recorded"} }));
-});
-describe("attendance identity boundary", () => {
-  it("uses only authenticated identity and verified email in privileged calls", async () => {
-    const request = input();
-    expect((await recordAttendance(request)).ok).toBe(true);
-    expect(mocks.rpc).toHaveBeenNthCalledWith(1,"school_claim_student",{p_organization_id:organization,p_user_id:"user_verified",p_verified_email:"student@school.test"});
-    expect(mocks.rpc).toHaveBeenNthCalledWith(2,"school_scan",expect.objectContaining({p_class_id:session,p_user_id:"user_verified",p_device_hash:"opaque-device",p_request_id:request.requestId}));
-  });
-  it("rejects unauthenticated, unverified and impersonated users before service writes", async () => {
-    mocks.auth.mockResolvedValueOnce({userId:null}); expect((await recordAttendance(input())).ok).toBe(false);
-    mocks.user.mockResolvedValueOnce({id:"user_other",emailAddresses:[]}); expect((await recordAttendance(input())).ok).toBe(false);
-    mocks.user.mockResolvedValueOnce({id:"user_verified",emailAddresses:[{emailAddress:"student@school.test",verification:{status:"unverified"}}]}); expect((await recordAttendance(input())).ok).toBe(false);
-    expect(mocks.rpc).not.toHaveBeenCalled();
-  });
-  it("rejects malicious identity fields and only reads exact expired replay", async () => {
-    expect((await recordAttendance({...input(),student_id:organization})).ok).toBe(false);
-    mocks.rpc.mockResolvedValueOnce({data:null,error:null});
-    expect((await recordAttendance(input(1000))).expired).toBe(true);
-    expect(mocks.rpc).toHaveBeenCalledTimes(1);
-    expect(mocks.rpc.mock.calls[0][0]).toBe("school_replay");
-    expect(mocks.user).not.toHaveBeenCalled();
-    expect(mocks.device).not.toHaveBeenCalled();
-  });
-  it("recovers committed success after token expiry without any mutation", async () => {
-    const request=input(1000);
-    mocks.rpc.mockResolvedValueOnce({error:null,data:{ok:true,action:"CHECK_IN",status:"PRESENT",message:"Recorded"}});
-    expect(await recordAttendance(request)).toEqual({ok:true,action:"CHECK_IN",status:"PRESENT",message:"Recorded"});
-    expect(mocks.rpc).toHaveBeenCalledWith("school_replay",expect.objectContaining({p_user_id:"user_verified",p_request_id:request.requestId,p_class_id:session,p_organization_id:organization}));
-    expect(mocks.rpc).toHaveBeenCalledTimes(1);
-    expect(mocks.device).not.toHaveBeenCalled();
-  });
-  it("does not scan if enrollment claim fails", async () => {
-    mocks.rpc.mockResolvedValue({data:null,error:{message:"private database details"}});
-    const result=await recordAttendance(input()); expect(result.ok).toBe(false);
-    expect(mocks.rpc).toHaveBeenCalledTimes(1); expect(result.message).not.toContain("database details");
-  });
-  it("returns authoritative duplicate/checkout results without inventing another action", async () => {
-    mocks.rpc.mockImplementation(async(name:string)=>({error:null,data:name==="school_claim_student"?{id:"x"}:{ok:false,action:"BLOCKED",status:"FLAGGED",message:"Already scanned"}}));
-    expect(await recordAttendance(input())).toEqual({ok:false,action:"BLOCKED",status:"FLAGGED",message:"Already scanned"});
-  });
+import type { AttendanceToken } from "@/lib/qr/token";
+const organization = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", session = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", nonce = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+function input(extra: Record<string, unknown> = {}) { const now = Math.floor(Date.now() / 1000); const payload: AttendanceToken = { version: 1, purpose: "CLASS_ATTENDANCE", organization_id: organization, session_id: session, nonce, issued_at: now - 30, expires_at: now + 3600 }; return { token: signAttendanceToken(payload, attendanceSecret()), requestId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", fullName: "Akinyele Dominion", matricNumber: "PHY/2026/0142", ...extra }; }
+beforeEach(() => { vi.stubEnv("ATTENDANCE_QR_SECRET", "s".repeat(64)); mocks.device.mockResolvedValue("a".repeat(64)); mocks.network.mockResolvedValue("b".repeat(64)); mocks.rpc.mockResolvedValue({ error: null, data: { ok: true, status: "PRESENT", message: "Attendance marked ✓", full_name: "Akinyele Dominion", matric_number: "PHY/2026/0142", course_code: "PHY 101", recorded_at: "2026-10-04T10:04:00Z" } }); });
+describe("accountless attendance identity boundary", () => {
+  it("passes only signed class context and entered roster fields to the controlled RPC", async () => { expect((await recordAttendance(input())).ok).toBe(true); expect(mocks.rpc).toHaveBeenCalledWith("school_attend_accountless", { p_organization_id: organization, p_class_id: session, p_nonce: nonce, p_full_name: "Akinyele Dominion", p_matric_number: "PHY/2026/0142", p_device_hash: "a".repeat(64), p_network_hash: "b".repeat(64), p_request_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd" }); });
+  it("rejects browser-supplied student, course, status and timestamp fields", async () => { expect((await recordAttendance(input({ student_id: organization }))).ok).toBe(false); expect((await recordAttendance(input({ attendance_status: "PRESENT" }))).ok).toBe(false); expect(mocks.rpc).not.toHaveBeenCalled(); });
+  it("rejects expired or cross-session tokens before database mutation", async () => { const now = Math.floor(Date.now() / 1000); const expired: AttendanceToken = { version: 1, purpose: "CLASS_ATTENDANCE", organization_id: organization, session_id: session, nonce, issued_at: now - 3600, expires_at: now - 1 }; expect((await recordAttendance({ ...input(), token: signAttendanceToken(expired, attendanceSecret()) })).status).toBe("CLOSED"); expect(mocks.rpc).not.toHaveBeenCalled(); });
+  it("does not expose provider errors or invent a successful attendance state", async () => { mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: "private database details" } }); const result = await recordAttendance(input()); expect(result).toMatchObject({ ok: false, status: "UNAVAILABLE" }); expect(result.message).not.toContain("database details"); });
+  it("returns authoritative duplicate and roster failures unchanged", async () => { mocks.rpc.mockResolvedValueOnce({ error: null, data: { ok: false, status: "DUPLICATE", message: "Your attendance has already been recorded for this class." } }); expect(await recordAttendance(input())).toMatchObject({ ok: false, status: "DUPLICATE" }); });
 });

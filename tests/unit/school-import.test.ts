@@ -1,10 +1,11 @@
-import {describe,it,expect} from "vitest";
-import {parseStudentCsv,schoolInputSchema} from "@/lib/school/validation";
-import {departmentId,courseId} from "./school-fixture";
-const header="full_name,email,matric_number,level\n";
-describe("student register import",()=>{
- it("parses quoted names and resolves normalized verified email invitations",()=>{expect(parseStudentCsv(header+'"Johnson, Akin",AKIN@example.org,PHY/1,100',departmentId)).toEqual([{full_name:"Johnson, Akin",email:"akin@example.org",matric_number:"PHY/1",level:"100",department_id:departmentId}]);});
- it("rejects malformed, duplicate and oversized imports without dropping records",()=>{for(const csv of [header+'"Unclosed,x@y.org,A,100',header+'Name,x@y.org,A',header+'Name,x@y.org,A,100\nOther,x@y.org,B,100',header+'Name,x@y.org,A,100\nOther,z@y.org,a,100',"wrong,header\nA,B", "x".repeat(100001)])expect(()=>parseStudentCsv(csv,departmentId)).toThrow();});
- it("rejects a planned class end before its start",()=>{expect(schoolInputSchema.safeParse({action:"class",course_id:courseId,starts_at:"2026-10-03T10:00:00Z",planned_ends_at:"2026-10-03T09:00:00Z",late_after_minutes:10,departure_required:true}).success).toBe(false);});
- it("rejects browser identity proof, unsupported actions and invalid session timing",()=>{expect(schoolInputSchema.safeParse({action:"lecturer",course_id:courseId,user_id:"someone"}).success).toBe(false);expect(schoolInputSchema.safeParse({action:"student",student_id:courseId}).success).toBe(false);expect(schoolInputSchema.safeParse({action:"class",course_id:courseId,starts_at:"invalid",late_after_minutes:121,departure_required:false}).success).toBe(false);});
+import { describe, it, expect } from "vitest";
+import { parseStudentCsv, parseStudentCsvPreview, schoolInputSchema } from "@/lib/school/validation";
+import { courseId } from "./school-fixture";
+const header = "name,matric_number\n";
+describe("student register import", () => {
+  it("parses the two required roster fields including quoted names", () => { expect(parseStudentCsv(header + '"Johnson, Akin",PHY/1')).toEqual([{ full_name: "Johnson, Akin", matric_number: "PHY/1" }]); });
+  it("accepts optional roster columns without making them attendance credentials", () => { expect(parseStudentCsv("name,matric_number,email,department,level\nAkin,PHY/1,akin@example.edu,Physics,100")).toEqual([{ full_name: "Akin", matric_number: "PHY/1" }]); });
+  it("previews duplicate and invalid rows before confirmation", () => { expect(parseStudentCsvPreview(header + "Akin,PHY/1\nDuplicate, phy/1 \n,PHY/2")).toMatchObject({ valid: 1, duplicates: 1, invalid: 1 }); });
+  it("rejects malformed imports instead of silently dropping records", () => { for (const csv of [header + '"Unclosed,PHY/1', "wrong,header\nA,B", "x".repeat(100001)]) expect(() => parseStudentCsv(csv)).toThrow(); });
+  it("requires a valid attendance close time after class start", () => { expect(schoolInputSchema.safeParse({ action: "class", course_id: courseId, starts_at: "2026-10-03T10:00:00Z", attendance_closes_at: "2026-10-03T10:30:00Z", planned_ends_at: "2026-10-03T12:00:00Z", late_after_minutes: 10, departure_required: false }).success).toBe(true); expect(schoolInputSchema.safeParse({ action: "class", course_id: courseId, starts_at: "2026-10-03T10:00:00Z", attendance_closes_at: "2026-10-03T09:30:00Z", late_after_minutes: 10, departure_required: false }).success).toBe(false); });
 });

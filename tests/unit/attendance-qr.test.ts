@@ -24,18 +24,18 @@ describe("signed attendance QR", () => {
     expect(() => validateAttendanceToken(signed, secret, { now: 1001, organizationId: session })).toThrow();
     expect(() => validateAttendanceToken(signed, secret, { now: 1001, sessionId: org })).toThrow();
     expect(() => validateAttendanceToken(signed, "b".repeat(64), { now: 1001 })).toThrow();
-    expect(() => validateAttendanceToken(signed, secret, { now: 999 })).toThrow();
-    expect(() => validateAttendanceToken(signAttendanceToken({ ...token, expires_at: 1100 }, secret), secret, { now: 1001 })).toThrow();
+    expect(() => validateAttendanceToken(signed, secret, { now: 994 })).toThrow();
+    expect(() => validateAttendanceToken(signAttendanceToken({ ...token, expires_at: token.issued_at + 18 * 60 * 60 + 1 }, secret), secret, { now: 1001 })).toThrow();
   });
   it("allows expired signatures solely for replay while retaining structural validation", () => {
     expect(validateAttendanceToken(signAttendanceToken(token,secret),secret,{now:2000,allowExpiredReplay:true})).toEqual(token);
     expect(()=>validateAttendanceToken(signAttendanceToken({...token,expires_at:900},secret),secret,{now:2000,allowExpiredReplay:true})).toThrow();
-    expect(()=>validateAttendanceToken(signAttendanceToken({...token,expires_at:1200},secret),secret,{now:2000,allowExpiredReplay:true})).toThrow();
+    expect(()=>validateAttendanceToken(signAttendanceToken({...token,expires_at:token.issued_at+18*60*60+1},secret),secret,{now:2000,allowExpiredReplay:true})).toThrow();
   });
   it("rotates unpredictable nonces", () => expect(newAttendanceToken(org, session, 1000).nonce).not.toBe(token.nonce));
   it("refuses caller-supplied identity and malformed request ids", () => {
-    expect(attendanceScanSchema.safeParse({ token: "x", requestId: token.nonce, student_id: org }).success).toBe(false);
-    expect(attendanceScanSchema.safeParse({ token: "x", requestId: "arbitrary" }).success).toBe(false);
+    expect(attendanceScanSchema.safeParse({ token: "x", requestId: token.nonce, fullName:"Student", matricNumber:"PHY/1", student_id: org }).success).toBe(false);
+    expect(attendanceScanSchema.safeParse({ token: "x", requestId: "arbitrary", fullName:"Student", matricNumber:"PHY/1" }).success).toBe(false);
   });
   it("preserves QR through authentication but rejects external redirects", () => {
     const path = `/attend?token=${signAttendanceToken(token, secret)}`;

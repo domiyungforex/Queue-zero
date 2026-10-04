@@ -11,3 +11,4 @@ export const attendanceTokenSchema = z.object({
 }).strict();
 export type AttendanceToken = z.infer<typeof attendanceTokenSchema>;
 export const QR_LIFETIME_SECONDS = 30;
+export const MAX_CLASS_QR_LIFETIME_SECONDS = 18 * 60 * 60;

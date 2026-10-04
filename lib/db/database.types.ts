@@ -5,6 +5,74 @@ export type Json = string | number | boolean | null | {
 export type Database = {
     "public": {
         Tables: {
+            "appointments": {
+                Row: {
+                    "created_at": string;
+                    "guest_name": string | null;
+                    "id": string;
+                    "organization_id": string;
+                    "scheduled_at": string;
+                    "service_id": string;
+                    "staff_id": string | null;
+                    "status": string;
+                    "unit_id": string;
+                    "user_id": string | null;
+                };
+                Insert: {
+                    "created_at"?: string;
+                    "guest_name"?: string | null;
+                    "id"?: string;
+                    "organization_id": string;
+                    "scheduled_at": string;
+                    "service_id": string;
+                    "staff_id"?: string | null;
+                    "status"?: string;
+                    "unit_id": string;
+                    "user_id"?: string | null;
+                };
+                Update: {
+                    "created_at"?: string;
+                    "guest_name"?: string | null;
+                    "id"?: string;
+                    "organization_id"?: string;
+                    "scheduled_at"?: string;
+                    "service_id"?: string;
+                    "staff_id"?: string | null;
+                    "status"?: string;
+                    "unit_id"?: string;
+                    "user_id"?: string | null;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "appointments_service_id_organization_id_unit_id_fkey";
+                        columns: [
+                            "service_id",
+                            "organization_id",
+                            "unit_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "institution_services";
+                        referencedColumns: [
+                            "id",
+                            "organization_id",
+                            "unit_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "appointments_staff_id_organization_id_fkey";
+                        columns: [
+                            "staff_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "business_members";
+                        referencedColumns: [
+                            "id",
+                            "business_id"
+                        ];
+                    }
+                ];
+            };
             "attendance_device_uses": {
                 Row: {
                     "class_session_id": string;
@@ -166,8 +234,11 @@ export type Database = {
                     "flag_reason": string | null;
                     "id": string;
                     "organization_id": string;
+                    "risk_flags": (string)[];
                     "status": Database["public"]['Enums']["attendance_status"];
                     "student_id": string;
+                    "submitted_matric_number": string | null;
+                    "submitted_name": string | null;
                     "updated_at": string;
                     "verification_score": number | null;
                 };
@@ -179,8 +250,11 @@ export type Database = {
                     "flag_reason"?: string | null;
                     "id"?: string;
                     "organization_id": string;
+                    "risk_flags"?: (string)[];
                     "status": Database["public"]['Enums']["attendance_status"];
                     "student_id": string;
+                    "submitted_matric_number"?: string | null;
+                    "submitted_name"?: string | null;
                     "updated_at"?: string;
                     "verification_score"?: number | null;
                 };
@@ -192,8 +266,11 @@ export type Database = {
                     "flag_reason"?: string | null;
                     "id"?: string;
                     "organization_id"?: string;
+                    "risk_flags"?: (string)[];
                     "status"?: Database["public"]['Enums']["attendance_status"];
                     "student_id"?: string;
+                    "submitted_matric_number"?: string | null;
+                    "submitted_name"?: string | null;
                     "updated_at"?: string;
                     "verification_score"?: number | null;
                 };
@@ -292,6 +369,64 @@ export type Database = {
                         referencedColumns: [
                             "id",
                             "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "attendance_submission_limits": {
+                Row: {
+                    "class_session_id": string;
+                    "created_at": string;
+                    "device_hash": string;
+                    "id": number;
+                    "matric_hash": string;
+                    "network_hash": string;
+                    "organization_id": string;
+                    "outcome": string;
+                };
+                Insert: {
+                    "class_session_id": string;
+                    "created_at"?: string;
+                    "device_hash": string;
+                    "id"?: never;
+                    "matric_hash": string;
+                    "network_hash": string;
+                    "organization_id": string;
+                    "outcome": string;
+                };
+                Update: {
+                    "class_session_id"?: string;
+                    "created_at"?: string;
+                    "device_hash"?: string;
+                    "id"?: never;
+                    "matric_hash"?: string;
+                    "network_hash"?: string;
+                    "organization_id"?: string;
+                    "outcome"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "attendance_submission_limits_class_session_id_organization_fkey";
+                        columns: [
+                            "class_session_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "class_sessions";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "attendance_submission_limits_organization_id_fkey";
+                        columns: [
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
                         ];
                     }
                 ];
@@ -421,10 +556,12 @@ export type Database = {
             };
             "businesses": {
                 Row: {
+                    "attendance_security_mode": string;
                     "country_code": string;
                     "created_at": string;
                     "id": string;
                     "industry": string;
+                    "institution_type": string | null;
                     "logo_url": string | null;
                     "name": string;
                     "organization_mode": Database["public"]['Enums']["organization_mode"];
@@ -435,10 +572,12 @@ export type Database = {
                     "updated_at": string;
                 };
                 Insert: {
+                    "attendance_security_mode"?: string;
                     "country_code": string;
                     "created_at"?: string;
                     "id"?: string;
                     "industry": string;
+                    "institution_type"?: string | null;
                     "logo_url"?: string | null;
                     "name": string;
                     "organization_mode"?: Database["public"]['Enums']["organization_mode"];
@@ -449,10 +588,12 @@ export type Database = {
                     "updated_at"?: string;
                 };
                 Update: {
+                    "attendance_security_mode"?: string;
                     "country_code"?: string;
                     "created_at"?: string;
                     "id"?: string;
                     "industry"?: string;
+                    "institution_type"?: string | null;
                     "logo_url"?: string | null;
                     "name"?: string;
                     "organization_mode"?: Database["public"]['Enums']["organization_mode"];
@@ -561,6 +702,7 @@ export type Database = {
             "class_sessions": {
                 Row: {
                     "arrival_open": boolean;
+                    "attendance_closes_at": string | null;
                     "checkout_enabled": boolean;
                     "course_id": string;
                     "created_at": string;
@@ -570,9 +712,11 @@ export type Database = {
                     "opened_at": string | null;
                     "organization_id": string;
                     "planned_ends_at": string | null;
+                    "qr_revoked_at": string | null;
                 };
                 Insert: {
                     "arrival_open"?: boolean;
+                    "attendance_closes_at"?: string | null;
                     "checkout_enabled"?: boolean;
                     "course_id": string;
                     "created_at"?: string;
@@ -582,9 +726,11 @@ export type Database = {
                     "opened_at"?: string | null;
                     "organization_id": string;
                     "planned_ends_at"?: string | null;
+                    "qr_revoked_at"?: string | null;
                 };
                 Update: {
                     "arrival_open"?: boolean;
+                    "attendance_closes_at"?: string | null;
                     "checkout_enabled"?: boolean;
                     "course_id"?: string;
                     "created_at"?: string;
@@ -594,6 +740,7 @@ export type Database = {
                     "opened_at"?: string | null;
                     "organization_id"?: string;
                     "planned_ends_at"?: string | null;
+                    "qr_revoked_at"?: string | null;
                 };
                 Relationships: [
                     {
@@ -727,6 +874,7 @@ export type Database = {
                     "id": string;
                     "organization_id": string;
                     "title": string;
+                    "unit_id": string | null;
                 };
                 Insert: {
                     "code": string;
@@ -734,6 +882,7 @@ export type Database = {
                     "id"?: string;
                     "organization_id": string;
                     "title": string;
+                    "unit_id"?: string | null;
                 };
                 Update: {
                     "code"?: string;
@@ -741,6 +890,7 @@ export type Database = {
                     "id"?: string;
                     "organization_id"?: string;
                     "title"?: string;
+                    "unit_id"?: string | null;
                 };
                 Relationships: [
                     {
@@ -766,6 +916,19 @@ export type Database = {
                         referencedColumns: [
                             "id"
                         ];
+                    },
+                    {
+                        foreignKeyName: "courses_unit_id_organization_id_fkey";
+                        columns: [
+                            "unit_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "organization_units";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
                     }
                 ];
             };
@@ -775,18 +938,21 @@ export type Database = {
                     "id": string;
                     "name": string;
                     "organization_id": string;
+                    "unit_id": string | null;
                 };
                 Insert: {
                     "faculty_id": string;
                     "id"?: string;
                     "name": string;
                     "organization_id": string;
+                    "unit_id"?: string | null;
                 };
                 Update: {
                     "faculty_id"?: string;
                     "id"?: string;
                     "name"?: string;
                     "organization_id"?: string;
+                    "unit_id"?: string | null;
                 };
                 Relationships: [
                     {
@@ -812,6 +978,19 @@ export type Database = {
                         referencedColumns: [
                             "id"
                         ];
+                    },
+                    {
+                        foreignKeyName: "departments_unit_id_organization_id_fkey";
+                        columns: [
+                            "unit_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "organization_units";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
                     }
                 ];
             };
@@ -820,16 +999,19 @@ export type Database = {
                     "id": string;
                     "name": string;
                     "organization_id": string;
+                    "unit_id": string | null;
                 };
                 Insert: {
                     "id"?: string;
                     "name": string;
                     "organization_id": string;
+                    "unit_id"?: string | null;
                 };
                 Update: {
                     "id"?: string;
                     "name"?: string;
                     "organization_id"?: string;
+                    "unit_id"?: string | null;
                 };
                 Relationships: [
                     {
@@ -841,6 +1023,151 @@ export type Database = {
                         referencedRelation: "businesses";
                         referencedColumns: [
                             "id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "faculties_unit_id_organization_id_fkey";
+                        columns: [
+                            "unit_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "organization_units";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "institution_invitations": {
+                Row: {
+                    "accepted_at": string | null;
+                    "accepted_by": string | null;
+                    "created_at": string;
+                    "delivered_at": string | null;
+                    "delivery_attempts": number;
+                    "delivery_lease_until": string | null;
+                    "email": string;
+                    "expires_at": string;
+                    "id": string;
+                    "invited_by": string;
+                    "organization_id": string;
+                    "permissions": (string)[];
+                    "provider_id": string | null;
+                    "revoked_at": string | null;
+                    "role": string;
+                    "staff_title": string | null;
+                    "token_hash": string;
+                    "unit_id": string;
+                };
+                Insert: {
+                    "accepted_at"?: string | null;
+                    "accepted_by"?: string | null;
+                    "created_at"?: string;
+                    "delivered_at"?: string | null;
+                    "delivery_attempts"?: number;
+                    "delivery_lease_until"?: string | null;
+                    "email": string;
+                    "expires_at"?: string;
+                    "id"?: string;
+                    "invited_by": string;
+                    "organization_id": string;
+                    "permissions": (string)[];
+                    "provider_id"?: string | null;
+                    "revoked_at"?: string | null;
+                    "role": string;
+                    "staff_title"?: string | null;
+                    "token_hash": string;
+                    "unit_id": string;
+                };
+                Update: {
+                    "accepted_at"?: string | null;
+                    "accepted_by"?: string | null;
+                    "created_at"?: string;
+                    "delivered_at"?: string | null;
+                    "delivery_attempts"?: number;
+                    "delivery_lease_until"?: string | null;
+                    "email"?: string;
+                    "expires_at"?: string;
+                    "id"?: string;
+                    "invited_by"?: string;
+                    "organization_id"?: string;
+                    "permissions"?: (string)[];
+                    "provider_id"?: string | null;
+                    "revoked_at"?: string | null;
+                    "role"?: string;
+                    "staff_title"?: string | null;
+                    "token_hash"?: string;
+                    "unit_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "institution_invitations_unit_id_organization_id_fkey";
+                        columns: [
+                            "unit_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "organization_units";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "institution_services": {
+                Row: {
+                    "created_at": string;
+                    "id": string;
+                    "kind": string;
+                    "name": string;
+                    "organization_id": string;
+                    "queue_id": string | null;
+                    "unit_id": string;
+                };
+                Insert: {
+                    "created_at"?: string;
+                    "id"?: string;
+                    "kind": string;
+                    "name": string;
+                    "organization_id": string;
+                    "queue_id"?: string | null;
+                    "unit_id": string;
+                };
+                Update: {
+                    "created_at"?: string;
+                    "id"?: string;
+                    "kind"?: string;
+                    "name"?: string;
+                    "organization_id"?: string;
+                    "queue_id"?: string | null;
+                    "unit_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "institution_services_queue_id_fkey";
+                        columns: [
+                            "queue_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "queues";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "institution_services_unit_id_organization_id_fkey";
+                        columns: [
+                            "unit_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "organization_units";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
                         ];
                     }
                 ];
@@ -949,6 +1276,67 @@ export type Database = {
                         referencedRelation: "tickets";
                         referencedColumns: [
                             "id"
+                        ];
+                    }
+                ];
+            };
+            "organization_units": {
+                Row: {
+                    "created_at": string;
+                    "id": string;
+                    "name": string;
+                    "organization_id": string;
+                    "parent_unit_id": string | null;
+                    "slug": string;
+                    "status": string;
+                    "type": string;
+                    "updated_at": string;
+                };
+                Insert: {
+                    "created_at"?: string;
+                    "id"?: string;
+                    "name": string;
+                    "organization_id": string;
+                    "parent_unit_id"?: string | null;
+                    "slug": string;
+                    "status"?: string;
+                    "type": string;
+                    "updated_at"?: string;
+                };
+                Update: {
+                    "created_at"?: string;
+                    "id"?: string;
+                    "name"?: string;
+                    "organization_id"?: string;
+                    "parent_unit_id"?: string | null;
+                    "slug"?: string;
+                    "status"?: string;
+                    "type"?: string;
+                    "updated_at"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "organization_units_organization_id_fkey";
+                        columns: [
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "organization_units_parent_unit_id_organization_id_fkey";
+                        columns: [
+                            "parent_unit_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "organization_units";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
                         ];
                     }
                 ];
@@ -1389,6 +1777,7 @@ export type Database = {
                     "session_id": string | null;
                     "slug": string;
                     "status": Database["public"]['Enums']["queue_status"];
+                    "unit_id": string | null;
                     "updated_at": string;
                     "warning_threshold": number;
                 };
@@ -1406,6 +1795,7 @@ export type Database = {
                     "session_id"?: string | null;
                     "slug": string;
                     "status"?: Database["public"]['Enums']["queue_status"];
+                    "unit_id"?: string | null;
                     "updated_at"?: string;
                     "warning_threshold"?: number;
                 };
@@ -1423,6 +1813,7 @@ export type Database = {
                     "session_id"?: string | null;
                     "slug"?: string;
                     "status"?: Database["public"]['Enums']["queue_status"];
+                    "unit_id"?: string | null;
                     "updated_at"?: string;
                     "warning_threshold"?: number;
                 };
@@ -1460,6 +1851,19 @@ export type Database = {
                         referencedRelation: "sessions";
                         referencedColumns: [
                             "id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "queues_unit_id_business_id_fkey";
+                        columns: [
+                            "unit_id",
+                            "business_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "organization_units";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
                         ];
                     }
                 ];
@@ -1632,6 +2036,37 @@ export type Database = {
                             "id"
                         ];
                     }
+                ];
+            };
+            "site_inquiries": {
+                Row: {
+                    "created_at": string;
+                    "email": string;
+                    "id": string;
+                    "message": string;
+                    "name": string;
+                    "request_id": string;
+                    "source_hash": string;
+                };
+                Insert: {
+                    "created_at"?: string;
+                    "email": string;
+                    "id"?: string;
+                    "message": string;
+                    "name": string;
+                    "request_id": string;
+                    "source_hash": string;
+                };
+                Update: {
+                    "created_at"?: string;
+                    "email"?: string;
+                    "id"?: string;
+                    "message"?: string;
+                    "name"?: string;
+                    "request_id"?: string;
+                    "source_hash"?: string;
+                };
+                Relationships: [
                 ];
             };
             "subscriptions": {
@@ -1813,6 +2248,63 @@ export type Database = {
                     }
                 ];
             };
+            "unit_memberships": {
+                Row: {
+                    "created_at": string;
+                    "member_id": string;
+                    "organization_id": string;
+                    "permissions": (string)[];
+                    "role": string;
+                    "staff_title": string | null;
+                    "unit_id": string;
+                };
+                Insert: {
+                    "created_at"?: string;
+                    "member_id": string;
+                    "organization_id": string;
+                    "permissions"?: (string)[];
+                    "role": string;
+                    "staff_title"?: string | null;
+                    "unit_id": string;
+                };
+                Update: {
+                    "created_at"?: string;
+                    "member_id"?: string;
+                    "organization_id"?: string;
+                    "permissions"?: (string)[];
+                    "role"?: string;
+                    "staff_title"?: string | null;
+                    "unit_id"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "unit_memberships_member_id_organization_id_fkey";
+                        columns: [
+                            "member_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "business_members";
+                        referencedColumns: [
+                            "id",
+                            "business_id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "unit_memberships_unit_id_organization_id_fkey";
+                        columns: [
+                            "unit_id",
+                            "organization_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "organization_units";
+                        referencedColumns: [
+                            "id",
+                            "organization_id"
+                        ];
+                    }
+                ];
+            };
             "webhook_events": {
                 Row: {
                     "created_at": string;
@@ -1929,6 +2421,21 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "create_unit_queue": {
+                Args: {
+                    "p_allow_phone": boolean;
+                    "p_average_service_seconds": number;
+                    "p_business_id": string;
+                    "p_description": string;
+                    "p_location_id": string;
+                    "p_name": string;
+                    "p_queue_id": string;
+                    "p_require_phone": boolean;
+                    "p_unit_id": string;
+                    "p_warning_threshold": number;
+                };
+                Returns: string;
+            };
             "get_public_display": {
                 Args: {
                     "p_slug": string;
@@ -2003,6 +2510,86 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            "institution_accept_invitation": {
+                Args: {
+                    "p_token_hash": string;
+                    "p_user_id": string;
+                    "p_verified_email": string;
+                };
+                Returns: string;
+            };
+            "institution_claim_invitation_delivery": {
+                Args: {
+                    "p_limit"?: number;
+                };
+                Returns: {
+                    "email": string;
+                    "id": string;
+                }[];
+            };
+            "institution_finish_invitation_delivery": {
+                Args: {
+                    "p_invitation_id": string;
+                    "p_provider_id"?: string;
+                    "p_success": boolean;
+                };
+                Returns: undefined;
+            };
+            "institution_has_permission": {
+                Args: {
+                    "p_organization_id": string;
+                    "p_permission": string;
+                    "p_unit_id": string;
+                };
+                Returns: boolean;
+            };
+            "institution_invite": {
+                Args: {
+                    "p_email": string;
+                    "p_organization_id": string;
+                    "p_permissions": (string)[];
+                    "p_request_id": string;
+                    "p_role": string;
+                    "p_staff_title": string;
+                    "p_token_hash": string;
+                    "p_unit_id": string;
+                };
+                Returns: string;
+            };
+            "institution_invite_batch": {
+                Args: {
+                    "p_invitations": Json;
+                    "p_organization_id": string;
+                };
+                Returns: Json;
+            };
+            "institution_manage": {
+                Args: {
+                    "p_action": string;
+                    "p_payload": Json;
+                };
+                Returns: Json;
+            };
+            "institution_revoke_invitation": {
+                Args: {
+                    "p_invitation_id": string;
+                };
+                Returns: undefined;
+            };
+            "institution_setup": {
+                Args: {
+                    "p_organization_id": string;
+                    "p_type": string;
+                };
+                Returns: undefined;
+            };
+            "institution_snapshot": {
+                Args: {
+                    "p_organization_id": string;
+                    "p_unit_id"?: string;
+                };
+                Returns: Json;
+            };
             "join_public_queue": {
                 Args: {
                     "p_customer_key": string;
@@ -2021,6 +2608,19 @@ export type Database = {
                     "p_industry": string;
                     "p_location_address": string;
                     "p_location_name": string;
+                    "p_timezone": string;
+                };
+                Returns: string;
+            };
+            "onboard_institution": {
+                Args: {
+                    "p_business_name": string;
+                    "p_country_code": string;
+                    "p_industry": string;
+                    "p_institution_type": string;
+                    "p_location_address": string;
+                    "p_location_name": string;
+                    "p_mode": Database["public"]['Enums']["organization_mode"];
                     "p_timezone": string;
                 };
                 Returns: string;
@@ -2105,11 +2705,43 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "school_attend_accountless": {
+                Args: {
+                    "p_class_id": string;
+                    "p_device_hash": string;
+                    "p_full_name": string;
+                    "p_matric_number": string;
+                    "p_network_hash": string;
+                    "p_nonce": string;
+                    "p_organization_id": string;
+                    "p_request_id": string;
+                };
+                Returns: Json;
+            };
             "school_claim_student": {
                 Args: {
                     "p_organization_id": string;
                     "p_user_id": string;
                     "p_verified_email": string;
+                };
+                Returns: Json;
+            };
+            "school_create_accountless_class": {
+                Args: {
+                    "p_attendance_closes_at": string;
+                    "p_course_id": string;
+                    "p_late_after_minutes": number;
+                    "p_organization_id": string;
+                    "p_planned_ends_at": string;
+                    "p_starts_at": string;
+                };
+                Returns: Json;
+            };
+            "school_import_roster": {
+                Args: {
+                    "p_course_id": string;
+                    "p_organization_id": string;
+                    "p_students": Json;
                 };
                 Returns: Json;
             };
@@ -2128,6 +2760,14 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            "school_public_class": {
+                Args: {
+                    "p_class_id": string;
+                    "p_nonce": string;
+                    "p_organization_id": string;
+                };
+                Returns: Json;
+            };
             "school_replay": {
                 Args: {
                     "p_class_id": string;
@@ -2135,6 +2775,21 @@ export type Database = {
                     "p_organization_id": string;
                     "p_request_id": string;
                     "p_user_id": string;
+                };
+                Returns: Json;
+            };
+            "school_revoke_qr": {
+                Args: {
+                    "p_class_id": string;
+                    "p_organization_id": string;
+                };
+                Returns: undefined;
+            };
+            "school_roster_existing": {
+                Args: {
+                    "p_course_id": string;
+                    "p_matric_numbers": (string)[];
+                    "p_organization_id": string;
                 };
                 Returns: Json;
             };
@@ -2170,6 +2825,16 @@ export type Database = {
                     "p_expected_revision": number;
                     "p_queue_id": string;
                     "p_status": Database["public"]['Enums']["queue_status"];
+                };
+                Returns: string;
+            };
+            "submit_site_inquiry": {
+                Args: {
+                    "p_email": string;
+                    "p_message": string;
+                    "p_name": string;
+                    "p_request_id": string;
+                    "p_source_hash": string;
                 };
                 Returns: string;
             };

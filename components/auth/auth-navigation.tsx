@@ -1,12 +1,21 @@
 "use client";
 
-import { ClerkFailed, ClerkLoaded, ClerkLoading, Show, useClerk } from "@clerk/nextjs";
+import { ClerkFailed, ClerkLoaded, ClerkLoading, ClerkProvider, Show, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import { useState } from "react";
+import { publicEnv } from "@/lib/env";
 
 const linkClass = "inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium";
 
 export function AuthNavigation() {
+  return (
+    <ClerkProvider publishableKey={publicEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/">
+      <AuthNavigationContent />
+    </ClerkProvider>
+  );
+}
+
+function AuthNavigationContent() {
   const { signOut } = useClerk();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
