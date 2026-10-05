@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { SignIn, SignUp, useAuth } from "@clerk/nextjs";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { safeAuthReturn } from "@/lib/school-student/return-url";
 
 function ClerkAuth({ mode }: { mode: "sign-in" | "sign-up" }) {
-  const { isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
   const search = useSearchParams();
 
   const returnTo = safeAuthReturn(
@@ -15,13 +15,32 @@ function ClerkAuth({ mode }: { mode: "sign-in" | "sign-up" }) {
     mode === "sign-up" ? "/onboarding" : "/dashboard",
   );
 
-  if (isSignedIn) {
+  useEffect(() => {
+    if (isLoaded && isSignedIn) router.replace(returnTo);
+  }, [isLoaded, isSignedIn, returnTo, router]);
+
+  if (!isLoaded || isSignedIn) {
     return (
-      <Link className="button-primary w-full" href={returnTo}>
-        Continue to QueueZero
-      </Link>
+      <div className="auth-transition" role="status" aria-live="polite">
+        <span className="loading-pulse" />
+        <p>{isSignedIn ? "Opening your workspace…" : "Loading secure account access…"}</p>
+      </div>
     );
   }
+
+  const appearance = {
+    elements: {
+      rootBox: "w-full",
+      cardBox: "w-full shadow-none",
+      card: "w-full shadow-none border-0 bg-transparent p-0",
+      headerTitle: "hidden",
+      headerSubtitle: "hidden",
+      socialButtonsBlockButton: "min-h-12 rounded-xl",
+      formFieldInput: "min-h-12 rounded-xl",
+      formButtonPrimary: "min-h-12 rounded-full font-semibold normal-case",
+      footer: "hidden",
+    },
+  };
 
   return mode === "sign-in" ? (
     <SignIn
@@ -30,16 +49,7 @@ function ClerkAuth({ mode }: { mode: "sign-in" | "sign-up" }) {
       signUpUrl={`/sign-up?redirect_url=${encodeURIComponent(returnTo)}`}
       forceRedirectUrl={returnTo}
       fallbackRedirectUrl={returnTo}
-      appearance={{
-        elements: {
-          rootBox: "w-full",
-          cardBox: "w-full shadow-none",
-          card: "w-full shadow-none border-0 bg-transparent p-0",
-          headerTitle: "hidden",
-          headerSubtitle: "hidden",
-          footer: "hidden",
-        },
-      }}
+      appearance={appearance}
     />
   ) : (
     <SignUp
@@ -48,23 +58,14 @@ function ClerkAuth({ mode }: { mode: "sign-in" | "sign-up" }) {
       signInUrl={`/sign-in?redirect_url=${encodeURIComponent(returnTo)}`}
       forceRedirectUrl={returnTo}
       fallbackRedirectUrl={returnTo}
-      appearance={{
-        elements: {
-          rootBox: "w-full",
-          cardBox: "w-full shadow-none",
-          card: "w-full shadow-none border-0 bg-transparent p-0",
-          headerTitle: "hidden",
-          headerSubtitle: "hidden",
-          footer: "hidden",
-        },
-      }}
+      appearance={appearance}
     />
   );
 }
 
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   return (
-    <Suspense fallback={<p role="status">Loading secure sign-in…</p>}>
+    <Suspense fallback={<p role="status">Loading secure account access…</p>}>
       <ClerkAuth mode={mode} />
     </Suspense>
   );
