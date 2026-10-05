@@ -59,9 +59,9 @@ input.biz{width:100%;background:#101012;border:1px solid #34343a;color:#fff;bord
 <div class="notice" id="notice"></div>
 <script>
 const navItems=[
- ['home','⌂','Home'],['map','⌖','Lagos'],['work','₦','Jobs'],['property','⌂','Homes'],['style','◫','Style'],['cars','◆','Cars'],['business','▦','Biz'],['social','◎','Pulse'],['profile','◉','You']
+ ['home','⌂','Home'],['map','⌖','Lagos'],['city','▣','City'],['work','₦','Jobs'],['property','⌂','Homes'],['style','◫','Style'],['cars','◆','Cars'],['business','▦','Biz'],['social','◎','Pulse'],['profile','◉','You']
 ];
-const state={tab:'home',cash:15000,energy:84,hunger:71,rep:8,day:1,district:'Agege',home:null,mission:0,ownedStyle:[],equippedTop:'#ef6f8f',equippedBottom:'#29282c',cars:[],primaryCar:null,businesses:[]};
+const state={tab:'home',cash:15000,energy:84,hunger:71,rep:8,day:1,district:'Agege',home:null,mission:0,ownedStyle:[],equippedTop:'#ef6f8f',equippedBottom:'#29282c',cars:[],primaryCar:null,businesses:[],met:[],visits:{}};
 const districts=[
  ['Agege','Affordable hustle, crowded streets.',1200],['Yaba','Tech, schools and startup energy.',1200],['Ikeja','Business, government and movement.',1200],['Victoria Island','Corporate money and expensive nights.',2500],['Lekki','Luxury, creators and property.',2500]
 ];
@@ -79,6 +79,13 @@ const cars=[
 ];
 const businesses=[
  ['Street Food Spot','Food & Hospitality','Agege',45000],['Salon & Beauty Studio','Beauty & Lifestyle','Yaba',85000],['Local Logistics Company','Logistics','Ikeja',160000],['Tech Startup','Technology','Yaba',220000],['Property Agency','Real Estate','Lekki',400000]
+];
+const locations=[
+ ['mama-t-kitchen',"Mama T's Kitchen",'Agege','Food','Mama T','Food vendor','Eat a full meal',1800,'Hunger +40'],
+ ['yaba-cuts','Yaba Cuts','Yaba','Salon','Femi','Barber & stylist','Get styled',4500,'Reputation +2'],
+ ['ikeja-auto','Ikeja Auto Works','Ikeja','Mechanic','Kunle','Mechanic','Repair primary vehicle',12000,'Condition → 100%'],
+ ['vi-clinic','Harbour Clinic','Victoria Island','Health','Dr. Ada','Doctor','Recover energy',7500,'Energy +25'],
+ ['lekki-lounge','Eko Nights Lounge','Lekki','Nightlife','Tola','Host','Spend the evening',15000,'Reputation +3']
 ];
 function money(n){return '₦'+n.toLocaleString()}
 function show(msg){const n=document.getElementById('notice');n.textContent=msg;n.style.display='block';clearTimeout(show.t);show.t=setTimeout(()=>n.style.display='none',1800)}
@@ -99,6 +106,7 @@ function render(){
  const c=document.getElementById('content');let html='';
  if(state.tab==='home')html=home();
  if(state.tab==='map')html='<div class="head"><div><h1>Lagos</h1><p>Move through districts and build a different life in each one.</p></div></div>'+listing(districts,'map');
+ if(state.tab==='city'){const here=locations.filter(x=>x[2]===state.district);html='<div class="head"><div><h1>'+state.district+'</h1><p>Meet people, use local services and make the district feel like home.</p></div></div><div class="list">'+here.map((x,i)=>'<article class="item"><span class="tag">'+x[3]+'</span><strong>'+x[1]+'</strong><small>'+x[4]+' · '+x[5]+'</small><small>'+x[6]+' · '+x[8]+'</small><div class="price">'+money(x[7])+'</div><div class="quick"><button class="btn" data-meet="'+x[0]+'">'+(state.met.includes(x[0])?'Met':'Meet '+x[4])+'</button><button class="btn primary" data-service="'+x[0]+'">Use service</button></div><small>'+(state.visits[x[0]]?state.visits[x[0]]+' visit'+(state.visits[x[0]]===1?'':'s'):'Not visited yet')+'</small></article>').join('')+'</div>';} 
  if(state.tab==='work')html='<div class="head"><div><h1>Jobs</h1><p>Earn money, build reputation and fund your next move.</p></div></div>'+listing(jobs,'jobs');
  if(state.tab==='property')html='<div class="head"><div><h1>Property</h1><p>Secure a place to live and upgrade as your income grows.</p></div></div>'+(state.home?card('Current home','<h3>'+state.home[0]+'</h3><p>'+state.home[1]+' · Weekly '+money(state.home[3])+'</p>'):'')+'<div class="list">'+homes.map((x,i)=>'<article class="item"><span class="tag">'+x[4]+'</span><strong>'+x[0]+'</strong><small>'+x[1]+'</small><div class="price">'+money(x[2])+' move-in</div><button class="btn" data-home="'+i+'">'+(state.district!==x[1]?'Travel there first':'Rent home')+'</button></article>').join('')+'</div>';
  if(state.tab==='style')html='<div class="head"><div><h1>Wardrobe</h1><p>Buy clothing and equip your look.</p></div></div>'+card('Current look','<div class="avatarCard"><div class="avatar">'+avatar()+'</div><div><h2>Preview Player</h2><p>'+state.ownedStyle.length+' owned items</p></div></div>')+'<div class="list">'+clothes.map((x,i)=>'<article class="item"><div class="swatch" style="background:'+x[3]+'"></div><span class="tag">'+x[4]+'</span><strong>'+x[0]+'</strong><small>'+x[1]+'</small><div class="price">'+money(x[2])+'</div><button class="btn" data-cloth="'+i+'">'+(state.ownedStyle.includes(i)?'Equip':'Buy item')+'</button></article>').join('')+'</div>';
@@ -116,6 +124,8 @@ function wire(){
  const mission=document.getElementById('mission');if(mission)mission.onclick=()=>{if(state.mission===0&&state.district!=='Yaba')return show('Travel to Yaba first.');if(state.mission===1&&state.rep<9)return show('Complete a work shift first.');if(state.mission===2&&!state.home)return show('Secure a home first.');if(state.mission<3){state.mission++;if(state.mission===2)state.cash+=5000;show('Story objective completed.');render()}};
  document.querySelectorAll('[data-travel]').forEach(b=>b.addEventListener('click',()=>{const d=districts.find(x=>x[0]===b.dataset.travel);if(spend(d[2])){state.district=d[0];state.energy=Math.max(0,state.energy-5);show('Arrived in '+d[0]+'.');render()}}));
  document.querySelectorAll('[data-work]').forEach(b=>b.addEventListener('click',()=>{const j=jobs[+b.dataset.work];if(state.energy<j[3])return show('Not enough energy.');state.cash+=j[2];state.energy-=j[3];state.hunger=Math.max(0,state.hunger-10);state.rep++;state.day++;show('Shift complete.');render()}));
+ document.querySelectorAll('[data-meet]').forEach(b=>b.addEventListener('click',()=>{const key=b.dataset.meet;if(!state.met.includes(key)){state.met.push(key);state.rep++;state.visits[key]=(state.visits[key]||0)+1;show('New contact added.');render()}}));
+ document.querySelectorAll('[data-service]').forEach(b=>b.addEventListener('click',()=>{const key=b.dataset.service,x=locations.find(v=>v[0]===key);if(!spend(x[7]))return;state.visits[key]=(state.visits[key]||0)+1;if(key==='mama-t-kitchen')state.hunger=Math.min(100,state.hunger+40);if(key==='yaba-cuts')state.rep+=2;if(key==='ikeja-auto'&&state.primaryCar===null){state.cash+=x[7];return show('Buy and select a primary vehicle first.')}if(key==='vi-clinic')state.energy=Math.min(100,state.energy+25);if(key==='lekki-lounge'){state.rep+=3;state.energy=Math.max(0,state.energy-8)}show('Service completed.');render()}));
  document.querySelectorAll('[data-home]').forEach(b=>b.addEventListener('click',()=>{const h=homes[+b.dataset.home];if(state.district!==h[1])return show('Travel to '+h[1]+' first.');if(spend(h[2])){state.home=h;show('New home secured.');render()}}));
  document.querySelectorAll('[data-cloth]').forEach(b=>b.addEventListener('click',()=>{const i=+b.dataset.cloth,x=clothes[i];if(!state.ownedStyle.includes(i)){if(!spend(x[2]))return;state.ownedStyle.push(i)}if(x[1]==='top')state.equippedTop=x[3];else if(x[1]==='bottom')state.equippedBottom=x[3];else{state.equippedTop=x[3];state.equippedBottom=x[3]}show('Outfit updated.');render()}));
  document.querySelectorAll('[data-car]').forEach(b=>b.addEventListener('click',()=>{const i=+b.dataset.car,x=cars[i];if(state.cars.includes(i))return show('Already owned.');if(spend(x[2])){state.cars.push(i);if(state.primaryCar===null)state.primaryCar=i;state.rep++;show('Vehicle purchased.');render()}}));
