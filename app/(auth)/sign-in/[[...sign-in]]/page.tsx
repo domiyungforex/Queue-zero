@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
-export const metadata:Metadata={title:"Sign in"};
-export default function Page(){return <AuthShell title="Welcome back." description="Good to see you. Let’s get your day moving."><AuthForm mode="sign-in"/></AuthShell>}
+
+export const metadata: Metadata = { title: "Sign in" };
+
+export default function Page() {
+  return (
+    <AuthShell title="Welcome back" description="Sign in to your QueueZero account.">
+      <AuthForm mode="sign-in" />
+    </AuthShell>
+  );
+}
