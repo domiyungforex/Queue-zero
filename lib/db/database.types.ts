@@ -2149,6 +2149,18 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            "school_scan_open": {
+                Args: {
+                    "p_class_id": string;
+                    "p_device_hash": string;
+                    "p_full_name": string;
+                    "p_matric_number": string;
+                    "p_nonce": string;
+                    "p_organization_id": string;
+                    "p_request_id": string;
+                };
+                Returns: Json;
+            };
             "school_snapshot": {
                 Args: {
                     "p_class_id"?: string;
