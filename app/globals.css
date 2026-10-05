@@ -28,7 +28,7 @@ body{font-family:QueueManrope,Arial,sans-serif}button{cursor:pointer}button:disa
 /* Shared visual language from the mobile TuRnMaRk reference. */
 @theme inline { --color-background:#f7f9fb; --color-foreground:#152421; --color-primary:#008f4c; --color-muted:#5e6d69; }
 html { background:#f7f9fb; scroll-padding-bottom:100px; }
-body { min-height:100dvh; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+body { min-height:100dvh; padding:0; }
 .button-primary,.call-next { background:linear-gradient(110deg,#008548,#00a95b); color:white; border-radius:999px; }
 .button-primary:hover,.call-next:hover:not(:disabled) { background:#007b42; }
 .panel,.stat-card,.queue-card,.waiting-panel,.billing-plan { background:#fff; border-color:#e3eae7; box-shadow:0 3px 16px #003d3205; }
