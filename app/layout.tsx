@@ -6,10 +6,10 @@ import { RegisterWorker } from "@/components/pwa/register";
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.NEXT_PUBLIC_APP_URL),
-  title: { default: "QueueZero — Leave the line", template: "%s | QueueZero" },
+  title: { default: "TuRnMaRk — Leave the line", template: "%s | TuRnMaRk" },
   description: "Scan. Join. Leave the line. Come back when you’re almost next.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "QueueZero" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "TuRnMaRk" },
   icons: {
     icon: "/icons/icon-192.png",
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
@@ -36,8 +36,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         signIn: { start: { title: "Welcome back", titleCombined: "Welcome back" } },
         signUp: {
           start: {
-            title: "Create your QueueZero account",
-            titleCombined: "Create your QueueZero account",
+            title: "Create your TuRnMaRk account",
+            titleCombined: "Create your TuRnMaRk account",
           },
         },
       }}
