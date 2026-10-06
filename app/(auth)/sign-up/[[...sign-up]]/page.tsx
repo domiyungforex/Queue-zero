@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Create your account" };
 
 export default function Page() {
   return (
-    <AuthShell title="Create your QueueZero account" description="Use your email address to get started.">
+    <AuthShell title="Create your TuRnMaRk account" description="Use your email address to get started.">
       <AuthForm mode="sign-up" />
     </AuthShell>
   );
