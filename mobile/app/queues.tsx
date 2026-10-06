@@ -4,12 +4,13 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, SafeAreaView, Text, View } from "react-native";
 import { createMobileSupabaseClient } from "@/lib/supabase";
 import { theme } from "@/lib/theme";
-import type { QueueSummary } from "@/lib/types";
+import type { QueueRow, QueueSummary } from "@/lib/types";
 
 export default function Queues() {
   const { getToken }=useAuth(); const { signOut }=useClerk(); const router=useRouter();
   const [queues,setQueues]=useState<QueueSummary[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState("");
-  const load=useCallback(async()=>{setLoading(true);setError("");try{const db=createMobileSupabaseClient(()=>getToken({template:"supabase"}));const {data,error}=await db.from("queues").select("id,name,description,status,average_service_seconds,locations!queues_location_id_business_id_fkey(name)").order("created_at");if(error)throw error;setQueues((data??[]) as QueueSummary[]);}catch{setError("We couldn’t load your queues. Pull down to try again.");}finally{setLoading(false)}},[getToken]);
+  const load=useCallback(async()=>{setLoading(true);setError("");try{const db=createMobileSupabaseClient(()=>getToken({template:"supabase"}));const {data,error}=await db.from("queues").select("id,name,description,status,average_service_seconds,locations!queues_location_id_business_id_fkey(name)").order("created_at");if(error)throw error;const rows = (data ?? []) as QueueRow[];
+    setQueues(rows.map(row => ({ ...row, locations: row.locations?.[0] ?? null })));}catch{setError("We couldn’t load your queues. Pull down to try again.");}finally{setLoading(false)}},[getToken]);
   useFocusEffect(useCallback(()=>{void load()},[load]));
   return <SafeAreaView style={{flex:1,backgroundColor:theme.surface}}><View style={{padding:20,flex:1}}>
     <View style={{flexDirection:"row",justifyContent:"space-between",alignItems:"center",marginBottom:20}}><View><Text style={{fontSize:30,fontWeight:"800",color:theme.ink}}>Your queues</Text><Text style={{color:theme.muted}}>Run today’s service.</Text></View><Pressable onPress={()=>void signOut()}><Text style={{color:theme.green,fontWeight:"700"}}>Sign out</Text></Pressable></View>
