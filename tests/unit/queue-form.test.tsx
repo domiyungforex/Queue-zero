@@ -8,7 +8,7 @@ import { QueueStatusControls } from "@/components/queue/queue-status-controls";
 import type { QueueState, QueueValues } from "@/lib/validation/queue";
 afterEach(cleanup);
 const locations = [{ id: "30000000-0000-4000-8000-000000000001", name: "Main Branch", is_active: true }, { id: "30000000-0000-4000-8000-000000000002", name: "Second Branch", is_active: true }];
-const values: QueueValues = { name: "Consultation", description: "Helpful details", locationId: locations[1].id, serviceMinutes: "7.5", warningThreshold: "2", phoneMode: "required" };
+const values: QueueValues = { name: "Walk-in Queue", serviceName: "Consultation", description: "Helpful details", locationId: locations[1].id, serviceMinutes: "7.5", capacity: "30", opensAt: "08:00", closesAt: "17:00", status: "open", warningThreshold: "2", phoneMode: "required" };
 function fill() {
   for (const [field, value] of Object.entries(values)) fireEvent.change(document.getElementById(field)!, { target: { value } });
   return screen.getByRole("button", { name: "Create queue" }).closest("form")!;
@@ -16,9 +16,9 @@ function fill() {
 describe("queue settings form", () => {
   it("labels all fields and defaults service time and threshold", () => {
     render(<QueueForm locations={locations} action={async () => ({ status: "idle" })} />);
-    for (const label of ["Queue name", /Description/, "Location", "Typical service time (minutes)", "Notification threshold", "Customer phone number"]) expect(screen.getByLabelText(label)).toBeTruthy();
-    expect((screen.getByLabelText("Notification threshold") as HTMLInputElement).value).toBe("3");
-    expect((screen.getByLabelText("Typical service time (minutes)") as HTMLInputElement).value).toBe("5");
+    for (const label of ["Queue name", "Service name", /Description/, "Location", "Average service duration", /Queue capacity/, /Opens at/, /Closes at/, "Status", "Return notification threshold", "Customer phone number"]) expect(screen.getByLabelText(label)).toBeTruthy();
+    expect((screen.getByLabelText("Return notification threshold") as HTMLInputElement).value).toBe("3");
+    expect((screen.getByLabelText("Average service duration") as HTMLInputElement).value).toBe("5");
   });
   it("prevents repeat clicks while pending and reenables after errors", async () => {
     let finish!: (state: QueueState) => void;
