@@ -116,7 +116,7 @@ export function StudentScan({ token, expired = false }: { token: string; expired
         </div>
       )}
 
-      {!result?.ok && result?.action !== "BLOCKED" && (
+      {!result?.ok && !result?.expired && result?.action !== "BLOCKED" && (
         <button className="button-primary w-full" disabled={pending} type="submit">
           {pending ? "Recording…" : result ? "Try again" : "Mark attendance"}
         </button>

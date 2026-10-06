@@ -30,7 +30,7 @@ describe("public queue read boundary", () => {
   it("calls only the public RPC with the anon key and no Clerk identity", async () => {
     expect(await getPublicQueue(fixture.slug)).toEqual(fixture);
     expect(requests).toHaveLength(1);
-    expect(new URL(requests[0].url).pathname).toBe("/rest/v1/rpc/get_public_queue");
+    expect(new URL(requests[0].url).pathname).toBe("/rest/v1/rpc/get_public_queue_v2");
     expect(await requests[0].json()).toEqual({ p_slug: fixture.slug });
     expect(requests[0].headers.get("apikey")).toBe("sb_publishable_fixture");
     expect(requests[0].headers.get("authorization")).toBe("Bearer sb_publishable_fixture");

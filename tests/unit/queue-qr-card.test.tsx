@@ -31,7 +31,7 @@ describe("queue QR controls", () => {
     const download = screen.getByRole("link", { name: "Download PNG" });
     expect(download.getAttribute("href")).toBe(artifact.pngDataUrl);
     expect(download.getAttribute("download")).toBe(artifact.filename);
-    const publicLink = screen.getByRole("link", { name: /Open public queue/ });
+    const publicLink = screen.getByRole("link", { name: /Preview customer experience/ });
     expect(publicLink.getAttribute("href")).toBe(artifact.publicUrl);
     expect(publicLink.getAttribute("rel")).toContain("noopener");
     expect(screen.getByRole("link", { name: "Print sheet" }).getAttribute("href")).toBe("/dashboard/queues/private-queue-id/qr");

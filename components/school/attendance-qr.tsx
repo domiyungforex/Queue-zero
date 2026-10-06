@@ -12,9 +12,7 @@ export function AttendanceQr({ classId }: { classId: string }) {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  async function loadQr() {
-    setLoading(true);
-    setError(false);
+  async function fetchQr() {
     try {
       const response = await fetch(`/api/school/classes/${classId}/qr`, { cache: "no-store" });
       if (!response.ok) throw new Error("QR unavailable");
@@ -36,11 +34,18 @@ export function AttendanceQr({ classId }: { classId: string }) {
   }
 
   useEffect(() => {
-    void loadQr();
+    const timer = window.setTimeout(() => void fetchQr(), 0);
     // Intentionally no interval/polling: the class QR remains stable until
     // the lecturer explicitly regenerates it.
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
+
+  async function regenerateQr() {
+    setLoading(true);
+    setError(false);
+    await fetchQr();
+  }
 
   return (
     <section className="school-qr" aria-label="Class attendance QR">
@@ -73,7 +78,7 @@ export function AttendanceQr({ classId }: { classId: string }) {
         className="button-secondary"
         type="button"
         disabled={loading}
-        onClick={() => void loadQr()}
+        onClick={() => void regenerateQr()}
       >
         {loading ? "Generating…" : qr ? "Regenerate QR" : "Retry QR"}
       </button>
