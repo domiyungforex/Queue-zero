@@ -56,7 +56,7 @@ export function AuthShell({
       <div className="auth-content">
         <header>
           <Link href="/">
-            Back to QueueZero
+            Back to TuRnMaRk
             <ArrowUpRight size={16} />
           </Link>
         </header>
