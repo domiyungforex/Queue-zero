@@ -6,7 +6,7 @@ import { joinOptionsSchema, ticketReceiptSchema } from "@/lib/validation/join";
 
 export async function getPublicJoinOptions(slug: string) {
   if (!publicQueueSlugSchema.safeParse(slug).success) return null;
-  const { data, error } = await createPublicSupabaseClient().rpc("get_public_join_options", { p_slug: slug });
+  const { data, error } = await createPublicSupabaseClient().rpc("get_public_join_options_v2", { p_slug: slug });
   if (error) throw new Error("We couldn’t load the join form. Please try again.");
   const parsed = z.array(joinOptionsSchema).max(1).safeParse(data);
   if (!parsed.success || (parsed.data[0] && parsed.data[0].slug !== slug)) throw new Error("Join details are temporarily unavailable.");
