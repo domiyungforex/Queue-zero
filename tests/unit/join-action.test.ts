@@ -14,7 +14,7 @@ beforeEach(() => { mocks.cookie.mockReturnValue({ value: context.requestId }); m
 describe("public join action", () => {
   it("derives trusted keys server-side, trims name and redirects to opaque receipt", async () => {
     await expect(joinQueue(context, { status: "idle" }, form())).rejects.toThrow(`NEXT_REDIRECT:/ticket/${token}`);
-    expect(mocks.rpc).toHaveBeenCalledWith("join_public_queue", { p_slug: "join-test", p_request_id: context.requestId, p_customer_key: "a".repeat(64), p_rate_key: "b".repeat(64), p_customer_name: "Ada", p_phone: "" });
+    expect(mocks.rpc).toHaveBeenCalledWith("join_public_queue_v2", { p_slug: "join-test", p_request_id: context.requestId, p_customer_key: "a".repeat(64), p_rate_key: "b".repeat(64), p_customer_name: "Ada", p_phone: "" });
     expect(mocks.revalidate).toHaveBeenCalledWith("/q/join-test");
   });
   it("rejects invalid input before database access", async () => {
