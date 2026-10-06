@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/clerk-expo";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, SafeAreaView, Text, View } from "react-native";
+import * as Crypto from "expo-crypto";
 import { createMobileSupabaseClient } from "@/lib/supabase";
 import { theme } from "@/lib/theme";
 import type { QueueConsole } from "@/lib/types";
@@ -14,7 +15,7 @@ export default function QueueScreen(){
   const load=useCallback(async()=>{if(!id)return;const {data,error}=await db.rpc("get_queue_console",{p_queue_id:id});if(error){setError("We couldn’t refresh this queue.");return}setQueue(data as QueueConsole);setError("")},[db,id]);
   useEffect(()=>{void load();if(!id)return;const channel=db.channel(`mobile-queue-${id}`).on("postgres_changes",{event:"*",schema:"public",table:"tickets",filter:`queue_id=eq.${id}`},()=>void load()).subscribe();return()=>{void db.removeChannel(channel)}},[db,id,load]);
   async function operate(operation:Operation,ticketId?:string){
-    if(!id||busy)return;setBusy(true);setError("");const requestId=globalThis.crypto.randomUUID();
+    if(!id||busy)return;setBusy(true);setError("");const requestId=Crypto.randomUUID();
     try{const result=operation==="call_next"?await db.rpc("call_next_ticket",{p_queue_id:id,p_request_id:requestId}):await db.rpc("operate_ticket",{p_queue_id:id,p_ticket_id:ticketId!,p_request_id:requestId,p_operation:operation});if(result.error)throw result.error;await load()}catch{setError("We couldn’t confirm that action. Refresh before trying again.");}finally{setBusy(false)}
   }
   if(!queue)return <SafeAreaView style={{flex:1,alignItems:"center",justifyContent:"center"}}><ActivityIndicator/></SafeAreaView>;
