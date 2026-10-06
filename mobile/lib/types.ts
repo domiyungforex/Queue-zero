@@ -1,4 +1,4 @@
-export type QueueSummary = {
+export type QueueRow = {\n  id: string; name: string; description: string | null; status: "open" | "paused" | "closed";\n  average_service_seconds: number; locations: { name: string }[] | null;\n};\nexport type QueueSummary = {
   id: string; name: string; description: string | null; status: "open" | "paused" | "closed";
   average_service_seconds: number; locations: { name: string } | null;
 };
