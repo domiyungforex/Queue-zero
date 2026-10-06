@@ -15,12 +15,12 @@
       "package": "com.turnmark.staff",
       "versionCode": 1
     },
-    "plugins": ["expo-router", "expo-secure-store"],
-    "experiments": { "typedRoutes": true },
-    "extra": {
-      "eas": {
-        "projectId": "SET_AFTER_EAS_PROJECT_LINK"
-      }
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
