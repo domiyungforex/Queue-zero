@@ -3,7 +3,7 @@ name: Phase 1 Verify
 on:
   push:
     branches:
-      - feat/turnmark-core-queue-phase1
+      - fix/phase1-verification
   workflow_dispatch:
 
 jobs:
