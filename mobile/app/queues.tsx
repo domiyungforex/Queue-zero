@@ -1,4 +1,4 @@
-import { useAuth, useClerk } from "@clerk/clerk-expo";
+import { useAuth, useClerk } from "@clerk/expo";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, SafeAreaView, Text, View } from "react-native";
