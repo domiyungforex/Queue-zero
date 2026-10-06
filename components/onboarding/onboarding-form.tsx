@@ -13,7 +13,7 @@ const controlClass =
   "onboarding-control";
 
 const steps = [
-  { title: "How will you use QueueZero?", hint: "We’ll tailor your workspace around this." },
+  { title: "How will you use TuRnMaRk?", hint: "We’ll tailor your workspace around this." },
   { title: "What should we call your organization?", hint: "This appears in your workspace and public queue experience." },
   { title: "What kind of organization is it?", hint: "This helps us choose sensible defaults." },
   { title: "Where are you operating?", hint: "We use this for reporting, dates and local queue times." },
@@ -52,7 +52,10 @@ export function OnboardingForm({
       locationName: 4,
       locationAddress: 4,
     };
-    if (field && fieldStep[field] !== undefined) setStep(fieldStep[field]!);
+    if (!field || fieldStep[field] === undefined) return;
+    const nextStep = fieldStep[field]!;
+    const timer = window.setTimeout(() => setStep(nextStep), 0);
+    return () => window.clearTimeout(timer);
   }, [state]);
 
   function value(name: OnboardingField) {
