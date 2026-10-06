@@ -13,7 +13,9 @@ const states = {
 } as const;
 
 export function PublicQueueView({ queue }: { queue: PublicQueue }) {
-  const state = states[queue.status];
+  const state = queue.is_full
+    ? { label: "Full", color: "bg-amber-100 text-amber-900", message: "This queue has reached its current capacity. Please check again soon or speak with staff.", button: "Queue full" }
+    : states[queue.status];
   return <PublicQueueShell>
     <div className="flex items-center gap-4">
       <BusinessLogo key={queue.business_logo_url ?? queue.business_name} name={queue.business_name} url={queue.business_logo_url} />
@@ -21,6 +23,7 @@ export function PublicQueueView({ queue }: { queue: PublicQueue }) {
     </div>
     <div className="mt-7"><span className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${state.color}`}>{state.label}</span>
       <h1 className="mt-4 break-words text-3xl font-semibold tracking-tight">{queue.queue_name}</h1>
+      <p className="mt-2 break-words text-base font-medium text-primary">{queue.service_name}</p>
       {queue.description && <p className="mt-3 whitespace-pre-wrap break-words leading-relaxed text-muted">{queue.description}</p>}
     </div>
     <section aria-label="Current queue" className="mt-7 rounded-2xl border border-black/10 bg-white p-6">
