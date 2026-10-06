@@ -1379,12 +1379,16 @@ export type Database = {
                     "allow_phone": boolean;
                     "average_service_seconds": number;
                     "business_id": string;
+                    "capacity": number | null;
+                    "closes_at": string | null;
                     "created_at": string;
                     "description": string | null;
                     "id": string;
                     "location_id": string;
                     "name": string;
+                    "opens_at": string | null;
                     "require_phone": boolean;
+                    "service_name": string;
                     "revision": number;
                     "session_id": string | null;
                     "slug": string;
@@ -1396,12 +1400,16 @@ export type Database = {
                     "allow_phone"?: boolean;
                     "average_service_seconds"?: number;
                     "business_id": string;
+                    "capacity"?: number | null;
+                    "closes_at"?: string | null;
                     "created_at"?: string;
                     "description"?: string | null;
                     "id"?: string;
                     "location_id": string;
                     "name": string;
+                    "opens_at"?: string | null;
                     "require_phone"?: boolean;
+                    "service_name": string;
                     "revision"?: number;
                     "session_id"?: string | null;
                     "slug": string;
@@ -1413,12 +1421,16 @@ export type Database = {
                     "allow_phone"?: boolean;
                     "average_service_seconds"?: number;
                     "business_id"?: string;
+                    "capacity"?: number | null;
+                    "closes_at"?: string | null;
                     "created_at"?: string;
                     "description"?: string | null;
                     "id"?: string;
                     "location_id"?: string;
                     "name"?: string;
+                    "opens_at"?: string | null;
                     "require_phone"?: boolean;
+                    "service_name"?: string;
                     "revision"?: number;
                     "session_id"?: string | null;
                     "slug"?: string;
@@ -1929,6 +1941,25 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "create_queue_v2": {
+                Args: {
+                    "p_allow_phone": boolean;
+                    "p_average_service_seconds": number;
+                    "p_business_id": string;
+                    "p_capacity": number | null;
+                    "p_closes_at": string | null;
+                    "p_description": string;
+                    "p_location_id": string;
+                    "p_name": string;
+                    "p_opens_at": string | null;
+                    "p_queue_id": string;
+                    "p_require_phone": boolean;
+                    "p_service_name": string;
+                    "p_status": Database["public"]['Enums']["queue_status"];
+                    "p_warning_threshold": number;
+                };
+                Returns: string;
+            };
             "get_public_display": {
                 Args: {
                     "p_slug": string;
@@ -1948,6 +1979,21 @@ export type Database = {
                     "status": Database["public"]['Enums']["queue_status"];
                 }[];
             };
+            "get_public_join_options_v2": {
+                Args: {
+                    "p_slug": string;
+                };
+                Returns: {
+                    "allow_phone": boolean;
+                    "business_name": string;
+                    "is_full": boolean;
+                    "queue_name": string;
+                    "require_phone": boolean;
+                    "service_name": string;
+                    "slug": string;
+                    "status": Database["public"]['Enums']["queue_status"];
+                }[];
+            };
             "get_public_queue": {
                 Args: {
                     "p_slug": string;
@@ -1960,6 +2006,25 @@ export type Database = {
                     "has_serving_customer": boolean;
                     "location_name": string;
                     "queue_name": string;
+                    "slug": string;
+                    "status": Database["public"]['Enums']["queue_status"];
+                    "waiting_count": number;
+                }[];
+            };
+            "get_public_queue_v2": {
+                Args: {
+                    "p_slug": string;
+                };
+                Returns: {
+                    "business_logo_url": string;
+                    "business_name": string;
+                    "description": string | null;
+                    "estimated_wait_seconds": number | null;
+                    "has_serving_customer": boolean;
+                    "is_full": boolean;
+                    "location_name": string;
+                    "queue_name": string;
+                    "service_name": string;
                     "slug": string;
                     "status": Database["public"]['Enums']["queue_status"];
                     "waiting_count": number;
@@ -2004,6 +2069,17 @@ export type Database = {
                 Returns: Json;
             };
             "join_public_queue": {
+                Args: {
+                    "p_customer_key": string;
+                    "p_customer_name": string;
+                    "p_phone": string;
+                    "p_rate_key": string;
+                    "p_request_id": string;
+                    "p_slug": string;
+                };
+                Returns: string;
+            };
+            "join_public_queue_v2": {
                 Args: {
                     "p_customer_key": string;
                     "p_customer_name": string;
@@ -2209,6 +2285,26 @@ export type Database = {
                     "p_name": string;
                     "p_queue_id": string;
                     "p_require_phone": boolean;
+                    "p_warning_threshold": number;
+                };
+                Returns: string;
+            };
+            "update_queue_v2": {
+                Args: {
+                    "p_allow_phone": boolean;
+                    "p_average_service_seconds": number;
+                    "p_business_id": string;
+                    "p_capacity": number | null;
+                    "p_closes_at": string | null;
+                    "p_description": string;
+                    "p_expected_revision": number;
+                    "p_location_id": string;
+                    "p_name": string;
+                    "p_opens_at": string | null;
+                    "p_queue_id": string;
+                    "p_require_phone": boolean;
+                    "p_service_name": string;
+                    "p_status": Database["public"]['Enums']["queue_status"];
                     "p_warning_threshold": number;
                 };
                 Returns: string;
