@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export default function Page() {
   return (
-    <AuthShell title="Welcome back" description="Sign in to your QueueZero account.">
+    <AuthShell title="Welcome back" description="Sign in to your TuRnMaRk account.">
       <AuthForm mode="sign-in" />
     </AuthShell>
   );
