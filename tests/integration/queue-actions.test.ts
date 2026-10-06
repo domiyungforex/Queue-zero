@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({ redirect: mocks.redirect, unstable_rethrow: 
 } }));
 import { createQueue, updateQueue, changeQueueStatus } from "@/app/dashboard/queues/actions";
 const context = { businessId: "30000000-0000-4000-8000-000000000001", queueId: "30000000-0000-4000-8000-000000000002" };
-const values = { name: " Consultation ", description: " Welcome ", locationId: "30000000-0000-4000-8000-000000000003", serviceMinutes: "5", warningThreshold: "3", phoneMode: "required" };
+const values = { name: " Consultation ", serviceName: " General Consultation ", description: " Welcome ", locationId: "30000000-0000-4000-8000-000000000003", serviceMinutes: "5", capacity: "20", opensAt: "08:00", closesAt: "17:00", status: "open", warningThreshold: "3", phoneMode: "required" };
 function form(overrides: Record<string, string> = {}) {
   const result = new FormData();
   Object.entries({ ...values, ...overrides }).forEach(([key, value]) => result.set(key, value));
@@ -22,10 +22,10 @@ beforeEach(() => {
 describe("queue server actions", () => {
   it("creates with validated values, a stable ID, and verified workspace ownership", async () => {
     await expect(createQueue(context, { status: "idle" }, form({ business_id: "victim" }))).rejects.toThrow(`NEXT_REDIRECT:/dashboard/queues/${context.queueId}?saved=created`);
-    expect(mocks.rpc).toHaveBeenCalledWith("create_queue", {
+    expect(mocks.rpc).toHaveBeenCalledWith("create_queue_v2", {
       p_queue_id: context.queueId, p_business_id: context.businessId, p_location_id: values.locationId,
-      p_name: "Consultation", p_description: "Welcome", p_average_service_seconds: 300, p_warning_threshold: 3,
-      p_allow_phone: true, p_require_phone: true,
+      p_name: "Consultation", p_service_name: "General Consultation", p_description: "Welcome", p_average_service_seconds: 300, p_warning_threshold: 3,
+      p_allow_phone: true, p_require_phone: true, p_capacity: 20, p_opens_at: "08:00", p_closes_at: "17:00", p_status: "open",
     });
     expect(mocks.revalidate).toHaveBeenCalledWith("/dashboard", "layout");
   });
@@ -56,7 +56,7 @@ describe("queue server actions", () => {
   });
   it("includes the revision on edits and does not submit a new slug", async () => {
     await expect(updateQueue({ ...context, revision: 7 }, { status: "idle" }, form())).rejects.toThrow("saved=updated");
-    expect(mocks.rpc).toHaveBeenCalledWith("update_queue", expect.objectContaining({ p_expected_revision: 7 }));
+    expect(mocks.rpc).toHaveBeenCalledWith("update_queue_v2", expect.objectContaining({ p_expected_revision: 7 }));
     expect(mocks.rpc.mock.calls[0][1]).not.toHaveProperty("p_slug");
   });
   it("reports stale edits and retains changes for review", async () => {
