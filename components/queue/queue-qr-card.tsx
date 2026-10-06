@@ -98,7 +98,7 @@ export function QueueQrCard({ artifact, queueId, businessName, queueName, sheet 
           ? <button type="button" disabled={!ready || imageFailed || printing} onClick={printSheet} className={buttonClass}>{printing ? "Preparing print…" : "Print"}</button>
           : <Link href={`/dashboard/queues/${queueId}/qr`} className={buttonClass}>Print sheet</Link>}
         <button type="button" disabled={copying} onClick={copyLink} className={buttonClass}>{copying ? "Copying…" : "Copy link"}</button>
-        <a href={artifact.publicUrl} target="_blank" rel="noopener noreferrer" className={buttonClass}>Open public queue<span className="sr-only"> (new tab)</span></a>
+        <a href={artifact.publicUrl} target="_blank" rel="noopener noreferrer" className={buttonClass}>Preview customer experience<span className="sr-only"> (new tab)</span></a>
       </div>
       <label htmlFor="public-queue-link" className="mt-5 block text-sm font-medium">Public queue link</label>
       <input ref={linkInput} id="public-queue-link" readOnly value={artifact.publicUrl}
