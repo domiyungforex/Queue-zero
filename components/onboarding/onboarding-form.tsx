@@ -31,6 +31,7 @@ export function OnboardingForm({
 }) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [step, setStep] = useState(0);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement>(null);
 
   const initialTimezone = useMemo(() => {
@@ -59,13 +60,37 @@ export function OnboardingForm({
   }, [state]);
 
   function value(name: OnboardingField) {
-    return state.values?.[name] ?? "";
+    return fieldValues[name] ?? state.values?.[name] ?? "";
+  }
+
+  function advance() {
+    const form = formRef.current;
+    if (!form) return;
+    const required: Record<number, string[]> = {
+      1: ["businessName"], 2: ["industry"], 3: ["country", "timezone"], 4: ["locationName", "locationAddress"],
+    };
+    const fields = required[step] ?? [];
+    for (const name of fields) {
+      const control = form.elements.namedItem(name);
+      if (control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement) {
+        if (!control.value.trim()) { control.setCustomValidity("Please complete this field."); control.reportValidity(); return; }
+        control.setCustomValidity("");
+        if (!control.reportValidity()) return;
+      }
+    }
+    setStep((current) => Math.min(steps.length - 1, current + 1));
   }
 
   const errorFor = (name: OnboardingField) => state.fieldErrors?.[name]?.[0];
 
   return (
-    <form ref={formRef} action={formAction} aria-busy={pending} className="onboarding-survey">
+    <form ref={formRef} action={formAction} aria-busy={pending} className="onboarding-survey" onChange={(event) => {
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) {
+        target.setCustomValidity("");
+        setFieldValues((previous) => ({ ...previous, [target.name]: target.value }));
+      }
+    }}>
       <div className="onboarding-progress" aria-label="Onboarding progress">
         <div>
           <span>Step {step + 1} of {steps.length}</span>
@@ -100,7 +125,7 @@ export function OnboardingForm({
                     type="radio"
                     name="organizationMode"
                     value={mode}
-                    defaultChecked={(state.values?.organizationMode ?? "BUSINESS") === mode}
+                    defaultChecked={(fieldValues.organizationMode ?? state.values?.organizationMode ?? "BUSINESS") === mode}
                   />
                   <span>
                     <strong>{label}</strong>
@@ -223,7 +248,7 @@ export function OnboardingForm({
           <button
             type="button"
             className="button-primary"
-            onClick={() => setStep((currentStep) => Math.min(steps.length - 1, currentStep + 1))}
+            onClick={advance}
           >
             Continue
           </button>
