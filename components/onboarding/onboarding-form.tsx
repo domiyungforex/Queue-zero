@@ -31,6 +31,8 @@ export function OnboardingForm({
 }) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [step, setStep] = useState(0);
+  const [selectedIndustry, setSelectedIndustry] = useState("");
+  const [selectedMode, setSelectedMode] = useState("BUSINESS");
   const formRef = useRef<HTMLFormElement>(null);
 
   const initialTimezone = useMemo(() => {
@@ -43,6 +45,8 @@ export function OnboardingForm({
 
   useEffect(() => {
     if (state.status !== "error") return;
+    if (state.values?.industry) setSelectedIndustry(state.values.industry);
+    if (state.values?.organizationMode) setSelectedMode(state.values.organizationMode);
     const field = Object.keys(state.fieldErrors ?? {})[0] as OnboardingField | undefined;
     const fieldStep: Partial<Record<OnboardingField, number>> = {
       businessName: 1,
@@ -57,6 +61,14 @@ export function OnboardingForm({
     const timer = window.setTimeout(() => setStep(nextStep), 0);
     return () => window.clearTimeout(timer);
   }, [state]);
+
+  function nextStep() {
+    if (step === 2 && !selectedIndustry) {
+      formRef.current?.querySelector<HTMLSelectElement>("#industry")?.focus();
+      return;
+    }
+    setStep((currentStep) => Math.min(steps.length - 1, currentStep + 1));
+  }
 
   function value(name: OnboardingField) {
     return state.values?.[name] ?? "";
@@ -100,7 +112,8 @@ export function OnboardingForm({
                     type="radio"
                     name="organizationMode"
                     value={mode}
-                    defaultChecked={(state.values?.organizationMode ?? "BUSINESS") === mode}
+                    checked={selectedMode === mode}
+                    onChange={() => setSelectedMode(mode)}
                   />
                   <span>
                     <strong>{label}</strong>
@@ -132,7 +145,8 @@ export function OnboardingForm({
               id="industry"
               name="industry"
               className={controlClass}
-              defaultValue={value("industry")}
+              value={selectedIndustry}
+              onChange={(event) => setSelectedIndustry(event.target.value)}
               aria-invalid={errorFor("industry") ? true : undefined}
             >
               <option value="" disabled>Choose an industry</option>
@@ -223,7 +237,7 @@ export function OnboardingForm({
           <button
             type="button"
             className="button-primary"
-            onClick={() => setStep((currentStep) => Math.min(steps.length - 1, currentStep + 1))}
+            onClick={nextStep}
           >
             Continue
           </button>
