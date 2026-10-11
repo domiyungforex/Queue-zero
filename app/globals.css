@@ -162,3 +162,20 @@ body{background:var(--qz-canvas);color:var(--qz-ink)}
   .onboarding-actions{gap:12px}
   .onboarding-actions button{flex:1}
 }
+
+/* Narrow phones: preserve viewport width and usable touch targets. */
+@media (max-width: 430px) {
+  html, body { max-width: 100%; overflow-x: clip; }
+  .workspace, .workspace-body, .workspace-main { min-width: 0; max-width: 100%; }
+  .workspace-main { padding: 16px; }
+  .workspace-header { padding: 14px 16px; }
+  .workspace-footer { padding: 16px; flex-wrap: wrap; }
+  .page-heading, .workspace-tip { flex-wrap: wrap; }
+  .metrics-grid, .queue-card-grid, .console-grid { grid-template-columns: minmax(0, 1fr); }
+  .onboarding-survey, .onboarding-card, .onboarding-question { min-width: 0; max-width: 100%; }
+  .onboarding-card { padding: 20px 16px; }
+  .onboarding-actions { gap: 8px; }
+  .onboarding-actions > button { min-width: 0; flex: 1; }
+  .school-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .school-table { min-width: 620px; }
+}

@@ -63,14 +63,6 @@ export function OnboardingForm({
     return () => window.clearTimeout(timer);
   }, [state]);
 
-  function nextStep() {
-    if (step === 2 && !selectedIndustry) {
-      formRef.current?.querySelector<HTMLSelectElement>("#industry")?.focus();
-      return;
-    }
-    setStep((currentStep) => Math.min(steps.length - 1, currentStep + 1));
-  }
-
   function value(name: OnboardingField) {
     return fieldValues[name] ?? state.values?.[name] ?? "";
   }
@@ -264,7 +256,6 @@ export function OnboardingForm({
             type="button"
             className="button-primary"
             onClick={advance}
-            onClick={nextStep}
           >
             Continue
           </button>
