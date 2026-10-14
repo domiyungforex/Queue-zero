@@ -9,6 +9,7 @@ import { QUEUE_FIELDS, queueSchema, queueContextSchema, queueEditContextSchema, 
 
 function mutationError(code?: string): QueueState {
   if (code === "QZ009") return { status: "error", message: "Your plan’s queue limit has been reached. Open Billing to upgrade." };
+  if (code === "QZ010") return { status: "error", message: "Institutional verification is required before this queue can be opened publicly." };
   if (code === "40001") return { status: "error", conflict: true, message: "This queue has changed since you opened it. Reload the latest details before making another change." };
   if (code === "42501") return { status: "error", message: "This queue is unavailable or you no longer have permission to manage it." };
   if (code === "22023") return { status: "error", message: "Check your settings and choose an active location in this business." };

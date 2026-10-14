@@ -1356,6 +1356,59 @@ export type Database = {
                     }
                 ];
             };
+            "organization_workspace_profiles": {
+                Row: {
+                    "authorized_representative_name": string | null;
+                    "business_id": string;
+                    "created_at": string;
+                    "legal_name": string;
+                    "organization_subtype": string;
+                    "organization_type": Database["public"]['Enums']["organization_type"];
+                    "service_templates": (string)[];
+                    "setup_completed_at": string;
+                    "updated_at": string;
+                    "verification_status": Database["public"]['Enums']["organization_verification_status"];
+                };
+                Insert: {
+                    "authorized_representative_name"?: string | null;
+                    "business_id": string;
+                    "created_at"?: string;
+                    "legal_name": string;
+                    "organization_subtype": string;
+                    "organization_type": Database["public"]['Enums']["organization_type"];
+                    "service_templates"?: (string)[];
+                    "setup_completed_at"?: string;
+                    "updated_at"?: string;
+                    "verification_status"?: Database["public"]['Enums']["organization_verification_status"];
+                };
+                Update: {
+                    "authorized_representative_name"?: string | null;
+                    "business_id"?: string;
+                    "created_at"?: string;
+                    "legal_name"?: string;
+                    "organization_subtype"?: string;
+                    "organization_type"?: Database["public"]['Enums']["organization_type"];
+                    "service_templates"?: (string)[];
+                    "setup_completed_at"?: string;
+                    "updated_at"?: string;
+                    "verification_status"?: Database["public"]['Enums']["organization_verification_status"];
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "organization_workspace_profil_business_id_organization_typ_fkey";
+                        columns: [
+                            "business_id",
+                            "organization_type"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id",
+                            "organization_type"
+                        ];
+                    }
+                ];
+            };
             "people": {
                 Row: {
                     "clerk_user_id": string | null;
@@ -2724,6 +2777,22 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "onboard_organization_workspace_v2": {
+                Args: {
+                    "p_authorized_representative_name": string;
+                    "p_country_code": string;
+                    "p_legal_name": string;
+                    "p_location_address": string;
+                    "p_location_name": string;
+                    "p_organization_subtype": string;
+                    "p_organization_type": Database["public"]['Enums']["organization_type"];
+                    "p_request_id": string;
+                    "p_service_templates": (string)[];
+                    "p_timezone": string;
+                    "p_workspace_name": string;
+                };
+                Returns: string;
+            };
             "onboard_professional_workspace": {
                 Args: {
                     "p_country_code": string;
@@ -2985,6 +3054,7 @@ export type Database = {
             "notification_type": "almost_your_turn" | "your_turn" | "queue_paused";
             "organization_mode": "BUSINESS" | "SCHOOL" | "HYBRID";
             "organization_type": "UNIVERSITY_SCHOOL" | "HOSPITAL_CLINIC" | "BANK_FINANCIAL" | "SALON_BARBERSHOP" | "GOVERNMENT_OFFICE" | "COMPANY_OTHER";
+            "organization_verification_status": "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
             "person_type": "CUSTOMER" | "STUDENT" | "EMPLOYEE" | "VISITOR" | "GUEST";
             "professional_category": "LECTURER_TEACHER" | "DOCTOR" | "NURSE" | "BANKER" | "BARBER_STYLIST" | "CONSULTANT" | "OTHER_PROFESSIONAL";
             "queue_status": "open" | "paused" | "closed";
@@ -3054,7 +3124,7 @@ export type CompositeTypes<PublicCompositeTypeNameOrOptions extends keyof Defaul
 export const Constants = {
     "public": {
         Enums: {
-            "attendance_status": ["PRESENT", "LATE", "ABSENT", "EARLY_LEAVE", "INCOMPLETE", "EXCUSED", "FLAGGED"], "business_role": ["owner", "admin", "staff", "lecturer", "student"], "notification_channel": ["web_push", "sms", "whatsapp"], "notification_status": ["pending", "sent", "failed", "skipped"], "notification_type": ["almost_your_turn", "your_turn", "queue_paused"], "organization_mode": ["BUSINESS", "SCHOOL", "HYBRID"], "organization_type": ["UNIVERSITY_SCHOOL", "HOSPITAL_CLINIC", "BANK_FINANCIAL", "SALON_BARBERSHOP", "GOVERNMENT_OFFICE", "COMPANY_OTHER"], "person_type": ["CUSTOMER", "STUDENT", "EMPLOYEE", "VISITOR", "GUEST"], "professional_category": ["LECTURER_TEACHER", "DOCTOR", "NURSE", "BANKER", "BARBER_STYLIST", "CONSULTANT", "OTHER_PROFESSIONAL"], "queue_status": ["open", "paused", "closed"], "session_status": ["DRAFT", "SCHEDULED", "OPEN", "PAUSED", "CLOSED", "COMPLETED"], "session_type": ["QUEUE", "CLASS", "VISIT", "APPOINTMENT", "EVENT", "SHIFT"], "subscription_plan": ["FREE", "STARTER", "BUSINESS"], "subscription_status": ["pending", "active", "past_due", "cancelled", "expired"], "ticket_actor_type": ["customer", "staff", "system"], "ticket_event_type": ["joined", "called", "recalled", "completed", "no_show", "cancelled"], "ticket_status": ["waiting", "serving", "completed", "no_show", "cancelled"], "workspace_ownership": ["ORGANIZATION", "INDIVIDUAL"]
+            "attendance_status": ["PRESENT", "LATE", "ABSENT", "EARLY_LEAVE", "INCOMPLETE", "EXCUSED", "FLAGGED"], "business_role": ["owner", "admin", "staff", "lecturer", "student"], "notification_channel": ["web_push", "sms", "whatsapp"], "notification_status": ["pending", "sent", "failed", "skipped"], "notification_type": ["almost_your_turn", "your_turn", "queue_paused"], "organization_mode": ["BUSINESS", "SCHOOL", "HYBRID"], "organization_type": ["UNIVERSITY_SCHOOL", "HOSPITAL_CLINIC", "BANK_FINANCIAL", "SALON_BARBERSHOP", "GOVERNMENT_OFFICE", "COMPANY_OTHER"], "organization_verification_status": ["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"], "person_type": ["CUSTOMER", "STUDENT", "EMPLOYEE", "VISITOR", "GUEST"], "professional_category": ["LECTURER_TEACHER", "DOCTOR", "NURSE", "BANKER", "BARBER_STYLIST", "CONSULTANT", "OTHER_PROFESSIONAL"], "queue_status": ["open", "paused", "closed"], "session_status": ["DRAFT", "SCHEDULED", "OPEN", "PAUSED", "CLOSED", "COMPLETED"], "session_type": ["QUEUE", "CLASS", "VISIT", "APPOINTMENT", "EVENT", "SHIFT"], "subscription_plan": ["FREE", "STARTER", "BUSINESS"], "subscription_status": ["pending", "active", "past_due", "cancelled", "expired"], "ticket_actor_type": ["customer", "staff", "system"], "ticket_event_type": ["joined", "called", "recalled", "completed", "no_show", "cancelled"], "ticket_status": ["waiting", "serving", "completed", "no_show", "cancelled"], "workspace_ownership": ["ORGANIZATION", "INDIVIDUAL"]
         }
     }
 } as const;

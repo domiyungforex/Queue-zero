@@ -11,8 +11,17 @@ import { onboardBusiness } from "@/app/onboarding/actions";
 
 const workspaceId = "ac000000-0000-4000-8000-000000000001";
 function form(organizationType: string) {
+  const configurations: Record<string, { subtype: string; template: string; representative?: string }> = {
+    UNIVERSITY_SCHOOL: { subtype: "UNIVERSITY", template: "STUDENT_SERVICES" },
+    HOSPITAL_CLINIC: { subtype: "CLINIC", template: "RECEPTION" },
+    BANK_FINANCIAL: { subtype: "COMMERCIAL_BANK", template: "CUSTOMER_SERVICE", representative: "Ada Representative" },
+    SALON_BARBERSHOP: { subtype: "SALON", template: "WALK_IN_SERVICE" },
+    GOVERNMENT_OFFICE: { subtype: "GOVERNMENT_AGENCY", template: "GENERAL_ENQUIRIES" },
+    COMPANY_OTHER: { subtype: "COMPANY", template: "CUSTOM_SERVICE" },
+  };
+  const configuration = configurations[organizationType] ?? { subtype: "INVALID", template: "INVALID" };
   const data = new FormData();
-  for (const [key, value] of Object.entries({ onboardingRequestId: "10000000-0000-4000-8000-000000000001", accountType: "ORGANIZATION", professionalCategory: "", organizationType, workspaceName: "School", teachingLevel: "", institutionName: "", serviceName: "", country: "NG", timezone: "Africa/Lagos", locationName: "Campus", locationAddress: "Main campus" })) data.set(key, value);
+  for (const [key, value] of Object.entries({ onboardingRequestId: "10000000-0000-4000-8000-000000000001", accountType: "ORGANIZATION", professionalCategory: "", organizationType, organizationSubtype: configuration.subtype, workspaceName: "School", legalName: "School Limited", representativeName: configuration.representative ?? "", serviceTemplates: configuration.template, teachingLevel: "", institutionName: "", serviceName: "", country: "NG", timezone: "Africa/Lagos", locationName: "Campus", locationAddress: "Main campus" })) data.set(key, value);
   return data;
 }
 
@@ -26,7 +35,7 @@ beforeEach(() => {
 describe("organization onboarding routing", () => {
   it("creates an education organization through the unified organization RPC", async () => {
     await expect(onboardBusiness({ status: "idle" }, form("UNIVERSITY_SCHOOL"))).rejects.toThrow("/dashboard?onboarding=complete");
-    expect(mocks.rpc).toHaveBeenCalledWith("onboard_organization_workspace", expect.objectContaining({ p_organization_type: "UNIVERSITY_SCHOOL", p_workspace_name: "School" }));
+    expect(mocks.rpc).toHaveBeenCalledWith("onboard_organization_workspace_v2", expect.objectContaining({ p_organization_type: "UNIVERSITY_SCHOOL", p_organization_subtype: "UNIVERSITY", p_workspace_name: "School" }));
   });
 
   it.each([
@@ -37,7 +46,7 @@ describe("organization onboarding routing", () => {
     ["COMPANY_OTHER", "other"],
   ])("maps %s to the unified organization RPC", async (organizationType) => {
     await expect(onboardBusiness({ status: "idle" }, form(organizationType))).rejects.toThrow("/dashboard?onboarding=complete");
-    expect(mocks.rpc).toHaveBeenCalledWith("onboard_organization_workspace", expect.objectContaining({ p_organization_type: organizationType, p_workspace_name: "School" }));
+    expect(mocks.rpc).toHaveBeenCalledWith("onboard_organization_workspace_v2", expect.objectContaining({ p_organization_type: organizationType, p_workspace_name: "School" }));
   });
 
   it("rejects an invalid organization type without touching the database", async () => {

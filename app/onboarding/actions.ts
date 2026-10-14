@@ -52,7 +52,16 @@ export async function onboardBusiness(_previous: OnboardingState, formData: Form
         p_location_name: input.locationName,
         p_location_address: input.locationAddress,
       };
-      result = await db.rpc("onboard_organization_workspace", parameters);
+      result = await db.rpc("onboard_organization_workspace_v2", {
+        ...parameters,
+        p_organization_subtype: input.organizationSubtype,
+        p_legal_name: input.legalName,
+        // The generated RPC type is non-null because PostgreSQL parameters do
+        // not expose nullability. The function normalizes an empty value to
+        // NULL for categories that do not require a representative.
+        p_authorized_representative_name: input.representativeName,
+        p_service_templates: input.serviceTemplates.split(",").filter(Boolean),
+      });
     }
     const { data, error } = result;
     const workspaceId = z.uuid().safeParse(data);

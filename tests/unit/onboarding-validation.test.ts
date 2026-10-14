@@ -6,7 +6,11 @@ const organization = {
   accountType: "ORGANIZATION",
   professionalCategory: "",
   organizationType: "HOSPITAL_CLINIC",
+  organizationSubtype: "CLINIC",
   workspaceName: "Clinic",
+  legalName: "Clinic Limited",
+  representativeName: "",
+  serviceTemplates: "RECEPTION,CONSULTATION",
   teachingLevel: "",
   institutionName: "",
   serviceName: "",
@@ -20,7 +24,11 @@ const individual = {
   accountType: "INDIVIDUAL",
   professionalCategory: "LECTURER_TEACHER",
   organizationType: "",
+  organizationSubtype: "",
   workspaceName: "My teaching workspace",
+  legalName: "",
+  representativeName: "",
+  serviceTemplates: "",
   teachingLevel: "University undergraduate",
   institutionName: "",
   serviceName: "",
@@ -63,8 +71,35 @@ describe("unified onboarding validation", () => {
     }
   });
 
-  it.each(ORGANIZATION_TYPE_VALUES)("accepts organization type %s", (organizationType) => {
-    expect(onboardingSchema.safeParse({ ...organization, organizationType }).success).toBe(true);
+  it.each([
+    ["UNIVERSITY_SCHOOL", "UNIVERSITY", "STUDENT_SERVICES"],
+    ["HOSPITAL_CLINIC", "CLINIC", "RECEPTION"],
+    ["BANK_FINANCIAL", "COMMERCIAL_BANK", "CUSTOMER_SERVICE"],
+    ["SALON_BARBERSHOP", "SALON", "WALK_IN_SERVICE"],
+    ["GOVERNMENT_OFFICE", "GOVERNMENT_AGENCY", "GENERAL_ENQUIRIES"],
+    ["COMPANY_OTHER", "COMPANY", "CUSTOM_SERVICE"],
+  ])("accepts configured organization type %s", (organizationType, organizationSubtype, serviceTemplates) => {
+    expect(onboardingSchema.safeParse({
+      ...organization,
+      organizationType,
+      organizationSubtype,
+      serviceTemplates,
+      representativeName: organizationType === "BANK_FINANCIAL" ? "Ada Representative" : "",
+    }).success).toBe(true);
+  });
+
+  it("requires bank representative and category-safe service templates", () => {
+    const bank = { ...organization, organizationType: "BANK_FINANCIAL", organizationSubtype: "COMMERCIAL_BANK", serviceTemplates: "RECEPTION" };
+    const result = onboardingSchema.safeParse(bank);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.representativeName).toBeDefined();
+      expect(result.error.flatten().fieldErrors.serviceTemplates).toBeDefined();
+    }
+  });
+
+  it("keeps the complete category list stable", () => {
+    expect(ORGANIZATION_TYPE_VALUES).toHaveLength(6);
   });
 
   it("requires an explicit account type", () => {

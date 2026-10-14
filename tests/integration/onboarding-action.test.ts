@@ -17,8 +17,8 @@ import { onboardBusiness } from "@/app/onboarding/actions";
 
 const workspaceId = "d3f1a1b2-c3d4-4e5f-8a9b-012345678901";
 const requestId = "10000000-0000-4000-8000-000000000001";
-const validValues = { onboardingRequestId: requestId, accountType: "ORGANIZATION", professionalCategory: "", organizationType: "HOSPITAL_CLINIC", workspaceName: " Clinic A ", teachingLevel: "", institutionName: "", serviceName: "", country: "gh", timezone: "Africa/Accra", locationName: " Main ", locationAddress: " Accra " };
-const individualValues = { onboardingRequestId: requestId, accountType: "INDIVIDUAL", professionalCategory: "LECTURER_TEACHER", organizationType: "", workspaceName: " My teaching workspace ", teachingLevel: "University undergraduate", institutionName: "Example University", serviceName: "", country: "ng", timezone: "Africa/Lagos", locationName: "", locationAddress: "" };
+const validValues = { onboardingRequestId: requestId, accountType: "ORGANIZATION", professionalCategory: "", organizationType: "HOSPITAL_CLINIC", organizationSubtype: "CLINIC", workspaceName: " Clinic A ", legalName: " Clinic A Limited ", representativeName: "", serviceTemplates: "RECEPTION,CONSULTATION", teachingLevel: "", institutionName: "", serviceName: "", country: "gh", timezone: "Africa/Accra", locationName: " Main ", locationAddress: " Accra " };
+const individualValues = { onboardingRequestId: requestId, accountType: "INDIVIDUAL", professionalCategory: "LECTURER_TEACHER", organizationType: "", organizationSubtype: "", workspaceName: " My teaching workspace ", legalName: "", representativeName: "", serviceTemplates: "", teachingLevel: "University undergraduate", institutionName: "Example University", serviceName: "", country: "ng", timezone: "Africa/Lagos", locationName: "", locationAddress: "" };
 const form = (values = validValues) => {
   const data = new FormData();
   Object.entries(values).forEach(([key, value]) => data.set(key, value));
@@ -46,8 +46,9 @@ describe("onboarding server action", () => {
     data.set("business_id", "another-tenant");
     await expect(onboardBusiness({ status: "idle" }, data)).rejects.toThrow("NEXT_REDIRECT:/dashboard?onboarding=complete");
     expect(mocks.user).toHaveBeenCalledOnce();
-    expect(mocks.rpc).toHaveBeenCalledWith("onboard_organization_workspace", {
+    expect(mocks.rpc).toHaveBeenCalledWith("onboard_organization_workspace_v2", {
       p_request_id: requestId, p_workspace_name: "Clinic A", p_organization_type: "HOSPITAL_CLINIC", p_country_code: "GH", p_timezone: "Africa/Accra", p_location_name: "Main", p_location_address: "Accra",
+      p_organization_subtype: "CLINIC", p_legal_name: "Clinic A Limited", p_authorized_representative_name: "", p_service_templates: ["RECEPTION", "CONSULTATION"],
     });
     expect(mocks.from).toHaveBeenCalledWith("business_members");
     expect(mocks.setCookie).toHaveBeenCalledWith("queuezero-business", workspaceId, expect.objectContaining({ httpOnly: true, sameSite: "lax", path: "/" }));

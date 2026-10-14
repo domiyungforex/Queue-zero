@@ -17,6 +17,12 @@ grant execute on function auth.jwt() to anon, authenticated, service_role;
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
 
+-- Reproduce the reported shared-schema security-advisor finding. The final
+-- application migration must contain it without deleting or rewriting data.
+create table public."Conversation" (id integer primary key, body text);
+insert into public."Conversation" values (1, 'shared fixture');
+grant all on public."Conversation" to public, anon, authenticated, service_role;
+
 -- Capture Broadcast calls in the isolated PostgreSQL harness. This records
 -- transport envelopes only and is never installed in the application database.
 create schema realtime;

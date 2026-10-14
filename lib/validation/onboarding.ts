@@ -35,7 +35,54 @@ export const ORGANIZATION_TYPES = [
   { value: "GOVERNMENT_OFFICE", label: "Government office", industry: "public_services", mode: "BUSINESS" },
   { value: "COMPANY_OTHER", label: "Company / Other", industry: "other", mode: "BUSINESS" },
 ] as const;
-export const ONBOARDING_FIELDS = ["onboardingRequestId", "accountType", "professionalCategory", "organizationType", "workspaceName", "teachingLevel", "institutionName", "serviceName", "country", "timezone", "locationName", "locationAddress"] as const;
+export const ORGANIZATION_SUBTYPES = {
+  UNIVERSITY_SCHOOL: [
+    { value: "UNIVERSITY", label: "University" },
+    { value: "SCHOOL", label: "School" },
+    { value: "POLYTECHNIC", label: "Polytechnic" },
+    { value: "COLLEGE", label: "College" },
+    { value: "TRAINING_INSTITUTION", label: "Training institution" },
+    { value: "OTHER", label: "Other education institution" },
+  ],
+  HOSPITAL_CLINIC: [{ value: "HOSPITAL", label: "Hospital" }, { value: "CLINIC", label: "Clinic" }],
+  BANK_FINANCIAL: [
+    { value: "COMMERCIAL_BANK", label: "Commercial bank" },
+    { value: "MICROFINANCE_BANK", label: "Microfinance bank" },
+    { value: "CREDIT_UNION", label: "Credit union" },
+    { value: "OTHER_FINANCIAL", label: "Other financial institution" },
+  ],
+  SALON_BARBERSHOP: [
+    { value: "SALON", label: "Salon" },
+    { value: "BARBERSHOP", label: "Barbershop" },
+    { value: "SALON_BARBERSHOP", label: "Salon and barbershop" },
+  ],
+  GOVERNMENT_OFFICE: [{ value: "GOVERNMENT_AGENCY", label: "Government agency" }, { value: "PUBLIC_OFFICE", label: "Public service office" }],
+  COMPANY_OTHER: [{ value: "COMPANY", label: "Company" }, { value: "OTHER_ORGANIZATION", label: "Other organization" }],
+} as const;
+export const ORGANIZATION_SERVICE_TEMPLATES = {
+  UNIVERSITY_SCHOOL: [
+    { value: "STUDENT_SERVICES", label: "Student services" }, { value: "ADMISSIONS", label: "Admissions" },
+    { value: "BURSARY", label: "Bursary" }, { value: "LIBRARY", label: "Library" },
+    { value: "MEDICAL_CENTRE", label: "Medical centre" }, { value: "DEPARTMENT_OFFICE", label: "Department office" },
+  ],
+  HOSPITAL_CLINIC: [
+    { value: "RECEPTION", label: "Reception" }, { value: "CONSULTATION", label: "Consultation" },
+    { value: "LABORATORY", label: "Laboratory" }, { value: "PHARMACY_PICKUP", label: "Pharmacy pickup" },
+  ],
+  BANK_FINANCIAL: [
+    { value: "CUSTOMER_SERVICE", label: "Customer service" }, { value: "ACCOUNT_OPENING", label: "Account opening" },
+    { value: "DEPOSITS", label: "Deposits" }, { value: "WITHDRAWALS", label: "Withdrawals" },
+    { value: "CARD_SERVICES", label: "Card services" }, { value: "LOAN_ENQUIRIES", label: "Loan enquiries" },
+    { value: "COMPLAINTS", label: "Complaints" }, { value: "DOCUMENT_VERIFICATION", label: "Document verification" },
+  ],
+  SALON_BARBERSHOP: [{ value: "WALK_IN_SERVICE", label: "Walk-in service queue" }],
+  GOVERNMENT_OFFICE: [
+    { value: "GENERAL_ENQUIRIES", label: "General enquiries" }, { value: "DOCUMENT_SERVICES", label: "Document services" },
+    { value: "PAYMENTS", label: "Payments" }, { value: "COMPLAINTS", label: "Complaints" },
+  ],
+  COMPANY_OTHER: [{ value: "CUSTOM_SERVICE", label: "Custom service queue" }],
+} as const;
+export const ONBOARDING_FIELDS = ["onboardingRequestId", "accountType", "professionalCategory", "organizationType", "organizationSubtype", "workspaceName", "legalName", "representativeName", "serviceTemplates", "teachingLevel", "institutionName", "serviceName", "country", "timezone", "locationName", "locationAddress"] as const;
 export type OnboardingField = (typeof ONBOARDING_FIELDS)[number];
 export type OnboardingValues = Record<OnboardingField, string>;
 
@@ -58,9 +105,13 @@ export const onboardingSchema = z.union([
     accountType: z.literal("INDIVIDUAL"),
     professionalCategory: z.literal("LECTURER_TEACHER", { error: "Choose an available profession." }),
     organizationType: z.literal(""),
+    organizationSubtype: z.literal(""),
     teachingLevel: requiredText("Teaching level", 100),
     institutionName: z.string().trim().max(160, "Use 160 characters or fewer."),
     serviceName: z.literal(""),
+    legalName: z.literal(""),
+    representativeName: z.literal(""),
+    serviceTemplates: z.literal(""),
     locationName: z.literal(""),
     locationAddress: z.literal(""),
   }).strict(),
@@ -69,9 +120,13 @@ export const onboardingSchema = z.union([
     accountType: z.literal("INDIVIDUAL"),
     professionalCategory: z.enum(SERVICE_PROFESSIONS, { error: "Choose a profession." }),
     organizationType: z.literal(""),
+    organizationSubtype: z.literal(""),
     teachingLevel: z.literal(""),
     institutionName: z.literal(""),
     serviceName: requiredText("Service name", 160),
+    legalName: z.literal(""),
+    representativeName: z.literal(""),
+    serviceTemplates: z.literal(""),
     locationName: requiredText("Practice location", 160),
     locationAddress: requiredText("Location address", 500),
   }).strict(),
@@ -80,12 +135,32 @@ export const onboardingSchema = z.union([
     accountType: z.literal("ORGANIZATION"),
     professionalCategory: z.literal(""),
     organizationType: z.enum(ORGANIZATION_TYPE_VALUES, { error: "Choose an organization type." }),
+    organizationSubtype: requiredText("Organization subtype", 50),
+    legalName: requiredText("Legal organization name", 200),
+    representativeName: z.string().trim().max(160, "Use 160 characters or fewer."),
+    serviceTemplates: requiredText("At least one service", 500),
     teachingLevel: z.literal(""),
     institutionName: z.literal(""),
     serviceName: z.literal(""),
     locationName: requiredText("Location name", 160),
     locationAddress: requiredText("Location address", 500),
-  }).strict(),
+  }).strict().superRefine((value, context) => {
+    const subtypes = ORGANIZATION_SUBTYPES[value.organizationType].map((option) => option.value as string);
+    if (!subtypes.includes(value.organizationSubtype)) {
+      context.addIssue({ code: "custom", path: ["organizationSubtype"], message: "Choose an organization subtype." });
+    }
+    const selected = value.serviceTemplates.split(",").map((item) => item.trim()).filter(Boolean);
+    const allowed = ORGANIZATION_SERVICE_TEMPLATES[value.organizationType].map((option) => option.value as string);
+    if (!selected.length || selected.some((item) => !allowed.includes(item)) || new Set(selected).size !== selected.length) {
+      context.addIssue({ code: "custom", path: ["serviceTemplates"], message: "Choose at least one available service." });
+    }
+    if (value.organizationType === "BANK_FINANCIAL" && !value.representativeName) {
+      context.addIssue({ code: "custom", path: ["representativeName"], message: "Authorized representative is required." });
+    }
+    if (value.organizationType !== "BANK_FINANCIAL" && value.representativeName) {
+      context.addIssue({ code: "custom", path: ["representativeName"], message: "Remove the unrelated representative value." });
+    }
+  }),
 ]);
 
 export type OnboardingState = {

@@ -4,6 +4,8 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import {
   ACCOUNT_TYPES,
   ONBOARDING_FIELDS,
+  ORGANIZATION_SERVICE_TEMPLATES,
+  ORGANIZATION_SUBTYPES,
   ORGANIZATION_TYPES,
   PROFESSIONS,
   type OnboardingAction,
@@ -18,7 +20,11 @@ const initialValues: OnboardingValues = {
   accountType: "",
   professionalCategory: "",
   organizationType: "",
+  organizationSubtype: "",
   workspaceName: "",
+  legalName: "",
+  representativeName: "",
+  serviceTemplates: "",
   teachingLevel: "",
   institutionName: "",
   serviceName: "",
@@ -33,7 +39,11 @@ const fieldSteps: Record<OnboardingField, number> = {
   accountType: 0,
   professionalCategory: 1,
   organizationType: 1,
+  organizationSubtype: 2,
   workspaceName: 2,
+  legalName: 2,
+  representativeName: 2,
+  serviceTemplates: 2,
   teachingLevel: 2,
   institutionName: 2,
   serviceName: 2,
@@ -95,11 +105,32 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
       accountType,
       professionalCategory: accountType === "INDIVIDUAL" ? current.professionalCategory : "",
       organizationType: accountType === "ORGANIZATION" ? current.organizationType : "",
+      organizationSubtype: accountType === "ORGANIZATION" ? current.organizationSubtype : "",
+      legalName: accountType === "ORGANIZATION" ? current.legalName : "",
+      representativeName: accountType === "ORGANIZATION" ? current.representativeName : "",
+      serviceTemplates: accountType === "ORGANIZATION" ? current.serviceTemplates : "",
       teachingLevel: accountType === "INDIVIDUAL" ? current.teachingLevel : "",
       institutionName: accountType === "INDIVIDUAL" ? current.institutionName : "",
       serviceName: accountType === "INDIVIDUAL" ? current.serviceName : "",
     }));
     setClientErrors({});
+  }
+
+  function selectOrganization(organizationType: string) {
+    setValues((current) => ({
+      ...current,
+      organizationType,
+      organizationSubtype: "",
+      representativeName: "",
+      serviceTemplates: "",
+    }));
+    setClientErrors({});
+  }
+
+  function toggleTemplate(template: string) {
+    const selected = new Set(values.serviceTemplates.split(",").filter(Boolean));
+    if (selected.has(template)) selected.delete(template); else selected.add(template);
+    update("serviceTemplates", [...selected].join(","));
   }
 
   function selectProfession(professionalCategory: string) {
@@ -125,6 +156,12 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
       if (!values.workspaceName.trim()) nextErrors.workspaceName = "Workspace name is required.";
       if (isLecturer && !values.teachingLevel.trim()) nextErrors.teachingLevel = "Teaching level is required.";
       if (isProfessionalService && !values.serviceName.trim()) nextErrors.serviceName = "Service name is required.";
+      if (!isIndividual) {
+        if (!values.organizationSubtype) nextErrors.organizationSubtype = "Choose an organization subtype.";
+        if (!values.legalName.trim()) nextErrors.legalName = "Legal organization name is required.";
+        if (values.organizationType === "BANK_FINANCIAL" && !values.representativeName.trim()) nextErrors.representativeName = "Authorized representative is required.";
+        if (!values.serviceTemplates) nextErrors.serviceTemplates = "Choose at least one service.";
+      }
     }
     if (step === 3) {
       if (!values.country) nextErrors.country = "Choose a country.";
@@ -146,6 +183,10 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
   }
 
   const organization = ORGANIZATION_TYPES.find(({ value }) => value === values.organizationType);
+  const organizationType = values.organizationType as keyof typeof ORGANIZATION_SUBTYPES;
+  const organizationSubtypes = values.organizationType ? ORGANIZATION_SUBTYPES[organizationType] : [];
+  const organizationTemplates = values.organizationType ? ORGANIZATION_SERVICE_TEMPLATES[organizationType] : [];
+  const selectedTemplates = new Set(values.serviceTemplates.split(",").filter(Boolean));
   const profession = PROFESSIONS.find(({ value }) => value === values.professionalCategory);
   const accountLabel = isIndividual ? "Individual" : "Organization";
 
@@ -190,7 +231,7 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
             {(isIndividual ? PROFESSIONS : ORGANIZATION_TYPES).map((option) => {
               const unavailable = "available" in option && !option.available;
               const selected = isIndividual ? values.professionalCategory === option.value : values.organizationType === option.value;
-              return <button key={option.value} type="button" role="radio" aria-checked={selected} disabled={unavailable} onClick={() => isIndividual ? selectProfession(option.value) : update("organizationType", option.value)} className={`flex min-h-16 items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left ${selected ? "border-[#008f4c] bg-[#eaf8ef] ring-2 ring-[#008f4c]/15" : "border-black/10 bg-white"} disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-black/40`}>
+              return <button key={option.value} type="button" role="radio" aria-checked={selected} disabled={unavailable} onClick={() => isIndividual ? selectProfession(option.value) : selectOrganization(option.value)} className={`flex min-h-16 items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left ${selected ? "border-[#008f4c] bg-[#eaf8ef] ring-2 ring-[#008f4c]/15" : "border-black/10 bg-white"} disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-black/40`}>
                 <span className="font-semibold">{option.label}</span>{unavailable && <span className="shrink-0 rounded-full bg-black/5 px-2 py-1 text-[10px] font-bold uppercase tracking-wide">Coming later</span>}
               </button>;
             })}
@@ -208,6 +249,12 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
             <FieldError id="workspaceName" message={errors.workspaceName} />
             {isLecturer && <><div><label htmlFor="teachingLevel" className="text-sm font-bold">Teaching level</label><input id="teachingLevel" value={values.teachingLevel} onChange={(event) => update("teachingLevel", event.target.value)} className={controlClass} maxLength={100} placeholder="e.g. University undergraduate" aria-invalid={errors.teachingLevel ? true : undefined} aria-describedby={errors.teachingLevel ? "teachingLevel-error" : undefined}/><FieldError id="teachingLevel" message={errors.teachingLevel}/></div><div><label htmlFor="institutionName" className="text-sm font-bold">Institution name <span className="font-normal text-muted">(optional)</span></label><input id="institutionName" value={values.institutionName} onChange={(event) => update("institutionName", event.target.value)} className={controlClass} maxLength={160} placeholder="For context only — no affiliation claim" aria-invalid={errors.institutionName ? true : undefined} aria-describedby={errors.institutionName ? "institutionName-error" : undefined}/><FieldError id="institutionName" message={errors.institutionName}/></div></>}
             {isProfessionalService && <div><label htmlFor="serviceName" className="text-sm font-bold">Service name</label><input id="serviceName" value={values.serviceName} onChange={(event) => update("serviceName", event.target.value)} className={controlClass} maxLength={160} placeholder="e.g. Consultations" aria-invalid={errors.serviceName ? true : undefined} aria-describedby={errors.serviceName ? "serviceName-error" : undefined}/><FieldError id="serviceName" message={errors.serviceName}/></div>}
+            {!isIndividual && <>
+              <div><label htmlFor="legalName" className="text-sm font-bold">Legal organization name</label><input id="legalName" value={values.legalName} onChange={(event) => update("legalName", event.target.value)} className={controlClass} maxLength={200} autoComplete="organization" placeholder="Registered or official name" aria-invalid={errors.legalName ? true : undefined} aria-describedby={errors.legalName ? "legalName-error" : undefined}/><FieldError id="legalName" message={errors.legalName}/></div>
+              <div><label htmlFor="organizationSubtype" className="text-sm font-bold">Organization type</label><select id="organizationSubtype" value={values.organizationSubtype} onChange={(event) => update("organizationSubtype", event.target.value)} className={controlClass} aria-invalid={errors.organizationSubtype ? true : undefined} aria-describedby={errors.organizationSubtype ? "organizationSubtype-error" : undefined}><option value="" disabled>Choose a type</option>{organizationSubtypes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><FieldError id="organizationSubtype" message={errors.organizationSubtype}/></div>
+              {values.organizationType === "BANK_FINANCIAL" && <div><label htmlFor="representativeName" className="text-sm font-bold">Authorized representative</label><input id="representativeName" value={values.representativeName} onChange={(event) => update("representativeName", event.target.value)} className={controlClass} maxLength={160} autoComplete="name" placeholder="Full name" aria-invalid={errors.representativeName ? true : undefined} aria-describedby={errors.representativeName ? "representativeName-error" : undefined}/><FieldError id="representativeName" message={errors.representativeName}/></div>}
+              <fieldset id="serviceTemplates" tabIndex={-1} className="rounded-xl border border-black/10 bg-white p-4" aria-invalid={errors.serviceTemplates ? true : undefined} aria-describedby={errors.serviceTemplates ? "serviceTemplates-error" : undefined}><legend className="px-1 text-sm font-bold">Services to configure</legend><p className="mb-3 text-sm text-muted">These choices guide setup. They do not create live queues.</p><div className="grid gap-2 sm:grid-cols-2">{organizationTemplates.map((option) => <label key={option.value} className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={selectedTemplates.has(option.value)} onChange={() => toggleTemplate(option.value)}/><span>{option.label}</span></label>)}</div><FieldError id="serviceTemplates" message={errors.serviceTemplates}/></fieldset>
+            </>}
           </div>
         </section>}
 
@@ -233,12 +280,13 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
               ["Workspace", values.workspaceName],
               ...(isLecturer ? [["Teaching level", values.teachingLevel], ...(values.institutionName ? [["Institution (context only)", values.institutionName]] : [])] : []),
               ...(isProfessionalService ? [["Service", values.serviceName]] : []),
+              ...(!isIndividual ? [["Legal name", values.legalName], ["Organization subtype", organizationSubtypes.find((option) => option.value === values.organizationSubtype)?.label], ...(values.representativeName ? [["Authorized representative", values.representativeName]] : []), ["Services to configure", organizationTemplates.filter((option) => selectedTemplates.has(option.value)).map((option) => option.label).join(", ")]] : []),
               ["Country", countries.find(({ code }) => code === values.country)?.name],
               ["Timezone", values.timezone.replaceAll("_", " ")],
               ...(needsLocation ? [["First location", values.locationName], ["Address", values.locationAddress]] : []),
             ].map(([label, value]) => <div key={label} className="grid gap-1 py-4 sm:grid-cols-[160px_1fr] sm:gap-5"><dt className="text-sm text-muted">{label}</dt><dd className="min-w-0 [overflow-wrap:anywhere] font-semibold text-[#092a23]">{value}</dd></div>)}
           </dl>
-          <p className="mt-5 rounded-xl bg-[#edf8e4] p-4 text-sm leading-6 text-[#24472f]">{isIndividual ? "This is your personal professional workspace. It does not represent your employer, institution, bank or professional regulator." : "You will be the owner of this organization workspace and can invite team members later."}</p>
+          <p className="mt-5 rounded-xl bg-[#edf8e4] p-4 text-sm leading-6 text-[#24472f]">{isIndividual ? "This is your personal professional workspace. It does not represent your employer, institution, bank or professional regulator." : values.organizationType === "BANK_FINANCIAL" ? "You will own this workspace, but official public queue activation remains paused until institutional verification is completed." : "You will be the owner of this organization workspace and can invite team members later. Selected services remain setup choices until you create them."}</p>
         </section>}
       </fieldset>
 

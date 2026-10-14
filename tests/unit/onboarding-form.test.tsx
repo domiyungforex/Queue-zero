@@ -91,9 +91,34 @@ describe("unified onboarding form", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Hospital / Clinic" }));
     continueStep();
     fireEvent.change(screen.getByLabelText("Organization name"), { target: { value: "Greenfield Clinic" } });
+    fireEvent.change(screen.getByLabelText("Legal organization name"), { target: { value: "Greenfield Clinic Limited" } });
+    fireEvent.change(screen.getByLabelText("Organization type"), { target: { value: "CLINIC" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Reception" }));
     continueStep();
     expect(screen.getByLabelText("First location name")).toBeTruthy();
     expect(screen.getByLabelText("Location address")).toBeTruthy();
+  });
+
+  it("requires bank affiliation details and explains verification before activation", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    fireEvent.click(screen.getByRole("radio", { name: /Organization/ }));
+    continueStep();
+    fireEvent.click(screen.getByRole("radio", { name: "Bank / Financial institution" }));
+    continueStep();
+    expect(screen.getByLabelText("Authorized representative")).toBeTruthy();
+    expect(screen.getByRole("checkbox", { name: "Account opening" })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Organization name"), { target: { value: "North Finance" } });
+    fireEvent.change(screen.getByLabelText("Legal organization name"), { target: { value: "North Finance Limited" } });
+    fireEvent.change(screen.getByLabelText("Organization type"), { target: { value: "MICROFINANCE_BANK" } });
+    fireEvent.change(screen.getByLabelText("Authorized representative"), { target: { value: "Ada Representative" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Customer service" }));
+    continueStep();
+    fireEvent.change(screen.getByLabelText("Country"), { target: { value: "NG" } });
+    fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Lagos" } });
+    fireEvent.change(screen.getByLabelText("First location name"), { target: { value: "Central branch" } });
+    fireEvent.change(screen.getByLabelText("Location address"), { target: { value: "Lagos" } });
+    continueStep();
+    expect(screen.getByText(/activation remains paused until institutional verification/i)).toBeTruthy();
   });
 
   it("submits preserved values and shows a loading state", async () => {
