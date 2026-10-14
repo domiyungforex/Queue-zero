@@ -7,11 +7,13 @@ import type { QueueAction, QueueField, QueueState, QueueValues } from "@/lib/val
 const control = "mt-2 min-h-12 w-full min-w-0 rounded-lg border border-black/20 bg-white px-3 py-3 text-base aria-invalid:border-red-700";
 const initialState: QueueState = { status: "idle" };
 
-export function QueueForm({ action, locations, initialValues, editing = false }: {
+export function QueueForm({ action, locations, initialValues, editing = false, units, selectedUnitId }: {
   action: QueueAction;
   locations: { id: string; name: string; is_active: boolean }[];
   initialValues?: QueueValues;
   editing?: boolean;
+  units?: { id: string; name: string }[];
+  selectedUnitId?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const ref = useRef<HTMLFormElement>(null);
@@ -41,6 +43,7 @@ export function QueueForm({ action, locations, initialValues, editing = false }:
     </div>}
     <fieldset disabled={pending || state.conflict} className="grid min-w-0 gap-6 rounded-2xl border border-black/10 bg-white p-5 sm:grid-cols-2 sm:p-8">
       <legend className="sr-only">Queue settings</legend>
+      {units && <div className="sm:col-span-2"><label htmlFor="unitId" className="font-semibold">Institution unit</label><select id="unitId" name="unitId" required className={control} defaultValue={values.unitId ?? selectedUnitId ?? ""}><option value="" disabled>Choose a unit</option>{units.map(unit => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></div>}
       <div className="sm:col-span-2"><label htmlFor="name" className="font-semibold">Queue name</label><input {...props("name")} required maxLength={160} placeholder="e.g. Doctor Consultation" />{error("name")}</div>
       <div className="sm:col-span-2"><label htmlFor="description" className="font-semibold">Description <span className="font-normal text-muted">(optional)</span></label><textarea {...props("description")} rows={3} maxLength={2000} />{error("description")}</div>
       <div className="sm:col-span-2"><label htmlFor="locationId" className="font-semibold">Location</label><select key={values.locationId} {...props("locationId")} required><option value="" disabled>Choose a location</option>{locations.map((location) => <option key={location.id} value={location.id} disabled={!location.is_active}>{location.name}{location.is_active ? "" : " (inactive)"}</option>)}</select>{error("locationId")}</div>

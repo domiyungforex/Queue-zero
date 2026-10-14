@@ -1,53 +1,141 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
-import type { OnboardingState, OnboardingValues } from "@/lib/validation/onboarding";
+import type { OnboardingState } from "@/lib/validation/onboarding";
 
 afterEach(cleanup);
-const props = { countries: [{ code: "GH", name: "Ghana" }], timezones: ["UTC", "Africa/Accra"] };
-const values: OnboardingValues = { businessName: "Clinic A", industry: "healthcare", country: "GH", timezone: "Africa/Accra", locationName: "Main", locationAddress: "Accra" };
+const props = { requestId: "10000000-0000-4000-8000-000000000001", countries: [{ code: "GH", name: "Ghana" }, { code: "NG", name: "Nigeria" }], timezones: ["UTC", "Africa/Accra", "Africa/Lagos"] };
+const idle = async (): Promise<OnboardingState> => ({ status: "idle" });
 
-function fillForm() {
-  for (const [name, value] of Object.entries(values)) {
-    fireEvent.change(document.getElementById(name)!, { target: { value } });
-  }
-  return screen.getByRole("button", { name: "Create business" }).closest("form")!;
+function continueStep() {
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 }
 
-describe("onboarding form", () => {
-  it("labels all six required fields", () => {
-    render(<OnboardingForm {...props} action={async () => ({ status: "idle" })} />);
-    for (const label of ["Business name", "Industry", "Country", "Timezone", "Location name", "Location address"]) {
-      expect(screen.getByLabelText(label).hasAttribute("required")).toBe(true);
+function reachIndividualReview() {
+  fireEvent.click(screen.getByRole("radio", { name: /Individual/ }));
+  continueStep();
+  fireEvent.click(screen.getByRole("radio", { name: "Lecturer / Teacher" }));
+  continueStep();
+  fireEvent.change(screen.getByLabelText("Workspace name"), { target: { value: "My Physics Classes" } });
+  fireEvent.change(screen.getByLabelText("Teaching level"), { target: { value: "University undergraduate" } });
+  continueStep();
+  fireEvent.change(screen.getByLabelText("Country"), { target: { value: "GH" } });
+  fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Accra" } });
+  continueStep();
+}
+
+describe("unified onboarding form", () => {
+  it("starts with an accessible six-step account choice", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    expect(screen.getByText("Step 1 of 6")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: /Individual/ }).getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByRole("radio", { name: /Organization/ }).getAttribute("aria-checked")).toBe("false");
+    expect(screen.queryByText(/sign in|authenticate/i)).toBeNull();
+  });
+
+  it("blocks incomplete steps with clear field feedback", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    continueStep();
+    expect(screen.getByText("Choose individual or organization.")).toBeTruthy();
+    expect(screen.getByText("Step 1 of 6")).toBeTruthy();
+  });
+
+  it("shows and enables every supported profession", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    fireEvent.click(screen.getByRole("radio", { name: /Individual/ }));
+    continueStep();
+    for (const profession of ["Lecturer / Teacher", "Doctor", "Nurse", "Banker", "Barber / Stylist", "Consultant", "Other professional"]) {
+      expect(screen.getByRole("radio", { name: new RegExp(profession.replace("/", "\\/"), "i") })).toBeTruthy();
     }
+    expect((screen.getByRole("radio", { name: /Doctor/ }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole("radio", { name: "Lecturer / Teacher" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it("disables submission and shows progress while saving", async () => {
-    let finish!: (state: OnboardingState) => void;
-    const action = vi.fn(() => new Promise<OnboardingState>((resolve) => { finish = resolve; }));
-    render(<OnboardingForm {...props} action={action} />);
-    fireEvent.submit(fillForm());
-    const button = await screen.findByRole("button", { name: "Creating your business…" });
-    expect((button as HTMLButtonElement).disabled).toBe(true);
-    expect(document.querySelector("fieldset")?.disabled).toBe(true);
-    fireEvent.click(button);
-    expect(action).toHaveBeenCalledOnce();
-    await act(async () => finish({ status: "error", message: "Please try again.", values }));
-    expect((screen.getByRole("button", { name: "Create business" }) as HTMLButtonElement).disabled).toBe(false);
+  it("collects a persisted service and practice location for a doctor", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    fireEvent.click(screen.getByRole("radio", { name: /Individual/ }));
+    continueStep();
+    fireEvent.click(screen.getByRole("radio", { name: "Doctor" }));
+    continueStep();
+    fireEvent.change(screen.getByLabelText("Workspace name"), { target: { value: "Dr Ada Consults" } });
+    fireEvent.change(screen.getByLabelText("Service name"), { target: { value: "Consultations" } });
+    continueStep();
+    fireEvent.change(screen.getByLabelText("Country"), { target: { value: "NG" } });
+    fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Lagos" } });
+    fireEvent.change(screen.getByLabelText("Authorized practice or service location"), { target: { value: "Authorized practice" } });
+    fireEvent.change(screen.getByLabelText("Location address"), { target: { value: "Lagos" } });
+    continueStep();
+    expect(screen.getByText("Consultations")).toBeTruthy();
+    expect(screen.getByText("Authorized practice")).toBeTruthy();
+    expect(screen.getByText(/does not represent your employer/i)).toBeTruthy();
   });
 
-  it("keeps values after server errors and focuses the invalid field", async () => {
-    const action = async (): Promise<OnboardingState> => ({ status: "error", values, message: "Please check the highlighted fields.", fieldErrors: { businessName: ["Use a different name."] } });
-    render(<OnboardingForm {...props} action={action} />);
-    fireEvent.submit(fillForm());
-    await screen.findByRole("alert");
-    const name = screen.getByLabelText("Business name") as HTMLInputElement;
-    await waitFor(() => expect(name.getAttribute("aria-invalid")).toBe("true"));
-    expect(name.value).toBe("Clinic A");
-    expect((screen.getByLabelText("Location address") as HTMLTextAreaElement).value).toBe("Accra");
+  it("preserves individual values across Back and reaches review", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    reachIndividualReview();
+    expect(screen.getByText("My Physics Classes")).toBeTruthy();
+    expect(screen.getByText("Lecturer / Teacher")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect((screen.getByLabelText("Country") as HTMLSelectElement).value).toBe("GH");
-    expect(document.activeElement).toBe(name);
-    expect(screen.getByText("Use a different name.").id).toBe(name.getAttribute("aria-describedby"));
+    expect((screen.getByLabelText("Timezone") as HTMLSelectElement).value).toBe("Africa/Accra");
+  });
+
+  it("collects organization type and required first-location details", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    fireEvent.click(screen.getByRole("radio", { name: /Organization/ }));
+    continueStep();
+    for (const type of ["University / School", "Hospital / Clinic", "Bank / Financial institution", "Salon / Barbershop", "Government office", "Company / Other"]) {
+      expect((screen.getByRole("radio", { name: type }) as HTMLButtonElement).disabled).toBe(false);
+    }
+    fireEvent.click(screen.getByRole("radio", { name: "Hospital / Clinic" }));
+    continueStep();
+    fireEvent.change(screen.getByLabelText("Organization name"), { target: { value: "Greenfield Clinic" } });
+    continueStep();
+    expect(screen.getByLabelText("First location name")).toBeTruthy();
+    expect(screen.getByLabelText("Location address")).toBeTruthy();
+  });
+
+  it("submits preserved values and shows a loading state", async () => {
+    let finish!: (state: OnboardingState) => void;
+    const action = vi.fn((previous: OnboardingState, formData: FormData) => {
+      void previous;
+      void formData;
+      return new Promise<OnboardingState>((resolve) => { finish = resolve; });
+    });
+    render(<OnboardingForm {...props} action={action} />);
+    reachIndividualReview();
+    fireEvent.click(screen.getByRole("button", { name: "Create workspace" }));
+    expect((await screen.findByRole("button", { name: "Creating your workspace…" }) as HTMLButtonElement).disabled).toBe(true);
+    const submitted = action.mock.calls[0]?.[1] as FormData;
+    expect(submitted.get("accountType")).toBe("INDIVIDUAL");
+    expect(submitted.get("onboardingRequestId")).toBe(props.requestId);
+    expect(submitted.get("professionalCategory")).toBe("LECTURER_TEACHER");
+    expect(submitted.get("workspaceName")).toBe("My Physics Classes");
+    expect(submitted.get("teachingLevel")).toBe("University undergraduate");
+    finish({ status: "error", message: "Please try again." });
+    await screen.findByRole("alert");
+  });
+
+  it("returns to the invalid field after a server validation error", async () => {
+    const action = async (): Promise<OnboardingState> => ({
+      status: "error",
+      message: "Please check the highlighted fields.",
+      fieldErrors: { workspaceName: ["Use a different workspace name."] },
+    });
+    render(<OnboardingForm {...props} action={action} />);
+    reachIndividualReview();
+    fireEvent.click(screen.getByRole("button", { name: "Create workspace" }));
+    const input = await screen.findByLabelText("Workspace name");
+    await waitFor(() => expect(document.activeElement).toBe(input));
+    expect((input as HTMLInputElement).value).toBe("My Physics Classes");
+    expect(screen.getByText("Use a different workspace name.")).toBeTruthy();
+  });
+
+  it("uses narrow-safe containers and stacked mobile actions", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    const form = screen.getByRole("button", { name: "Continue" }).closest("form")!;
+    expect(form.className).toContain("min-w-0");
+    expect(screen.getByRole("button", { name: "Continue" }).parentElement?.className).toContain("flex-col-reverse");
   });
 });

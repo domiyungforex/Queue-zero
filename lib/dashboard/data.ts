@@ -15,7 +15,8 @@ export const getDashboardQueues = cache(async () => {
 });
 
 export const getDashboardLocations = cache(async () => {
-  const membership = await requireBusinessManager();
+  const current = await requireBusinessMembership();
+  const membership = current.institutionType ? current : await requireBusinessManager();
   const db = await createUserSupabaseClient();
   const { data, error } = await db.from("locations").select("id,name,address,timezone,is_active")
     .eq("business_id", membership.businessId).order("created_at", { ascending: true });

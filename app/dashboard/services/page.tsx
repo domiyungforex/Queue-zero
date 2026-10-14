@@ -1,0 +1,5 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getInstitutionSnapshot } from "@/lib/institution/data";
+export const metadata: Metadata = { title: "Institution services" };
+export default async function ServicesPage() { const { snapshot } = await getInstitutionSnapshot(); return <><h1 className="text-3xl font-semibold">Institution services</h1><p className="my-4 text-muted">Open a unit to see the services you can access.</p><div className="grid gap-4 sm:grid-cols-2">{snapshot.units.filter(unit => unit.status === "active").map(unit => <Link key={unit.id} href={`/dashboard/units/${unit.id}`} className="rounded-xl border border-black/10 bg-white p-5"><h2 className="font-semibold">{unit.name}</h2><p className="mt-2 text-muted">{snapshot.queues.filter(queue => queue.unit_id === unit.id).length} accessible queues · {snapshot.courses.filter(course => course.unit_id === unit.id).length} courses</p></Link>)}</div>{!snapshot.units.length && <p>No services are available to your account yet.</p>}</>; }

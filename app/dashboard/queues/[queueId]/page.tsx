@@ -1,3 +1,4 @@
+import { getInstitutionSnapshot } from "@/lib/institution/data";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { StaffConsole } from "@/components/queue/staff-console";
@@ -18,7 +19,8 @@ export default async function QueueDetailsPage({ params, searchParams }: {
   const consoleState = await getQueueConsole(queue.id);
   const saved = (await searchParams).saved;
   const message = saved === "created" ? "Queue created." : saved === "updated" ? "Queue settings saved." : saved === "status" ? `Queue is now ${queue.status}.` : null;
-  const manager = membership.role === "owner" || membership.role === "admin";
+  const institution = membership.institutionType && queue.unit_id ? await getInstitutionSnapshot(queue.unit_id) : null;
+  const manager = Boolean(institution?.snapshot.units.find(unit => unit.id === queue.unit_id)?.permissions.includes("queue.manage")) || membership.role === "owner" || membership.role === "admin";
   return <>
     <Link href="/dashboard/queues" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary">← Queues</Link>
     {message && <p role="status" className="my-4 rounded-xl bg-green-50 p-4 text-green-900">{message}</p>}

@@ -11,7 +11,7 @@ import type { Json } from "@/lib/db/database.types";
 
 export async function manageSchool(_previous: SchoolActionState, form: FormData): Promise<SchoolActionState> {
   const membership = await requireBusinessMembership();
-  if (!["owner", "admin", "lecturer"].includes(membership.role)) return { ok: false, message: "You do not have permission to manage attendance." };
+  if (!membership.institutionType && !["owner", "admin", "lecturer"].includes(membership.role)) return { ok: false, message: "You do not have permission to manage attendance." };
   try {
     const raw: Record<string, unknown> = Object.fromEntries(form.entries());
     if (raw.action === "enroll") raw.students = parseStudentCsv(String(raw.csv ?? ""));
@@ -19,7 +19,7 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     const parsed = schoolInputSchema.safeParse(raw);
     if (!parsed.success) return { ok: false, message: "Please check the form fields and try again." };
     const { action, ...fields } = parsed.data;
-    if (["faculty", "department", "lecturer", "remove_lecturer"].includes(action) && membership.role === "lecturer") return { ok: false, message: "Only an owner or administrator can change school setup." };
+    if (["faculty", "department", "lecturer", "remove_lecturer"].includes(action) && !membership.institutionType && membership.role === "lecturer") return { ok: false, message: "Only an owner or administrator can change school setup." };
     let payload: Record<string, Json | undefined> = { ...fields, organization_id: membership.businessId };
     if (parsed.data.action === "course" && membership.role === "lecturer") {
       const identity = await currentUser();

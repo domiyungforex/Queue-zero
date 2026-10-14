@@ -42,4 +42,10 @@ describe("signed attendance QR", () => {
     expect(safeAuthReturn(path)).toBe(path);
     for (const value of ["//evil.test", "/\\evil.test", "https://evil.test", "/\n/evil.test"]) expect(safeAuthReturn(value)).toBe("/dashboard");
   });
+  it("preserves Clerk absolute return URLs only for the configured application origin", () => {
+    expect(safeAuthReturn("https://turnmark.example/dashboard/queues?tab=open", "/dashboard", "https://turnmark.example"))
+      .toBe("/dashboard/queues?tab=open");
+    expect(safeAuthReturn("https://evil.example/dashboard/settings", "/dashboard", "https://turnmark.example"))
+      .toBe("/dashboard");
+  });
 });

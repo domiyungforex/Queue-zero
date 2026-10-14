@@ -9,13 +9,23 @@ export const getMemberships = cache(async () => {
   const userId = await requireUserId();
   const db = await createUserSupabaseClient();
   const { data, error } = await db.from("business_members")
-    .select("business_id,role,businesses!business_members_business_id_fkey(name,organization_mode)")
+    .select("business_id,role,businesses!business_members_business_id_fkey(name,organization_mode,institution_type,workspace_ownership,professional_category,organization_type,onboarding_completed_at)")
     .eq("clerk_user_id", userId)
     .order("created_at", { ascending: true }).order("id", { ascending: true });
   if (error) throw new Error("We couldn’t load your business. Please try again.");
   return (data ?? []).map((membership) => {
     if (!membership.businesses) throw new Error("Your business is temporarily unavailable.");
-    return { businessId: membership.business_id, role: membership.role, businessName: membership.businesses.name, ...(membership.businesses.organization_mode ? { organizationMode: membership.businesses.organization_mode } : {}) };
+    return {
+      businessId: membership.business_id,
+      role: membership.role,
+      businessName: membership.businesses.name,
+      workspaceOwnership: membership.businesses.workspace_ownership,
+      ...(membership.businesses.organization_mode ? { organizationMode: membership.businesses.organization_mode } : {}),
+      ...(membership.businesses.institution_type ? { institutionType: membership.businesses.institution_type } : {}),
+      ...(membership.businesses.professional_category ? { professionalCategory: membership.businesses.professional_category } : {}),
+      ...(membership.businesses.organization_type ? { organizationType: membership.businesses.organization_type } : {}),
+      ...(membership.businesses.onboarding_completed_at ? { onboardingCompletedAt: membership.businesses.onboarding_completed_at } : {}),
+    };
   });
 });
 

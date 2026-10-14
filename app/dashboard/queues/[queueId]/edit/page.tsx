@@ -1,13 +1,20 @@
+import { notFound } from "next/navigation";
+import { getInstitutionSnapshot } from "@/lib/institution/data";
 import Link from "next/link";
-import { requireBusinessManager } from "@/lib/business/membership";
+import { requireBusinessManager, requireBusinessMembership } from "@/lib/business/membership";
 import { getDashboardLocations } from "@/lib/dashboard/data";
 import { getManagedQueue } from "@/lib/queue/management";
 import { updateQueue } from "@/app/dashboard/queues/actions";
 import { QueueForm } from "@/components/queue/queue-form";
 
 export default async function EditQueuePage({ params }: { params: Promise<{ queueId: string }> }) {
-  const membership = await requireBusinessManager();
+  const current = await requireBusinessMembership();
+  const membership = current.institutionType ? current : await requireBusinessManager();
   const queue = await getManagedQueue((await params).queueId);
+  if (membership.institutionType && queue.unit_id) {
+    const { snapshot, manager } = await getInstitutionSnapshot(queue.unit_id);
+    if (!manager && !snapshot.units.find(unit => unit.id === queue.unit_id)?.permissions.includes("queue.manage")) notFound();
+  }
   const locations = await getDashboardLocations();
   return <>
     <Link href={`/dashboard/queues/${queue.id}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary">← Queue details</Link>

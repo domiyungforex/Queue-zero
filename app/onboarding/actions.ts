@@ -1,25 +1,23 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { requireUserId } from "@/lib/auth/server";
 import { createUserSupabaseClient } from "@/lib/db/server";
-import { ONBOARDING_FIELDS, onboardingSchema, type OnboardingState, type OnboardingValues } from "@/lib/validation/onboarding";
+import { ONBOARDING_FIELDS, ORGANIZATION_TYPES, onboardingSchema, type OnboardingState, type OnboardingValues } from "@/lib/validation/onboarding";
 
 export async function onboardBusiness(_previous: OnboardingState, formData: FormData): Promise<OnboardingState> {
-  await requireUserId();
+  const userId = await requireUserId();
   const values = Object.fromEntries(ONBOARDING_FIELDS.map((field) => {
     const value = formData.get(field);
     return [field, typeof value === "string" ? value : ""];
   })) as OnboardingValues;
-  const organizationMode = formData.get("organizationMode");
-  if (organizationMode !== null) values.organizationMode = typeof organizationMode === "string" ? organizationMode : "";
   const parsed = onboardingSchema.safeParse(values);
   // Bound values echoed after a malicious oversized submission; normal form
   // values remain intact on both validation and infrastructure failures.
   const retainedValues = Object.fromEntries(ONBOARDING_FIELDS.map((field) => [field, values[field].slice(0, 1000)])) as OnboardingValues;
-  if (values.organizationMode !== undefined) retainedValues.organizationMode = values.organizationMode.slice(0, 100);
   if (!parsed.success) {
     return { status: "error", message: "Please check the highlighted fields.", values: retainedValues, fieldErrors: parsed.error.flatten().fieldErrors };
   }
@@ -27,25 +25,60 @@ export async function onboardBusiness(_previous: OnboardingState, formData: Form
   try {
     const db = await createUserSupabaseClient();
     const input = parsed.data;
-    const parameters = {
-      p_business_name: input.businessName,
-      p_industry: input.industry,
-      p_country_code: input.country,
-      p_timezone: input.timezone,
-      p_location_name: input.locationName,
-      p_location_address: input.locationAddress,
-    };
-    const { data, error } = (!input.organizationMode || input.organizationMode === "BUSINESS")
-      ? await db.rpc("onboard_business", parameters)
-      : await db.rpc("onboard_organization", { ...parameters, p_mode: input.organizationMode });
-    if (error || !z.uuid().safeParse(data).success) {
-      return { status: "error", message: "We couldn’t finish setting up your business. Please try again.", values: retainedValues };
+    let result: { data: string | null; error: unknown };
+    if (input.accountType === "INDIVIDUAL") {
+      result = await db.rpc("onboard_professional_workspace_v2", {
+        p_workspace_name: input.workspaceName,
+        p_professional_category: input.professionalCategory,
+        p_country_code: input.country,
+        p_timezone: input.timezone,
+        p_teaching_level: input.teachingLevel || undefined,
+        p_institution_name: input.institutionName || undefined,
+        p_service_name: input.serviceName || undefined,
+        p_location_name: input.locationName || undefined,
+        p_location_address: input.locationAddress || undefined,
+      });
+    } else {
+      const organizationType = ORGANIZATION_TYPES.find(({ value }) => value === input.organizationType);
+      if (!organizationType) {
+        return { status: "error", message: "Please check the highlighted fields.", values: retainedValues, fieldErrors: { organizationType: ["Choose an organization type."] } };
+      }
+      const parameters = {
+        p_request_id: input.onboardingRequestId,
+        p_workspace_name: input.workspaceName,
+        p_organization_type: organizationType.value,
+        p_country_code: input.country,
+        p_timezone: input.timezone,
+        p_location_name: input.locationName,
+        p_location_address: input.locationAddress,
+      };
+      result = await db.rpc("onboard_organization_workspace", parameters);
     }
+    const { data, error } = result;
+    const workspaceId = z.uuid().safeParse(data);
+    if (error || !workspaceId.success) {
+      return { status: "error", message: "We couldn’t finish setting up your workspace. Please try again.", values: retainedValues };
+    }
+    const { data: membership, error: membershipError } = await db.from("business_members")
+      .select("business_id")
+      .eq("business_id", workspaceId.data)
+      .eq("clerk_user_id", userId)
+      .maybeSingle();
+    if (membershipError || membership?.business_id !== workspaceId.data) {
+      return { status: "error", message: "Your workspace was saved, but we couldn’t open it yet. Please try again.", values: retainedValues };
+    }
+    (await cookies()).set("queuezero-business", workspaceId.data, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
   } catch (error) {
     unstable_rethrow(error);
-    return { status: "error", message: "We couldn’t finish setting up your business. Please try again.", values: retainedValues };
+    return { status: "error", message: "We couldn’t finish setting up your workspace. Please try again.", values: retainedValues };
   }
 
   revalidatePath("/dashboard", "layout");
-  redirect("/dashboard");
+  redirect("/dashboard?onboarding=complete");
 }

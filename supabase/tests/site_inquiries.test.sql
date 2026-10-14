@@ -1,0 +1,16 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
+select plan(9);
+select ok(not has_table_privilege('anon','public.site_inquiries','SELECT'),'inquiries are not publicly readable');
+select ok(not has_table_privilege('authenticated','public.site_inquiries','SELECT'),'signed-in customers cannot read inquiries');
+select ok(not has_function_privilege('anon','public.submit_site_inquiry(text,text,text,text,uuid)','EXECUTE'),'anonymous RPC denied');
+select ok(has_function_privilege('service_role','public.submit_site_inquiry(text,text,text,text,uuid)','EXECUTE'),'controlled server RPC permitted');
+select lives_ok($$select public.submit_site_inquiry('Ada','ada@example.com','A genuine question about the service',repeat('a',64),'60000000-0000-4000-8000-000000000001')$$,'inquiry accepted');
+select lives_ok($$select public.submit_site_inquiry('Ada','ada@example.com','A genuine question about the service',repeat('a',64),'60000000-0000-4000-8000-000000000001')$$,'exact retry accepted');
+select is((select count(*) from public.site_inquiries where source_hash=repeat('a',64)),1::bigint,'retry does not duplicate');
+select throws_ok($$select public.submit_site_inquiry('Ada','ada@example.com','A different message from another request',repeat('a',64),'60000000-0000-4000-8000-000000000001')$$,'22023','Invalid retry','cannot change an existing inquiry via retry');
+do $$begin for n in 2..5 loop perform public.submit_site_inquiry('Ada','ada@example.com','A genuine question about the service',repeat('a',64),('60000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid); end loop; end$$;
+select throws_ok($$select public.submit_site_inquiry('Ada','ada@example.com','Another genuine question about the service',repeat('a',64),'60000000-0000-4000-8000-000000000006')$$,'P0001','Too many inquiries. Try again later.','rate limit applies transactionally');
+select * from finish();
+rollback;

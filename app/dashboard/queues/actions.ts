@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
-import { requireBusinessManager } from "@/lib/business/membership";
+import { requireBusinessManager, requireBusinessMembership } from "@/lib/business/membership";
 import { createUserSupabaseClient } from "@/lib/db/server";
 import { QUEUE_FIELDS, queueSchema, queueContextSchema, queueEditContextSchema, queueStatusSchema, type QueueContext, type QueueEditContext, type QueueState, type QueueValues } from "@/lib/validation/queue";
 
@@ -16,7 +16,8 @@ function mutationError(code?: string): QueueState {
 }
 
 async function saveSettings(context: QueueContext | QueueEditContext, formData: FormData, editing: boolean): Promise<QueueState> {
-  const membership = await requireBusinessManager();
+  const current = await requireBusinessMembership();
+  const membership = current.institutionType ? current : await requireBusinessManager();
   const parsedContext = (editing ? queueEditContextSchema : queueContextSchema).safeParse(context);
   if (!parsedContext.success || parsedContext.data.businessId !== membership.businessId) {
     return { status: "error", message: "Your workspace has changed. Return to Queues and open the form again." };
@@ -27,7 +28,10 @@ async function saveSettings(context: QueueContext | QueueEditContext, formData: 
     return [field, typeof value === "string" ? value : ""];
   })) as QueueValues;
   const retained = Object.fromEntries(QUEUE_FIELDS.map((field) => [field, values[field].slice(0, 2000)])) as QueueValues;
+  const unitId = formData.get("unitId");
+  if (typeof unitId === "string" && unitId) { values.unitId = unitId; retained.unitId = unitId.slice(0, 100); }
   const parsed = queueSchema.safeParse(values);
+  if (membership.institutionType && !editing && !values.unitId) return { status: "error", message: "Choose an institution unit.", values: retained };
   if (!parsed.success) return { status: "error", message: "Please check the highlighted fields.", values: retained, fieldErrors: parsed.error.flatten().fieldErrors };
   try {
     const db = await createUserSupabaseClient();
@@ -43,7 +47,9 @@ async function saveSettings(context: QueueContext | QueueEditContext, formData: 
     };
     const result = revision !== undefined
       ? await db.rpc("update_queue", { ...args, p_expected_revision: revision })
-      : await db.rpc("create_queue", args);
+      : membership.institutionType && input.unitId
+        ? await db.rpc("create_unit_queue", { ...args, p_unit_id: input.unitId })
+        : await db.rpc("create_queue", args);
     if (result.error || !z.uuid().safeParse(result.data).success || result.data !== parsedContext.data.queueId) {
       return { ...mutationError(result.error?.code), values: retained };
     }
@@ -64,7 +70,8 @@ export async function updateQueue(context: QueueEditContext, _previous: QueueSta
 }
 
 export async function changeQueueStatus(context: QueueEditContext, _previous: QueueState, formData: FormData): Promise<QueueState> {
-  const membership = await requireBusinessManager();
+  const current = await requireBusinessMembership();
+  const membership = current.institutionType ? current : await requireBusinessManager();
   const parsedContext = queueEditContextSchema.safeParse(context);
   const status = queueStatusSchema.safeParse(formData.get("status"));
   if (!parsedContext.success || !status.success || parsedContext.data.businessId !== membership.businessId) {

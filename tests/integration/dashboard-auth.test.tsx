@@ -1,4 +1,5 @@
 import { isValidElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { protect, redirect } = vi.hoisted(() => ({ protect: vi.fn(), redirect: vi.fn((path: string) => { throw new Error(`NEXT_REDIRECT:${path}`); }) }));
@@ -14,7 +15,7 @@ import DashboardLayout from "@/app/dashboard/layout";
 import OnboardingPage from "@/app/onboarding/page";
 import { getCurrentMembership, requireBusinessManager, requireBusinessOwner } from "@/lib/business/membership";
 
-let rows: { business_id: string; role: string; businesses: { name: string } }[];
+let rows: { business_id: string; role: string; businesses: { name: string; onboarding_completed_at?: string } }[];
 let responseStatus: number;
 const requests: URL[] = [];
 beforeEach(() => {
@@ -40,6 +41,17 @@ describe("authenticated membership routing with mocked Clerk and database transp
     expect(isValidElement(await DashboardPage())).toBe(true);
     expect(isValidElement(await DashboardLayout({ children: "dashboard content" }))).toBe(true);
     expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("shows confirmation only after onboarding persistence redirects back", async () => {
+    rows[0].businesses.onboarding_completed_at = "2026-10-14T08:00:00.000Z";
+    const page = await DashboardPage({ searchParams: Promise.resolve({ onboarding: "complete" }) });
+    expect(renderToStaticMarkup(page)).toContain("Your workspace is ready.");
+  });
+
+  it("does not trust the onboarding query without persisted completion", async () => {
+    const page = await DashboardPage({ searchParams: Promise.resolve({ onboarding: "complete" }) });
+    expect(renderToStaticMarkup(page)).not.toContain("Your workspace is ready.");
   });
 
   it("selects the signed-in user's membership, including when they can read other members", async () => {
@@ -75,6 +87,17 @@ describe("authenticated membership routing with mocked Clerk and database transp
 
   it("redirects existing members away from onboarding", async () => {
     await expect(OnboardingPage()).rejects.toThrow("NEXT_REDIRECT:/dashboard");
+  });
+
+  it("lets an existing member deliberately add another workspace", async () => {
+    expect(isValidElement(await OnboardingPage({ searchParams: Promise.resolve({ new: "workspace" }) }))).toBe(true);
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("keeps workspace switching available for student memberships", async () => {
+    rows[0].role = "student";
+    expect(renderToStaticMarkup(await DashboardPage())).toContain("Use the workspace switcher above");
+    expect(redirect).not.toHaveBeenCalledWith("/attend");
   });
 
   it("does not interpret a database failure as missing membership", async () => {

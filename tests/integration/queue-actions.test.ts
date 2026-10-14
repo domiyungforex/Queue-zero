@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ member: vi.fn(), client: vi.fn(), rpc: vi.fn(), revalidate: vi.fn(), redirect: vi.fn((path: string) => { throw new Error(`NEXT_REDIRECT:${path}`); }) }));
-vi.mock("@/lib/business/membership", () => ({ requireBusinessManager: mocks.member }));
+vi.mock("@/lib/business/membership", () => ({ requireBusinessManager: mocks.member, requireBusinessMembership: mocks.member }));
 vi.mock("@/lib/db/server", () => ({ createUserSupabaseClient: mocks.client }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect, unstable_rethrow: (error: unknown) => {

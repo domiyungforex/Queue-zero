@@ -2,9 +2,10 @@ import { z } from "zod";
 
 export const QUEUE_FIELDS = ["name", "description", "locationId", "serviceMinutes", "warningThreshold", "phoneMode"] as const;
 export type QueueField = (typeof QUEUE_FIELDS)[number];
-export type QueueValues = Record<QueueField, string>;
+export type QueueValues = Record<QueueField, string> & { unitId?: string };
 
 export const queueSchema = z.object({
+  unitId: z.uuid("Choose a unit.").optional(),
   name: z.string().trim().min(1, "Enter a queue name.").max(160, "Use 160 characters or fewer."),
   description: z.string().trim().max(2000, "Use 2,000 characters or fewer."),
   locationId: z.uuid("Choose a location."),

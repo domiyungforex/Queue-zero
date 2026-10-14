@@ -11,6 +11,7 @@ import { testJoinConcurrency } from "../tests/database/join-concurrency.mjs";
 import { testCallNextConcurrency } from "../tests/database/call-next-concurrency.mjs";
 
 import { testAttendanceConcurrency } from "../tests/database/attendance-concurrency.mjs";
+import { testWorkspaceConcurrency } from "../tests/database/workspace-concurrency.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const container = `queuezero-test-${randomUUID()}`;
@@ -59,6 +60,7 @@ try {
   await testJoinConcurrency(container);
   await testCallNextConcurrency(container);
   await testAttendanceConcurrency(container);
+  await testWorkspaceConcurrency(container);
 } finally {
   // The randomly named test container is the only resource removed.
   spawnSync("docker", ["rm", "--force", container], { stdio: "ignore" });

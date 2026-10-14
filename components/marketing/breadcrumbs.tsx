@@ -1,0 +1,3 @@
+import Link from "next/link";
+import { jsonLd, siteUrl } from "@/lib/site/metadata";
+export function Breadcrumbs({ label, path }: { label: string; path: string }) { return <><nav aria-label="Breadcrumb" className="mb-6 text-sm"><ol className="flex flex-wrap gap-2"><li><Link href="/">Home</Link></li><li aria-hidden="true">/</li><li aria-current="page">{label}</li></ol></nav><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: siteUrl().href }, { "@type": "ListItem", position: 2, name: label, item: new URL(path, siteUrl()).href }] }) }} /></>; }

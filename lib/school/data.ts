@@ -9,7 +9,7 @@ import { schoolSnapshotSchema } from "./contracts";
 export async function getSchoolSnapshot(courseId?: string, classId?: string) {
   if ((courseId && !z.uuid().safeParse(courseId).success) || (classId && !z.uuid().safeParse(classId).success)) notFound();
   const membership = await requireBusinessMembership();
-  if (!["owner", "admin", "lecturer"].includes(membership.role)) notFound();
+  if (!membership.institutionType && !["owner", "admin", "lecturer"].includes(membership.role)) notFound();
   const db = await createUserSupabaseClient();
   const { data, error } = await db.rpc("school_snapshot", { p_organization_id: membership.businessId, p_course_id: courseId ?? undefined, p_class_id: classId ?? undefined });
   if (error?.code === "42501" || error?.code === "P0002") notFound();

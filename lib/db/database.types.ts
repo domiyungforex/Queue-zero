@@ -564,12 +564,17 @@ export type Database = {
                     "institution_type": string | null;
                     "logo_url": string | null;
                     "name": string;
+                    "onboarding_completed_at": string | null;
+                    "onboarding_request_id": string | null;
                     "organization_mode": Database["public"]['Enums']["organization_mode"];
+                    "organization_type": Database["public"]['Enums']["organization_type"] | null;
                     "owner_user_id": string;
+                    "professional_category": Database["public"]['Enums']["professional_category"] | null;
                     "slug": string;
                     "subscription_tier": Database["public"]['Enums']["subscription_plan"];
                     "timezone": string;
                     "updated_at": string;
+                    "workspace_ownership": Database["public"]['Enums']["workspace_ownership"];
                 };
                 Insert: {
                     "attendance_security_mode"?: string;
@@ -580,12 +585,17 @@ export type Database = {
                     "institution_type"?: string | null;
                     "logo_url"?: string | null;
                     "name": string;
+                    "onboarding_completed_at"?: string | null;
+                    "onboarding_request_id"?: string | null;
                     "organization_mode"?: Database["public"]['Enums']["organization_mode"];
+                    "organization_type"?: Database["public"]['Enums']["organization_type"] | null;
                     "owner_user_id": string;
+                    "professional_category"?: Database["public"]['Enums']["professional_category"] | null;
                     "slug": string;
                     "subscription_tier"?: Database["public"]['Enums']["subscription_plan"];
                     "timezone"?: string;
                     "updated_at"?: string;
+                    "workspace_ownership"?: Database["public"]['Enums']["workspace_ownership"];
                 };
                 Update: {
                     "attendance_security_mode"?: string;
@@ -596,12 +606,17 @@ export type Database = {
                     "institution_type"?: string | null;
                     "logo_url"?: string | null;
                     "name"?: string;
+                    "onboarding_completed_at"?: string | null;
+                    "onboarding_request_id"?: string | null;
                     "organization_mode"?: Database["public"]['Enums']["organization_mode"];
+                    "organization_type"?: Database["public"]['Enums']["organization_type"] | null;
                     "owner_user_id"?: string;
+                    "professional_category"?: Database["public"]['Enums']["professional_category"] | null;
                     "slug"?: string;
                     "subscription_tier"?: Database["public"]['Enums']["subscription_plan"];
                     "timezone"?: string;
                     "updated_at"?: string;
+                    "workspace_ownership"?: Database["public"]['Enums']["workspace_ownership"];
                 };
                 Relationships: [
                     {
@@ -1446,6 +1461,66 @@ export type Database = {
                         referencedColumns: [
                             "id",
                             "organization_id"
+                        ];
+                    }
+                ];
+            };
+            "professional_workspace_profiles": {
+                Row: {
+                    "business_id": string;
+                    "created_at": string;
+                    "institution_name": string | null;
+                    "practice_location_id": string | null;
+                    "professional_category": Database["public"]['Enums']["professional_category"];
+                    "service_name": string | null;
+                    "teaching_level": string | null;
+                    "updated_at": string;
+                };
+                Insert: {
+                    "business_id": string;
+                    "created_at"?: string;
+                    "institution_name"?: string | null;
+                    "practice_location_id"?: string | null;
+                    "professional_category": Database["public"]['Enums']["professional_category"];
+                    "service_name"?: string | null;
+                    "teaching_level"?: string | null;
+                    "updated_at"?: string;
+                };
+                Update: {
+                    "business_id"?: string;
+                    "created_at"?: string;
+                    "institution_name"?: string | null;
+                    "practice_location_id"?: string | null;
+                    "professional_category"?: Database["public"]['Enums']["professional_category"];
+                    "service_name"?: string | null;
+                    "teaching_level"?: string | null;
+                    "updated_at"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "professional_workspace_profil_business_id_professional_cat_fkey";
+                        columns: [
+                            "business_id",
+                            "professional_category"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id",
+                            "professional_category"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "professional_workspace_profil_practice_location_id_busines_fkey";
+                        columns: [
+                            "practice_location_id",
+                            "business_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "locations";
+                        referencedColumns: [
+                            "id",
+                            "business_id"
                         ];
                     }
                 ];
@@ -2637,6 +2712,41 @@ export type Database = {
                 };
                 Returns: string;
             };
+            "onboard_organization_workspace": {
+                Args: {
+                    "p_country_code": string;
+                    "p_location_address": string;
+                    "p_location_name": string;
+                    "p_organization_type": Database["public"]['Enums']["organization_type"];
+                    "p_request_id": string;
+                    "p_timezone": string;
+                    "p_workspace_name": string;
+                };
+                Returns: string;
+            };
+            "onboard_professional_workspace": {
+                Args: {
+                    "p_country_code": string;
+                    "p_professional_category": Database["public"]['Enums']["professional_category"];
+                    "p_timezone": string;
+                    "p_workspace_name": string;
+                };
+                Returns: string;
+            };
+            "onboard_professional_workspace_v2": {
+                Args: {
+                    "p_country_code": string;
+                    "p_institution_name"?: string;
+                    "p_location_address"?: string;
+                    "p_location_name"?: string;
+                    "p_professional_category": Database["public"]['Enums']["professional_category"];
+                    "p_service_name"?: string;
+                    "p_teaching_level"?: string;
+                    "p_timezone": string;
+                    "p_workspace_name": string;
+                };
+                Returns: string;
+            };
             "operate_queue": {
                 Args: {
                     "p_queue_id": string;
@@ -2874,7 +2984,9 @@ export type Database = {
             "notification_status": "pending" | "sent" | "failed" | "skipped";
             "notification_type": "almost_your_turn" | "your_turn" | "queue_paused";
             "organization_mode": "BUSINESS" | "SCHOOL" | "HYBRID";
+            "organization_type": "UNIVERSITY_SCHOOL" | "HOSPITAL_CLINIC" | "BANK_FINANCIAL" | "SALON_BARBERSHOP" | "GOVERNMENT_OFFICE" | "COMPANY_OTHER";
             "person_type": "CUSTOMER" | "STUDENT" | "EMPLOYEE" | "VISITOR" | "GUEST";
+            "professional_category": "LECTURER_TEACHER" | "DOCTOR" | "NURSE" | "BANKER" | "BARBER_STYLIST" | "CONSULTANT" | "OTHER_PROFESSIONAL";
             "queue_status": "open" | "paused" | "closed";
             "session_status": "DRAFT" | "SCHEDULED" | "OPEN" | "PAUSED" | "CLOSED" | "COMPLETED";
             "session_type": "QUEUE" | "CLASS" | "VISIT" | "APPOINTMENT" | "EVENT" | "SHIFT";
@@ -2883,6 +2995,7 @@ export type Database = {
             "ticket_actor_type": "customer" | "staff" | "system";
             "ticket_event_type": "joined" | "called" | "recalled" | "completed" | "no_show" | "cancelled";
             "ticket_status": "waiting" | "serving" | "completed" | "no_show" | "cancelled";
+            "workspace_ownership": "ORGANIZATION" | "INDIVIDUAL";
         };
         CompositeTypes: {
             [_ in never]: never;
@@ -2941,7 +3054,7 @@ export type CompositeTypes<PublicCompositeTypeNameOrOptions extends keyof Defaul
 export const Constants = {
     "public": {
         Enums: {
-            "attendance_status": ["PRESENT", "LATE", "ABSENT", "EARLY_LEAVE", "INCOMPLETE", "EXCUSED", "FLAGGED"], "business_role": ["owner", "admin", "staff", "lecturer", "student"], "notification_channel": ["web_push", "sms", "whatsapp"], "notification_status": ["pending", "sent", "failed", "skipped"], "notification_type": ["almost_your_turn", "your_turn", "queue_paused"], "organization_mode": ["BUSINESS", "SCHOOL", "HYBRID"], "person_type": ["CUSTOMER", "STUDENT", "EMPLOYEE", "VISITOR", "GUEST"], "queue_status": ["open", "paused", "closed"], "session_status": ["DRAFT", "SCHEDULED", "OPEN", "PAUSED", "CLOSED", "COMPLETED"], "session_type": ["QUEUE", "CLASS", "VISIT", "APPOINTMENT", "EVENT", "SHIFT"], "subscription_plan": ["FREE", "STARTER", "BUSINESS"], "subscription_status": ["pending", "active", "past_due", "cancelled", "expired"], "ticket_actor_type": ["customer", "staff", "system"], "ticket_event_type": ["joined", "called", "recalled", "completed", "no_show", "cancelled"], "ticket_status": ["waiting", "serving", "completed", "no_show", "cancelled"]
+            "attendance_status": ["PRESENT", "LATE", "ABSENT", "EARLY_LEAVE", "INCOMPLETE", "EXCUSED", "FLAGGED"], "business_role": ["owner", "admin", "staff", "lecturer", "student"], "notification_channel": ["web_push", "sms", "whatsapp"], "notification_status": ["pending", "sent", "failed", "skipped"], "notification_type": ["almost_your_turn", "your_turn", "queue_paused"], "organization_mode": ["BUSINESS", "SCHOOL", "HYBRID"], "organization_type": ["UNIVERSITY_SCHOOL", "HOSPITAL_CLINIC", "BANK_FINANCIAL", "SALON_BARBERSHOP", "GOVERNMENT_OFFICE", "COMPANY_OTHER"], "person_type": ["CUSTOMER", "STUDENT", "EMPLOYEE", "VISITOR", "GUEST"], "professional_category": ["LECTURER_TEACHER", "DOCTOR", "NURSE", "BANKER", "BARBER_STYLIST", "CONSULTANT", "OTHER_PROFESSIONAL"], "queue_status": ["open", "paused", "closed"], "session_status": ["DRAFT", "SCHEDULED", "OPEN", "PAUSED", "CLOSED", "COMPLETED"], "session_type": ["QUEUE", "CLASS", "VISIT", "APPOINTMENT", "EVENT", "SHIFT"], "subscription_plan": ["FREE", "STARTER", "BUSINESS"], "subscription_status": ["pending", "active", "past_due", "cancelled", "expired"], "ticket_actor_type": ["customer", "staff", "system"], "ticket_event_type": ["joined", "called", "recalled", "completed", "no_show", "cancelled"], "ticket_status": ["waiting", "serving", "completed", "no_show", "cancelled"], "workspace_ownership": ["ORGANIZATION", "INDIVIDUAL"]
         }
     }
 } as const;

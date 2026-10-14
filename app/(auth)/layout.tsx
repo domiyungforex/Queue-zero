@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
       signInFallbackRedirectUrl="/dashboard"
-      signUpFallbackRedirectUrl="/dashboard"
+      signUpFallbackRedirectUrl="/onboarding"
       afterSignOutUrl="/"
       localization={{
         signIn: { start: { title: "Sign in to TuRnMaRk", titleCombined: "Sign in to TuRnMaRk" } },
