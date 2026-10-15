@@ -23,8 +23,18 @@ export default async function EditQueuePage({ params }: { params: Promise<{ queu
     {!locations.some((location) => location.is_active) && <p role="status" className="mb-6 rounded-xl bg-amber-50 p-4">An active location is needed before you can save changes.</p>}
     <QueueForm key={`${queue.id}:${queue.revision}`} editing locations={locations}
       action={updateQueue.bind(null, { businessId: membership.businessId, queueId: queue.id, revision: queue.revision })}
-      initialValues={{ name: queue.name, description: queue.description ?? "", locationId: queue.location_id,
-        serviceMinutes: String(queue.average_service_seconds / 60), warningThreshold: String(queue.warning_threshold),
-        phoneMode: queue.require_phone ? "required" : queue.allow_phone ? "optional" : "none" }} />
+      initialValues={{
+        name: queue.name,
+        serviceName: queue.service_name,
+        description: queue.description ?? "",
+        locationId: queue.location_id,
+        serviceMinutes: String(queue.average_service_seconds / 60),
+        capacity: queue.capacity == null ? "" : String(queue.capacity),
+        opensAt: queue.opens_at ?? "",
+        closesAt: queue.closes_at ?? "",
+        status: queue.status,
+        warningThreshold: String(queue.warning_threshold),
+        phoneMode: queue.require_phone ? "required" : queue.allow_phone ? "optional" : "none",
+      }} />
   </>;
 }

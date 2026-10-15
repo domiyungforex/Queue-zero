@@ -7,7 +7,7 @@ import { publicQueueSchema, publicQueueSlugSchema } from "@/lib/validation/publi
 export const getPublicQueue = cache(async (slug: string) => {
   if (!publicQueueSlugSchema.safeParse(slug).success) return null;
   const db = createPublicSupabaseClient();
-  const { data, error } = await db.rpc("get_public_queue", { p_slug: slug });
+  const { data, error } = await db.rpc("get_public_queue_v2", { p_slug: slug });
   if (error) throw new Error("We couldn’t load this queue. Please try again.");
   const parsed = z.array(publicQueueSchema).max(1).safeParse(data);
   if (!parsed.success) throw new Error("Queue details are temporarily unavailable.");

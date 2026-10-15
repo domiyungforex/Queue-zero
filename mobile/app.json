@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "TuRnMaRk",
+    "slug": "turnmark",
+    "scheme": "turnmark",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.turnmark.staff",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "com.turnmark.staff",
+      "versionCode": 1
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

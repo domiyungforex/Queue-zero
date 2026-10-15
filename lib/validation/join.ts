@@ -9,8 +9,14 @@ export const joinInputSchema = z.object({
   phone: z.string().max(32, "Use 32 characters or fewer."),
 }).strict();
 export const joinOptionsSchema = z.object({
-  slug: publicQueueSlugSchema, business_name: z.string().min(1).max(160), queue_name: z.string().min(1).max(160),
-  status: z.enum(["open", "paused", "closed"]), allow_phone: z.boolean(), require_phone: z.boolean(),
+  slug: publicQueueSlugSchema,
+  business_name: z.string().min(1).max(160),
+  queue_name: z.string().min(1).max(160),
+  service_name: z.string().min(1).max(160),
+  status: z.enum(["open", "paused", "closed"]),
+  is_full: z.boolean(),
+  allow_phone: z.boolean(),
+  require_phone: z.boolean(),
 }).strict().refine((value) => !value.require_phone || value.allow_phone);
 export type JoinOptions = z.output<typeof joinOptionsSchema>;
 export type JoinState = {

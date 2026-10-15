@@ -37,7 +37,7 @@ async function saveSettings(context: QueueContext | QueueEditContext, formData: 
   try {
     const db = await createUserSupabaseClient();
     const input = parsed.data;
-    const args = {
+    const legacyArgs = {
       p_queue_id: parsedContext.data.queueId,
       p_business_id: membership.businessId,
       p_location_id: input.locationId,
@@ -46,11 +46,19 @@ async function saveSettings(context: QueueContext | QueueEditContext, formData: 
       p_warning_threshold: input.warningThreshold,
       p_allow_phone: input.phoneMode !== "none", p_require_phone: input.phoneMode === "required",
     };
+    const args = {
+      ...legacyArgs,
+      p_service_name: input.serviceName,
+      p_capacity: input.capacity,
+      p_opens_at: input.opensAt,
+      p_closes_at: input.closesAt,
+      p_status: input.status,
+    };
     const result = revision !== undefined
-      ? await db.rpc("update_queue", { ...args, p_expected_revision: revision })
+      ? await db.rpc("update_queue_v2", { ...args, p_expected_revision: revision })
       : membership.institutionType && input.unitId
-        ? await db.rpc("create_unit_queue", { ...args, p_unit_id: input.unitId })
-        : await db.rpc("create_queue", args);
+        ? await db.rpc("create_unit_queue_v2", { ...args, p_unit_id: input.unitId })
+        : await db.rpc("create_queue_v2", args);
     if (result.error || !z.uuid().safeParse(result.data).success || result.data !== parsedContext.data.queueId) {
       return { ...mutationError(result.error?.code), values: retained };
     }

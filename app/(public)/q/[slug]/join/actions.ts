@@ -30,7 +30,7 @@ export async function joinQueue(context: JoinContext, _previous: JoinState, form
     const session = customerSessionSchema.safeParse((await cookies()).get(CUSTOMER_COOKIE)?.value);
     if (!session.success) return { status: "error", values: retained, message: "Enable cookies for this site, then reopen the queue link to join.", refreshRequired: true };
     const keys = getJoinKeys(session.data, await headers());
-    const { data, error } = await createJoinSupabaseClient().rpc("join_public_queue", {
+    const { data, error } = await createJoinSupabaseClient().rpc("join_public_queue_v2", {
       p_slug: parsedContext.data.slug, p_request_id: parsedContext.data.requestId,
       p_customer_key: keys.customerKey, p_rate_key: keys.rateKey,
       p_customer_name: parsed.data.firstName, p_phone: parsed.data.phone,

@@ -19,8 +19,8 @@ export function QueueForm({ action, locations, initialValues, editing = false, u
   const ref = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const values = state.values ?? initialValues ?? {
-    name: "", description: "", locationId: locations.find((location) => location.is_active)?.id ?? "",
-    serviceMinutes: "5", warningThreshold: "3", phoneMode: "none",
+    name: "", serviceName: "", description: "", locationId: locations.find((location) => location.is_active)?.id ?? "",
+    serviceMinutes: "5", capacity: "", opensAt: "", closesAt: "", status: "open", warningThreshold: "3", phoneMode: "none",
   };
   useEffect(() => {
     if (state.status === "error") {
@@ -44,11 +44,16 @@ export function QueueForm({ action, locations, initialValues, editing = false, u
     <fieldset disabled={pending || state.conflict} className="grid min-w-0 gap-6 rounded-2xl border border-black/10 bg-white p-5 sm:grid-cols-2 sm:p-8">
       <legend className="sr-only">Queue settings</legend>
       {units && <div className="sm:col-span-2"><label htmlFor="unitId" className="font-semibold">Institution unit</label><select id="unitId" name="unitId" required className={control} defaultValue={values.unitId ?? selectedUnitId ?? ""}><option value="" disabled>Choose a unit</option>{units.map(unit => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></div>}
-      <div className="sm:col-span-2"><label htmlFor="name" className="font-semibold">Queue name</label><input {...props("name")} required maxLength={160} placeholder="e.g. Doctor Consultation" />{error("name")}</div>
+      <div><label htmlFor="name" className="font-semibold">Queue name</label><input {...props("name")} required maxLength={160} placeholder="e.g. Walk-in Queue" />{error("name")}</div>
+      <div><label htmlFor="serviceName" className="font-semibold">Service name</label><input {...props("serviceName")} required maxLength={160} placeholder="e.g. General Consultation" />{error("serviceName")}</div>
       <div className="sm:col-span-2"><label htmlFor="description" className="font-semibold">Description <span className="font-normal text-muted">(optional)</span></label><textarea {...props("description")} rows={3} maxLength={2000} />{error("description")}</div>
       <div className="sm:col-span-2"><label htmlFor="locationId" className="font-semibold">Location</label><select key={values.locationId} {...props("locationId")} required><option value="" disabled>Choose a location</option>{locations.map((location) => <option key={location.id} value={location.id} disabled={!location.is_active}>{location.name}{location.is_active ? "" : " (inactive)"}</option>)}</select>{error("locationId")}</div>
-      <div><label htmlFor="serviceMinutes" className="font-semibold">Typical service time (minutes)</label><input {...props("serviceMinutes")} required type="number" inputMode="decimal" min={1 / 60} max={1440} step="any" />{error("serviceMinutes")}<p className="mt-2 text-sm text-muted">Time spent serving one customer, e.g. 5 or 1.5 minutes.</p></div>
-      <div><label htmlFor="warningThreshold" className="font-semibold">Notification threshold</label><input {...props("warningThreshold")} required type="number" inputMode="numeric" min={0} max={100} step={1} />{error("warningThreshold")}<p className="mt-2 text-sm text-muted">People ahead when a customer should start returning. Default: 3.</p></div>
+      <div><label htmlFor="serviceMinutes" className="font-semibold">Average service duration</label><input {...props("serviceMinutes")} required type="number" inputMode="decimal" min={1 / 60} max={1440} step="any" />{error("serviceMinutes")}<p className="mt-2 text-sm text-muted">Minutes spent serving one customer. TuRnMaRk improves estimates from real completed services.</p></div>
+      <div><label htmlFor="capacity" className="font-semibold">Queue capacity <span className="font-normal text-muted">(optional)</span></label><input {...props("capacity")} type="number" inputMode="numeric" min={1} max={1000} step={1} placeholder="No custom limit" />{error("capacity")}</div>
+      <div><label htmlFor="opensAt" className="font-semibold">Opens at <span className="font-normal text-muted">(optional)</span></label><input {...props("opensAt")} type="time" />{error("opensAt")}</div>
+      <div><label htmlFor="closesAt" className="font-semibold">Closes at <span className="font-normal text-muted">(optional)</span></label><input {...props("closesAt")} type="time" />{error("closesAt")}</div>
+      <div><label htmlFor="status" className="font-semibold">Status</label><select key={values.status} {...props("status")}><option value="open">Open</option><option value="paused">Paused</option><option value="closed">Closed</option></select>{error("status")}</div>
+      <div><label htmlFor="warningThreshold" className="font-semibold">Return notification threshold</label><input {...props("warningThreshold")} required type="number" inputMode="numeric" min={0} max={100} step={1} />{error("warningThreshold")}<p className="mt-2 text-sm text-muted">People ahead when a customer should start returning. Default: 3.</p></div>
       <div className="sm:col-span-2"><label htmlFor="phoneMode" className="font-semibold">Customer phone number</label><select key={values.phoneMode} {...props("phoneMode")}><option value="none">Don’t collect phone numbers</option><option value="optional">Optional</option><option value="required">Required</option></select>{error("phoneMode")}</div>
     </fieldset>
     <button type="submit" disabled={pending || state.conflict || !locations.some((location) => location.is_active)} className="min-h-12 rounded-xl bg-primary px-7 py-3 font-semibold text-white disabled:opacity-50">{pending ? "Saving queue…" : editing ? "Save changes" : "Create queue"}</button>

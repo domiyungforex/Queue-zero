@@ -28,7 +28,7 @@ body{font-family:QueueManrope,Arial,sans-serif}button{cursor:pointer}button:disa
 /* Shared visual language from the mobile TuRnMaRk reference. */
 @theme inline { --color-background:#f7f9fb; --color-foreground:#152421; --color-primary:#008f4c; --color-muted:#5e6d69; }
 html { background:#f7f9fb; scroll-padding-bottom:100px; }
-body { min-height:100dvh; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+body { min-height:100dvh; padding:0; }
 .button-primary,.call-next { background:linear-gradient(110deg,#008548,#00a95b); color:white; border-radius:999px; }
 .button-primary:hover,.call-next:hover:not(:disabled) { background:#007b42; }
 .panel,.stat-card,.queue-card,.waiting-panel,.billing-plan { background:#fff; border-color:#e3eae7; box-shadow:0 3px 16px #003d3205; }
@@ -72,3 +72,110 @@ body { min-height:100dvh; padding:env(safe-area-inset-top) env(safe-area-inset-r
 .customer-ticket.ticket-waiting .text-muted{color:#c4dcd2}.customer-ticket.ticket-waiting>div{border-color:#52766a}
 .ticket-progress{display:flex;list-style:none;margin:25px 0;padding:0;gap:4px}.ticket-progress>li{position:relative;flex:1;text-align:center;font-size:10px;color:#697670}.ticket-progress>li:before{content:'';height:2px;background:#e0e8e3;position:absolute;left:0;right:0;top:11px}.ticket-progress>li:first-child:before{left:50%}.ticket-progress>li:last-child:before{right:50%}.ticket-progress span{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;margin:0 auto 8px;background:#e8eeeb}.ticket-progress .reached span{background:#008f4c;color:white}.ticket-progress [aria-current=step]{font-weight:700;color:#00723d}
 .customer-shell form button.bg-primary{border-radius:999px}
+
+
+/* 2026 QueueZero product experience */
+:root{
+  --qz-ink:#10221d;
+  --qz-muted:#64756f;
+  --qz-line:#e5ece8;
+  --qz-surface:#ffffff;
+  --qz-canvas:#f6f8f7;
+  --qz-green:#008f4c;
+  --qz-green-dark:#005f37;
+  --qz-soft:#eaf8f0;
+}
+body{background:var(--qz-canvas);color:var(--qz-ink)}
+.button-primary{box-shadow:0 8px 20px rgba(0,143,76,.16);transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+.button-primary:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,143,76,.22)}
+.auth-shell{background:var(--qz-canvas)}
+.auth-story{background:radial-gradient(circle at 15% 15%,rgba(41,189,108,.28),transparent 35%),linear-gradient(150deg,#063d31,#071f1c 72%)}
+.auth-story h2{max-width:620px}
+.auth-content{background:#fff}
+.auth-content>main{max-width:460px}
+.auth-content h1{font-size:clamp(34px,4vw,48px);font-weight:650;letter-spacing:-2px}
+.auth-description{max-width:390px;color:var(--qz-muted)}
+.auth-transition{display:flex;min-height:180px;flex-direction:column;align-items:flex-start;justify-content:center;color:var(--qz-muted);gap:12px}
+.auth-transition .loading-pulse{margin:0}
+.setup-shell{min-height:100dvh;background:radial-gradient(circle at 80% 0,#e5f8ed 0,transparent 28%),var(--qz-canvas)}
+.setup-shell>main{max-width:820px;padding-top:42px}
+.setup-heading{max-width:620px;margin-bottom:26px}
+.setup-heading h1{font-size:clamp(34px,5vw,52px);letter-spacing:-2.2px}
+.onboarding-survey{max-width:720px}
+.onboarding-progress{margin-bottom:20px}
+.onboarding-progress>div:first-child{display:flex;justify-content:space-between;gap:20px;color:var(--qz-muted);font-size:12px}
+.onboarding-progress strong{color:var(--qz-green-dark)}
+.onboarding-progress-track{height:6px;margin-top:10px;overflow:hidden;border-radius:999px;background:#dfe8e3}
+.onboarding-progress-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#008f4c,#27b968);transition:width .25s ease}
+.onboarding-card{min-height:410px;padding:clamp(26px,5vw,48px);border:1px solid var(--qz-line);border-radius:28px;background:rgba(255,255,255,.94);box-shadow:0 28px 70px rgba(8,48,35,.08)}
+.onboarding-card h2{max-width:560px;font-size:clamp(28px,4vw,40px);line-height:1.08;letter-spacing:-1.7px}
+.onboarding-hint{max-width:520px;margin-top:12px;color:var(--qz-muted);font-size:14px;line-height:1.7}
+.onboarding-question{margin-top:34px}
+.onboarding-question label{display:block;margin-bottom:9px;font-size:13px;font-weight:700}
+.onboarding-stack{display:grid;gap:22px}
+.onboarding-control{width:100%;min-height:54px;border:1px solid #cedbd5;border-radius:14px;background:#fff;padding:14px 16px;font-size:15px;transition:border-color .15s,box-shadow .15s}
+.onboarding-control:focus{border-color:#20a762;box-shadow:0 0 0 4px rgba(0,143,76,.1);outline:none}
+.onboarding-control[aria-invalid=true]{border-color:#bd3b39}
+.choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.choice-card{position:relative;cursor:pointer}
+.choice-card input{position:absolute;opacity:0;pointer-events:none}
+.choice-card span{display:flex;min-height:145px;flex-direction:column;justify-content:flex-end;padding:22px;border:1px solid var(--qz-line);border-radius:18px;background:#fff;transition:.16s ease}
+.choice-card strong{font-size:18px}
+.choice-card small{margin-top:7px;color:var(--qz-muted);font-size:12px;line-height:1.55}
+.choice-card:hover span{border-color:#acd5bc;transform:translateY(-2px)}
+.choice-card input:checked+span{border-color:#20a762;background:var(--qz-soft);box-shadow:inset 0 0 0 1px #20a762}
+.field-error{margin-top:8px;color:#a63030;font-size:12px}
+.onboarding-error{margin:20px 0 -8px;border-radius:12px;background:#fff0ef;padding:12px 14px;color:#922d2a;font-size:13px}
+.onboarding-actions{display:flex;align-items:center;justify-content:space-between;margin-top:18px}
+.onboarding-actions .button-primary{min-width:140px}
+.onboarding-note{text-align:center;margin-top:18px;color:#7a8983;font-size:11px}
+.workspace{background:var(--qz-canvas)}
+.workspace-sidebar{background:linear-gradient(180deg,#07392f,#07241f);border-right:1px solid rgba(255,255,255,.05)}
+.workspace-nav{gap:4px}
+.workspace-nav>a{border-radius:12px;color:#c8d9d3}
+.workspace-nav>a:hover{background:rgba(255,255,255,.07)}
+.workspace-nav>a[aria-current=page]{background:#e7f8ee;color:#006f3e;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.workspace-header{min-height:78px;border-bottom-color:var(--qz-line);background:rgba(255,255,255,.92);backdrop-filter:blur(14px)}
+.workspace-main{padding-top:34px}
+.page-heading h1{font-size:clamp(32px,4vw,46px);font-weight:650;letter-spacing:-2px}
+.page-description{max-width:620px;color:var(--qz-muted)}
+.stat-card,.queue-card,.panel,.waiting-panel,.billing-plan{border-radius:18px;border-color:var(--qz-line);box-shadow:0 8px 30px rgba(12,57,43,.04)}
+.stat-card{padding:24px}
+.stat-card>strong{font-weight:650}
+.overview-banner{border-radius:16px;border-color:#dcebe2;background:#edf9f2}
+.workspace-tip{border:1px solid #dbece2;border-radius:18px;background:linear-gradient(135deg,#eaf9f0,#f8fbf9)}
+.customer-shell{background:radial-gradient(circle at 50% 0,#e5f8ed,transparent 34%),var(--qz-canvas)}
+.customer-shell section[aria-label="Current queue"],.customer-ticket{border-radius:24px!important}
+@media(max-width:950px){
+  .workspace-header{min-height:68px}
+  .workspace-main{padding-top:24px}
+  .workspace-nav{border-top-color:var(--qz-line);box-shadow:0 -12px 35px rgba(0,44,30,.08)}
+}
+@media(max-width:700px){
+  .auth-story{min-height:90px;padding:22px 24px}
+  .auth-content{padding:16px 22px 28px}
+  .auth-content>main{padding:26px 0}
+  .setup-shell>main{padding:28px 18px 40px}
+  .choice-grid{grid-template-columns:1fr}
+  .choice-card span{min-height:100px}
+  .onboarding-card{min-height:390px;border-radius:22px;padding:28px 22px}
+  .onboarding-actions{gap:12px}
+  .onboarding-actions button{flex:1}
+}
+
+/* Narrow phones: preserve viewport width and usable touch targets. */
+@media (max-width: 430px) {
+  html, body { max-width: 100%; overflow-x: clip; }
+  .workspace, .workspace-body, .workspace-main { min-width: 0; max-width: 100%; }
+  .workspace-main { padding: 16px; }
+  .workspace-header { padding: 14px 16px; }
+  .workspace-footer { padding: 16px; flex-wrap: wrap; }
+  .page-heading, .workspace-tip { flex-wrap: wrap; }
+  .metrics-grid, .queue-card-grid, .console-grid { grid-template-columns: minmax(0, 1fr); }
+  .onboarding-survey, .onboarding-card, .onboarding-question { min-width: 0; max-width: 100%; }
+  .onboarding-card { padding: 20px 16px; }
+  .onboarding-actions { gap: 8px; }
+  .onboarding-actions > button { min-width: 0; flex: 1; }
+  .school-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .school-table { min-width: 620px; }
+}
