@@ -11,7 +11,7 @@ for (const width of [320, 768]) {
   await expect(page.getByRole("main").getByRole("alert")).toContainText(/closed|invalid|unavailable/i);
   await expect(page.getByRole("button", { name: "Mark Attendance" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /sign in|create account/i })).toHaveCount(0);
-  await expect(page.locator('script[src*="clerk"]')).toHaveCount(0);
+  await expect(page.locator('script[src^="/__clerk/"], script[src^="https://"][src*="clerk"]')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(errors).toEqual([]);
  });

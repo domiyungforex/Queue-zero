@@ -19,7 +19,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
     const draft = newAttendanceToken(classId, classId);
     const db = await createUserSupabaseClient();
     const { data, error } = await db.rpc("school_issue_qr", { p_class_id: classId, p_nonce: draft.nonce, p_expires_at: new Date(draft.expires_at * 1000).toISOString() });
-    const issued = z.object({ organization_id: z.uuid(), session_id: z.uuid(), nonce: z.uuid(), issued_at: z.iso.datetime(), expires_at: z.iso.datetime() }).safeParse(data);
+    const issued = z.object({ organization_id: z.uuid(), session_id: z.uuid(), nonce: z.uuid(), issued_at: z.iso.datetime({ offset: true }), expires_at: z.iso.datetime({ offset: true }) }).safeParse(data);
     if (error || !issued.success || issued.data.session_id !== classId) return NextResponse.json({ error: "This class is unavailable or you do not have permission." }, { status: 403, headers });
     const payload = attendanceTokenSchema.parse({ version: 1, purpose: "CLASS_ATTENDANCE", organization_id: issued.data.organization_id, session_id: classId, nonce: issued.data.nonce, issued_at: Math.floor(Date.parse(issued.data.issued_at) / 1000), expires_at: Math.floor(Date.parse(issued.data.expires_at) / 1000) });
     const token = signAttendanceToken(payload, secret);

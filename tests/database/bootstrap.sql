@@ -20,8 +20,14 @@ alter default privileges in schema public grant all on functions to anon, authen
 -- Reproduce the reported shared-schema security-advisor finding. The final
 -- application migration must contain it without deleting or rewriting data.
 create table public."Conversation" (id integer primary key, body text);
+create table public."Permission" (id integer primary key, body text);
+create table public."Agent" (id integer primary key, body text);
+create table public."Wallet" (id integer primary key, body text);
 insert into public."Conversation" values (1, 'shared fixture');
-grant all on public."Conversation" to public, anon, authenticated, service_role;
+insert into public."Permission" values (1, 'shared fixture');
+insert into public."Agent" values (1, 'shared fixture');
+insert into public."Wallet" values (1, 'shared fixture');
+grant all on public."Conversation", public."Permission", public."Agent", public."Wallet" to public, anon, authenticated, service_role;
 
 -- Capture Broadcast calls in the isolated PostgreSQL harness. This records
 -- transport envelopes only and is never installed in the application database.

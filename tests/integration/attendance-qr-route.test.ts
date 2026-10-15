@@ -7,7 +7,7 @@ import { GET } from "@/app/api/school/classes/[classId]/qr/route";
 import { validateAttendanceToken } from "@/lib/qr/validation";
 import { attendanceSecret } from "@/lib/qr/secret";
 const classId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", nonce = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
-const issuedAt = "2026-10-04T10:00:00.000Z", expiresAt = "2026-10-04T12:00:00.000Z";
+const issuedAt = "2026-10-04T10:00:00.000+00:00", expiresAt = "2026-10-04T12:00:00.000+00:00";
 const request = () => GET(new Request("http://localhost:3000/api/qr"), { params: Promise.resolve({ classId }) });
 beforeEach(() => { vi.stubEnv("ATTENDANCE_QR_SECRET", "s".repeat(64)); vi.setSystemTime(new Date("2026-10-04T10:01:00Z")); mocks.auth.mockResolvedValue({ userId: "lecturer" }); mocks.rpc.mockResolvedValue({ error: null, data: { organization_id: org, session_id: classId, nonce, issued_at: issuedAt, expires_at: expiresAt } }); });
 describe("authorized stable class QR route", () => {

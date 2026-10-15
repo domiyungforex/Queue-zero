@@ -2,6 +2,37 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
 
+type RealtimeClient = Pick<ReturnType<typeof createClient>, "channel" | "removeChannel" | "realtime">;
+let publicClient: RealtimeClient | null | undefined;
+let authenticatedClient: RealtimeClient | null | undefined;
+
+function getRealtimeClient(authenticated: boolean) {
+  const existing = authenticated ? authenticatedClient : publicClient;
+  if (existing !== undefined) return existing;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const client = url && key ? createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      storageKey: authenticated ? "turnmark-realtime-staff" : "turnmark-realtime-public",
+    },
+    accessToken: authenticated ? async () => {
+      const response = await fetch("/api/realtime", { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+      if (!response.ok) throw new Error("Live session unavailable");
+      const data: unknown = await response.json();
+      if (typeof data !== "object" || data === null || !("token" in data) || typeof data.token !== "string") {
+        throw new Error("Live session unavailable");
+      }
+      return data.token;
+    } : undefined,
+  }) : null;
+  if (authenticated) authenticatedClient = client;
+  else publicClient = client;
+  return client;
+}
+
 /** Broadcast invalidates; HTTP always supplies authoritative state. */
 export function useLive(topic: string, onChange: () => void, authenticated = false, enabled = true) {
   const callback = useRef(onChange);
@@ -18,20 +49,7 @@ export function useLive(topic: string, onChange: () => void, authenticated = fal
       clearTimeout(debounce);
       debounce = setTimeout(() => callback.current(), 180);
     };
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const client = url && key ? createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-      accessToken: authenticated ? async () => {
-        const response = await fetch("/api/realtime", { cache: "no-store", signal: AbortSignal.timeout(10_000) });
-        if (!response.ok) throw new Error("Live session unavailable");
-        const data: unknown = await response.json();
-        if (typeof data !== "object" || data === null || !("token" in data) || typeof data.token !== "string") {
-          throw new Error("Live session unavailable");
-        }
-        return data.token;
-      } : undefined,
-    }) : null;
+    const client = getRealtimeClient(authenticated);
 
     async function connect() {
       if (!client || stopped || channel) return;

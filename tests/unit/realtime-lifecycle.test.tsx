@@ -54,4 +54,12 @@ describe("authoritative realtime lifecycle", () => {
     expect(refresh).toHaveBeenCalled();
     expect(mocks.channel).toHaveBeenCalledOnce();
   });
+  it("reuses one Supabase client for multiple subscriptions with the same access mode", () => {
+    const before = mocks.createClient.mock.calls.length;
+    const first = renderHook(() => useLive("ticket:first", vi.fn()));
+    const second = renderHook(() => useLive("ticket:second", vi.fn()));
+    expect(mocks.createClient.mock.calls.length - before).toBeLessThanOrEqual(1);
+    first.unmount();
+    second.unmount();
+  });
 });
