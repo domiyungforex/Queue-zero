@@ -6,7 +6,7 @@ TuRnMaRk runs physical queues through a public customer web app and an authentic
 
 ## Explore
 
-- Website: https://queuezero.conchportal.com
+- Website: https://turnmark.conchportal.com
 - Business workspace: `/dashboard`
 - Public queue: `/q/{slug}`; private customer ticket: `/ticket/{opaque-token}`
 - Waiting-room display: `/display/{slug}`

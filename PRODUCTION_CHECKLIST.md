@@ -34,9 +34,9 @@ The DB test harness now waits for PostgreSQL's final TCP listener rather than it
 
 ## Read-only production observations
 
-- Canonical site `https://queuezero.conchportal.com` responds successfully over HTTPS.
-- Vercel project `queue-zero` (`prj_ChgtgY0WlNMzEcartohGeDm02Tp6`) deployed release **`906adc2`** successfully as `dpl_DxJ9jGC7hGrZG1Jaha4k1QTb6Ls8`. The canonical domain serves the updated application.
-- All 10 read-only hosted browser checks passed: mobile/public layouts, PWA metadata/icons, offline recovery, browser navigation and the legacy demo redirect. The data-writing customer journey was intentionally skipped on production.
+- Canonical site `https://turnmark.conchportal.com` responds successfully over HTTPS.
+- The canonical domain serves the TuRnMaRk application from Vercel. The deployment ID was not inspected because this workspace has no authenticated Vercel CLI session.
+- Read-only hosted browser checks passed for mobile/public layouts, PWA navigation, metadata and browser routing. Direct HTTPS checks confirmed robots, sitemap, LLM files, icons, social image, manifest and the legacy demo redirect; no production records were written.
 - Hosted SQL catalog checks confirmed all 10 new triggers enabled, the manager-lock and join-limit helpers installed, Realtime Broadcast available, and anonymous execution of the private business helper denied. No sample records were inserted.
 - The workspace lacks Supabase CLI credentials; migration deployment used the authenticated connector after comparing remote history with the local files. Git HTTPS push authentication failed; GitHub Git Data API publishing preserved every original commit and verified identical tree hashes before a non-forced main update.
 - Supabase `wbvgorahtkiiwplsbnga` reports ACTIVE_HEALTHY (PostgreSQL 17). All original 14 migrations are recorded. All 18 TuRnMaRk tables have enabled and forced RLS. Anonymous roles lack raw TuRnMaRk table SELECT grants.
@@ -51,7 +51,7 @@ Set these in the deployment's **production** environment, using matching provide
 
 | Configuration | Required verification |
 | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | Exactly `https://queuezero.conchportal.com`; no path/query/credentials. Print QR only from this configured origin. |
+| `NEXT_PUBLIC_APP_URL` | Exactly `https://turnmark.conchportal.com`; no path/query/credentials. Print QR only from this configured origin. |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Matching production instance; allowed origin and sign-in/up redirects point to TuRnMaRk. Preserve other applications using the shared instance. |
 | `CLERK_DATABASE_JWT_TEMPLATE` | If needed, issuer-signed template supplies the authenticated role and correct subject; Supabase trusts the matching Clerk issuer. Verify using two genuine tenant sessions. |
 | `CLERK_DISABLE_AUTO_PROXY` | Confirm the configured direct Clerk custom-domain script path works. |

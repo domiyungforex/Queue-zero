@@ -29,7 +29,7 @@ The form uses the existing service-role configuration and `QUEUE_JOIN_SECRET` on
 
 No customer reviews, performance results, team photos, address, telephone number or response-time guarantee was invented. The homepage includes a case-study participation invitation rather than a fabricated success story. Publish named reviews and measured case studies only with permission and source evidence. Supply a genuine team photograph and descriptive alt text before adding a team section. Existing place photographs describe settings and are not represented as the team or customers.
 
-A custom production domain already exists at `queuezero.conchportal.com`. Renaming the product does not establish ownership or DNS for a new TuRnMaRk domain. Domain changes remain deployment configuration work.
+The canonical production domain is `turnmark.conchportal.com`. The retired QueueZero hostname must not be published unless it is configured to redirect to this canonical origin.
 
 ## Verification
 

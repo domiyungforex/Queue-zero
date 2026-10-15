@@ -1,6 +1,6 @@
 # TuRnMaRk deployment
 
-The Vercel project `queue-zero` tracks `domiyungforex/Queue-zero`, branch `main`. The canonical production origin is **https://queuezero.conchportal.com**. Set the Next.js preset and default `npm run build`; do not specify a custom output directory.
+The Vercel project `queue-zero` tracks `domiyungforex/Queue-zero`, branch `main`. The canonical production origin is **https://turnmark.conchportal.com**. Set the Next.js preset and default `npm run build`; do not specify a custom output directory.
 
 ## Environment
 
@@ -8,7 +8,7 @@ Copy variable names from `.env.example` into Vercel’s encrypted environment se
 
 | Configuration | Required values |
 | --- | --- |
-| Canonical origin | `NEXT_PUBLIC_APP_URL=https://queuezero.conchportal.com` |
+| Canonical origin | `NEXT_PUBLIC_APP_URL=https://turnmark.conchportal.com` |
 | Clerk | Matching publishable/secret keys; `CLERK_DISABLE_AUTO_PROXY=true` for direct frontend API on the configured custom domain |
 | Supabase | Matching project URL, public key, server-only service key |
 | Anonymous join protection | Stable random `QUEUE_JOIN_SECRET` |

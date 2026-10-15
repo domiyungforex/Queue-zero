@@ -6,7 +6,7 @@ Resolve the critical blockers in `PRODUCTION_CHECKLIST.md` before operating real
 
 This timing assumes production authentication and provider setup have already passed acceptance.
 
-1. **Sign in — 1 minute.** Open https://queuezero.conchportal.com, create the business account and verify its email. Customers never need accounts.
+1. **Sign in — 1 minute.** Open https://turnmark.conchportal.com, create the business account and verify its email. Customers never need accounts.
 2. **Business and location — 2 minutes.** Enter name, industry, country, reporting timezone, first location and address. Confirm the timezone with staff.
 3. **Create a queue — 1 minute.** Set the service name, location, typical service duration and almost-turn threshold. Leave phone collection off unless operationally necessary.
 4. **Print the QR — 2 minutes.** Download the queue PNG or use Print. Check the printed code opens the business's canonical public queue URL on a phone. Place it where arriving customers can reach it.

@@ -6,7 +6,7 @@ TuRnMaRk remains queue-first: anonymous QR joining, live tickets, wait estimates
 
 BUSINESS, SCHOOL and HYBRID organization modes control specialized navigation and school access. Only QUEUE and CLASS have workflows. Future session types are enum extension points, not unfinished screens. School views use real database data; local test fixtures never run in production.
 
-The exact product brand is **TuRnMaRk** in UI, authentication, metadata, install manifests, icons, offline page, printable QR cards, exports and documentation. Existing `queuezero.conchportal.com` URLs, repository identity, legacy database functions and browser cookie/idempotency keys remain compatible. Renaming the public domain requires configuring a real replacement and preserving redirects; no domain has been invented or switched.
+The exact product brand is **TuRnMaRk** in UI, authentication, metadata, install manifests, icons, offline page, printable QR cards, exports and documentation. The canonical public origin is `turnmark.conchportal.com`; repository identity, legacy database functions and browser cookie/idempotency keys remain compatible. The retired hostname should redirect to this canonical origin before it is advertised again.
 
 ## Additive migrations
 
