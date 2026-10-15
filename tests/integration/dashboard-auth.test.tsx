@@ -13,7 +13,7 @@ vi.mock("@/components/ui/page-shell", () => ({ PageShell: () => null }));
 import DashboardPage from "@/app/dashboard/page";
 import DashboardLayout from "@/app/dashboard/layout";
 import OnboardingPage from "@/app/onboarding/page";
-import { getCurrentMembership, requireBusinessManager, requireBusinessOwner } from "@/lib/business/membership";
+import { getCurrentMembership, getWorkspaceMembership, requireBusinessManager, requireBusinessOwner } from "@/lib/business/membership";
 
 let rows: { business_id: string; role: string; businesses: { name: string; onboarding_completed_at?: string } }[];
 let responseStatus: number;
@@ -67,6 +67,24 @@ describe("authenticated membership routing with mocked Clerk and database transp
     expect((await getCurrentMembership())?.businessId).toBe("business-b");
     selectedBusiness.value = "another-tenant";
     expect((await getCurrentMembership())?.businessId).toBe("business-a");
+  });
+
+  it("rechecks the selected workspace role before allowing owner routes", async () => {
+    rows.push({ business_id: "business-b", role: "staff", businesses: { name: "Clinic B" } });
+    selectedBusiness.value = "business-b";
+    await expect(requireBusinessOwner()).rejects.toThrow("NEXT_REDIRECT:/dashboard");
+  });
+
+  it("verifies an exact workspace membership directly against the signed-in user", async () => {
+    await expect(getWorkspaceMembership("business-a")).resolves.toMatchObject({ businessId: "business-a", role: "owner" });
+    const request = requests.at(-1);
+    expect(request?.searchParams.get("clerk_user_id")).toBe("eq.user_verified");
+    expect(request?.searchParams.get("business_id")).toBe("eq.business-a");
+  });
+
+  it("treats a removed membership as unavailable", async () => {
+    rows = [];
+    await expect(getWorkspaceMembership("business-a")).resolves.toBeNull();
   });
 
   it("scopes the queue query to the authorized workspace", async () => {

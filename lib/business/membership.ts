@@ -36,6 +36,33 @@ export const getCurrentMembership = cache(async () => {
   return memberships.find((membership) => membership.businessId === selected) ?? memberships[0] ?? null;
 });
 
+// Deliberately not cached: workspace switching must validate the exact target
+// against the current database membership immediately before changing the
+// preference cookie. The next dashboard request validates it again.
+export async function getWorkspaceMembership(businessId: string) {
+  const userId = await requireUserId();
+  const db = await createUserSupabaseClient();
+  const { data, error } = await db.from("business_members")
+    .select("business_id,role,businesses!business_members_business_id_fkey(name,organization_mode,institution_type,workspace_ownership,professional_category,organization_type,onboarding_completed_at)")
+    .eq("clerk_user_id", userId)
+    .eq("business_id", businessId)
+    .maybeSingle();
+  if (error) throw new Error("We couldn’t verify that workspace. Please try again.");
+  if (!data) return null;
+  if (!data.businesses) throw new Error("Your workspace is temporarily unavailable.");
+  return {
+    businessId: data.business_id,
+    role: data.role,
+    businessName: data.businesses.name,
+    workspaceOwnership: data.businesses.workspace_ownership,
+    ...(data.businesses.organization_mode ? { organizationMode: data.businesses.organization_mode } : {}),
+    ...(data.businesses.institution_type ? { institutionType: data.businesses.institution_type } : {}),
+    ...(data.businesses.professional_category ? { professionalCategory: data.businesses.professional_category } : {}),
+    ...(data.businesses.organization_type ? { organizationType: data.businesses.organization_type } : {}),
+    ...(data.businesses.onboarding_completed_at ? { onboardingCompletedAt: data.businesses.onboarding_completed_at } : {}),
+  };
+}
+
 export const requireBusinessMembership = cache(async () => {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/onboarding");
