@@ -89,5 +89,5 @@ export async function onboardBusiness(_previous: OnboardingState, formData: Form
   }
 
   revalidatePath("/dashboard", "layout");
-  redirect("/dashboard?onboarding=complete");
+  redirect("/onboarding/complete");
 }

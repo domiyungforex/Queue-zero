@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
-import { PageShell } from "@/components/ui/page-shell";
+import { OnboardingShell } from "@/components/onboarding/onboarding-ui";
 import { getCurrentMembership } from "@/lib/business/membership";
 import { COUNTRY_CODES } from "@/lib/validation/onboarding";
 import { onboardBusiness } from "./actions";
 
-export const metadata: Metadata = { title: "Create your workspace" };
+export const metadata: Metadata = { title: "Set up your workspace", description: "Create an individual or organization TuRnMaRk workspace." };
 
 export default async function OnboardingPage(props?: { searchParams?: Promise<{ new?: string | string[] }> }) {
   const searchParams = props?.searchParams;
@@ -20,8 +20,8 @@ export default async function OnboardingPage(props?: { searchParams?: Promise<{ 
   const timezones = Array.from(new Set(["UTC", ...Intl.supportedValuesOf("timeZone")]));
 
   return (
-    <PageShell title="Set up your workspace">
+    <OnboardingShell>
       <OnboardingForm action={onboardBusiness} countries={countries} timezones={timezones} requestId={randomUUID()} />
-    </PageShell>
+    </OnboardingShell>
   );
 }

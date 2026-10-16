@@ -18,6 +18,7 @@ const organization = {
   timezone: "Africa/Accra",
   locationName: "Main",
   locationAddress: "Accra",
+  authorizationDeclaration: "true",
 };
 const individual = {
   onboardingRequestId: "10000000-0000-4000-8000-000000000002",
@@ -36,6 +37,7 @@ const individual = {
   timezone: "Africa/Lagos",
   locationName: "",
   locationAddress: "",
+  authorizationDeclaration: "",
 };
 
 describe("unified onboarding validation", () => {
@@ -106,6 +108,14 @@ describe("unified onboarding validation", () => {
     const incomplete: Partial<typeof organization> = { ...organization };
     delete incomplete.accountType;
     expect(onboardingSchema.safeParse(incomplete).success).toBe(false);
+  });
+
+  it("requires an organization registrant to confirm their authority", () => {
+    const result = onboardingSchema.safeParse({ ...organization, authorizationDeclaration: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.authorizationDeclaration).toBeDefined();
+    }
   });
 
   it("requires a valid request key for retry-safe creation", () => {

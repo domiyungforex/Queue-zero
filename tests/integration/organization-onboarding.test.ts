@@ -21,7 +21,7 @@ function form(organizationType: string) {
   };
   const configuration = configurations[organizationType] ?? { subtype: "INVALID", template: "INVALID" };
   const data = new FormData();
-  for (const [key, value] of Object.entries({ onboardingRequestId: "10000000-0000-4000-8000-000000000001", accountType: "ORGANIZATION", professionalCategory: "", organizationType, organizationSubtype: configuration.subtype, workspaceName: "School", legalName: "School Limited", representativeName: configuration.representative ?? "", serviceTemplates: configuration.template, teachingLevel: "", institutionName: "", serviceName: "", country: "NG", timezone: "Africa/Lagos", locationName: "Campus", locationAddress: "Main campus" })) data.set(key, value);
+  for (const [key, value] of Object.entries({ onboardingRequestId: "10000000-0000-4000-8000-000000000001", accountType: "ORGANIZATION", professionalCategory: "", organizationType, organizationSubtype: configuration.subtype, workspaceName: "School", legalName: "School Limited", representativeName: configuration.representative ?? "", serviceTemplates: configuration.template, teachingLevel: "", institutionName: "", serviceName: "", country: "NG", timezone: "Africa/Lagos", locationName: "Campus", locationAddress: "Main campus", authorizationDeclaration: "true" })) data.set(key, value);
   return data;
 }
 
@@ -34,7 +34,7 @@ beforeEach(() => {
 
 describe("organization onboarding routing", () => {
   it("creates an education organization through the unified organization RPC", async () => {
-    await expect(onboardBusiness({ status: "idle" }, form("UNIVERSITY_SCHOOL"))).rejects.toThrow("/dashboard?onboarding=complete");
+    await expect(onboardBusiness({ status: "idle" }, form("UNIVERSITY_SCHOOL"))).rejects.toThrow("/onboarding/complete");
     expect(mocks.rpc).toHaveBeenCalledWith("onboard_organization_workspace_v2", expect.objectContaining({ p_organization_type: "UNIVERSITY_SCHOOL", p_organization_subtype: "UNIVERSITY", p_workspace_name: "School" }));
   });
 
@@ -45,7 +45,7 @@ describe("organization onboarding routing", () => {
     ["GOVERNMENT_OFFICE", "public_services"],
     ["COMPANY_OTHER", "other"],
   ])("maps %s to the unified organization RPC", async (organizationType) => {
-    await expect(onboardBusiness({ status: "idle" }, form(organizationType))).rejects.toThrow("/dashboard?onboarding=complete");
+    await expect(onboardBusiness({ status: "idle" }, form(organizationType))).rejects.toThrow("/onboarding/complete");
     expect(mocks.rpc).toHaveBeenCalledWith("onboard_organization_workspace_v2", expect.objectContaining({ p_organization_type: organizationType, p_workspace_name: "School" }));
   });
 
