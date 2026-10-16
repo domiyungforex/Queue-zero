@@ -20,8 +20,7 @@ export default async function OnboardingPage(props?: { searchParams?: Promise<{ 
   const timezones = Array.from(new Set(["UTC", ...Intl.supportedValuesOf("timeZone")]));
 
   return (
-    <PageShell title="Create your TuRnMaRk workspace">
-      <p className="mb-8 max-w-2xl leading-relaxed text-muted">Choose a personal workspace for your own work or set up TuRnMaRk for an organization. Your account stays the same either way.</p>
+    <PageShell title="Set up your workspace">
       <OnboardingForm action={onboardBusiness} countries={countries} timezones={timezones} requestId={randomUUID()} />
     </PageShell>
   );

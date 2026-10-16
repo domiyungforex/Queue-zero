@@ -16,11 +16,11 @@ it("prevents repeated submissions while pending and preserves values after failu
   let finish!: (state: JoinState) => void;
   const action = vi.fn(() => new Promise<JoinState>((resolve) => { finish = resolve; }));
   render(<JoinQueueForm options={options} action={action} />);
-  fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Ada" } });
+  fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Ada" } });
   await act(async () => { fireEvent.submit(screen.getByRole("button", { name: "Join queue" }).closest("form")!); });
   expect((screen.getByRole("button", { name: "Joining…" }) as HTMLButtonElement).disabled).toBe(true);
   await act(async () => { finish({ status: "error", message: "Please retry", values: { firstName: "Ada", phone: "" } }); });
   expect(screen.getByRole("alert").textContent).toBe("Please retry");
-  expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Ada");
+  expect((screen.getByLabelText("First name") as HTMLInputElement).value).toBe("Ada");
   expect((screen.getByRole("button", { name: "Join queue" }) as HTMLButtonElement).disabled).toBe(false);
 });

@@ -33,7 +33,7 @@ const initialValues: OnboardingValues = {
   locationName: "",
   locationAddress: "",
 };
-const stepNames = ["Welcome", "Type", "Details", "Configure", "Review", "Complete"] as const;
+const stepNames = ["Start", "Type", "Details", "Set up", "Review"] as const;
 const fieldSteps: Record<OnboardingField, number> = {
   onboardingRequestId: 0,
   accountType: 0,
@@ -191,17 +191,14 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
   const accountLabel = isIndividual ? "Individual" : "Organization";
 
   return (
-    <form ref={formRef} action={formAction} onReset={(event) => event.preventDefault()} aria-busy={pending} className="min-w-0 w-full max-w-4xl overflow-hidden rounded-3xl border border-black/10 bg-[#fffef9] shadow-[0_24px_70px_rgba(2,35,28,0.08)]">
+    <form ref={formRef} action={formAction} onReset={(event) => event.preventDefault()} aria-busy={pending} className="min-w-0 w-full max-w-4xl overflow-hidden rounded-3xl border border-black/10 bg-white shadow-[0_24px_70px_rgba(22,26,63,0.10)]">
       {ONBOARDING_FIELDS.map((field) => <input key={field} type="hidden" name={field} value={values[field]} />)}
-      <div className="bg-[#062f29] px-5 py-6 text-white sm:px-8">
+      <div className="bg-[#17130f] px-5 py-5 text-white sm:px-8">
         <div className="flex items-end justify-between gap-4">
-          <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#c6ef67]">Step {step + 1} of 6</p><p className="mt-2 text-sm text-white/75">A workspace shaped around how you work.</p></div>
-          <span className="text-sm font-semibold text-[#c6ef67]">{Math.round(((step + 1) / 6) * 100)}%</span>
+          <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffc857]">Step {step + 1} of 5</p><p className="mt-1 text-xs text-white/65">{stepNames[step]}</p></div>
+          <span className="text-sm font-semibold text-[#ff7a40]">{Math.round(((step + 1) / 5) * 100)}%</span>
         </div>
-        <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/15" aria-hidden="true"><div className="h-full rounded-full bg-[#b9ee57] transition-[width]" style={{ width: `${((step + 1) / 6) * 100}%` }} /></div>
-        <ol aria-label="Onboarding progress" className="mt-4 flex gap-2 overflow-x-auto pb-1 text-[11px] text-white/55">
-          {stepNames.map((name, index) => <li key={name} aria-current={index === step ? "step" : undefined} className={`shrink-0 ${index === step ? "font-bold text-white" : ""}`}>{index + 1}. {name}</li>)}
-        </ol>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/15" aria-hidden="true"><div className="h-full rounded-full bg-[#ff5c1a] transition-[width]" style={{ width: `${((step + 1) / 5) * 100}%` }} /></div>
       </div>
 
       <fieldset disabled={pending} className="min-w-0 p-5 sm:p-8 lg:p-10">
@@ -209,29 +206,29 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
         {state.status === "error" && <div role="alert" tabIndex={-1} className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{state.message}</div>}
 
         {step === 0 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#008f4c]">Welcome to TuRnMaRk</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#071f1b] sm:text-4xl">Who is this workspace for?</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">Start</p>
+          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f] sm:text-4xl">Who is this workspace for?</h2>
           <p className="mt-3 max-w-2xl leading-7 text-muted">Choose the option that reflects who owns the work. You can still belong to other TuRnMaRk organizations later.</p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2" role="radiogroup" aria-describedby={errors.accountType ? "accountType-error" : undefined}>
             {[
               { value: "INDIVIDUAL", title: "Individual", description: "I want to manage my own work." },
               { value: "ORGANIZATION", title: "Organization", description: "I represent an organization." },
-            ].map((option) => <button key={option.value} type="button" role="radio" aria-checked={values.accountType === option.value} onClick={() => selectAccount(option.value as (typeof ACCOUNT_TYPES)[number])} className={`min-h-36 rounded-2xl border p-5 text-left transition-colors ${values.accountType === option.value ? "border-[#008f4c] bg-[#eaf8ef] ring-2 ring-[#008f4c]/15" : "border-black/10 bg-white hover:border-[#008f4c]/50"}`}>
-              <span className="block text-xl font-bold text-[#092a23]">{option.title}</span><span className="mt-2 block text-sm leading-6 text-muted">{option.description}</span>
+            ].map((option) => <button key={option.value} type="button" role="radio" aria-checked={values.accountType === option.value} onClick={() => selectAccount(option.value as (typeof ACCOUNT_TYPES)[number])} className={`min-h-28 rounded-2xl border p-5 text-left transition-colors ${values.accountType === option.value ? "border-[#ff5c1a] bg-[#fff0e5] ring-2 ring-[#ff5c1a]/15" : "border-black/10 bg-white hover:border-[#ff5c1a]/50"}`}>
+              <span className="block text-xl font-bold text-[#17130f]">{option.title}</span><span className="mt-2 block text-sm leading-6 text-muted">{option.description}</span>
             </button>)}
           </div>
           <FieldError id="accountType" message={errors.accountType} />
         </section>}
 
         {step === 1 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#008f4c]">{accountLabel} workspace</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#071f1b]">{isIndividual ? "What best describes your work?" : "What kind of organization is this?"}</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">{accountLabel}</p>
+          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f]">{isIndividual ? "What best describes your work?" : "What kind of organization is this?"}</h2>
           <p className="mt-3 leading-7 text-muted">{isIndividual ? "Choose the work you manage personally. This does not claim affiliation with an employer or institution." : "This helps us prepare the right operational tools without asking unnecessary questions."}</p>
           <div className="mt-7 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-describedby={isIndividual ? "professionalCategory-error" : "organizationType-error"}>
             {(isIndividual ? PROFESSIONS : ORGANIZATION_TYPES).map((option) => {
               const unavailable = "available" in option && !option.available;
               const selected = isIndividual ? values.professionalCategory === option.value : values.organizationType === option.value;
-              return <button key={option.value} type="button" role="radio" aria-checked={selected} disabled={unavailable} onClick={() => isIndividual ? selectProfession(option.value) : selectOrganization(option.value)} className={`flex min-h-16 items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left ${selected ? "border-[#008f4c] bg-[#eaf8ef] ring-2 ring-[#008f4c]/15" : "border-black/10 bg-white"} disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-black/40`}>
+              return <button key={option.value} type="button" role="radio" aria-checked={selected} disabled={unavailable} onClick={() => isIndividual ? selectProfession(option.value) : selectOrganization(option.value)} className={`flex min-h-16 items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left ${selected ? "border-[#ff5c1a] bg-[#fff0e5] ring-2 ring-[#ff5c1a]/15" : "border-black/10 bg-white"} disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-black/40`}>
                 <span className="font-semibold">{option.label}</span>{unavailable && <span className="shrink-0 rounded-full bg-black/5 px-2 py-1 text-[10px] font-bold uppercase tracking-wide">Coming later</span>}
               </button>;
             })}
@@ -240,8 +237,8 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
         </section>}
 
         {step === 2 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#008f4c]">Workspace details</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#071f1b]">{isIndividual ? "Tell us about your work" : "Tell us about your organization"}</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">Details</p>
+          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f]">{isIndividual ? "Tell us about your work" : "Tell us about your organization"}</h2>
           <p className="mt-3 max-w-2xl leading-7 text-muted">{isIndividual ? "Use a workspace name your students or customers will recognize. It does not claim official affiliation with another organization." : "We only need the public name used by your team and visitors."}</p>
           <div className="mt-8 grid max-w-2xl gap-5">
             <label htmlFor="workspaceName" className="text-sm font-bold">{isIndividual ? "Workspace name" : "Organization name"}</label>
@@ -259,8 +256,8 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
         </section>}
 
         {step === 3 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#008f4c]">Workspace configuration</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#071f1b]">Set your local details</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">Set up</p>
+          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f]">Set your local details</h2>
           <p className="mt-3 max-w-2xl leading-7 text-muted">Times and records use these settings. {isLecturer ? "No institution address is required." : "Your first service location can be changed later."}</p>
           <div className="mt-8 grid gap-5 sm:grid-cols-2">
             <div><label htmlFor="country" className="text-sm font-bold">Country</label><select id="country" value={values.country} onChange={(event) => update("country", event.target.value)} className={controlClass} autoComplete="country" aria-invalid={errors.country ? true : undefined} aria-describedby={errors.country ? "country-error" : undefined}><option value="" disabled>Choose a country</option>{countries.map(({ code, name }) => <option key={code} value={code}>{name}</option>)}</select><FieldError id="country" message={errors.country} /></div>
@@ -270,8 +267,8 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
         </section>}
 
         {step === 4 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#008f4c]">Review</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#071f1b]">Ready to create your workspace?</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">Review</p>
+          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f]">Ready to create your workspace?</h2>
           <p className="mt-3 leading-7 text-muted">Review the details below. TuRnMaRk creates the workspace only after you confirm.</p>
           <dl className="mt-8 divide-y divide-black/10 rounded-2xl border border-black/10 bg-white px-5 sm:px-7">
             {[
@@ -284,15 +281,15 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
               ["Country", countries.find(({ code }) => code === values.country)?.name],
               ["Timezone", values.timezone.replaceAll("_", " ")],
               ...(needsLocation ? [["First location", values.locationName], ["Address", values.locationAddress]] : []),
-            ].map(([label, value]) => <div key={label} className="grid gap-1 py-4 sm:grid-cols-[160px_1fr] sm:gap-5"><dt className="text-sm text-muted">{label}</dt><dd className="min-w-0 [overflow-wrap:anywhere] font-semibold text-[#092a23]">{value}</dd></div>)}
+            ].map(([label, value]) => <div key={label} className="grid gap-1 py-4 sm:grid-cols-[160px_1fr] sm:gap-5"><dt className="text-sm text-muted">{label}</dt><dd className="min-w-0 [overflow-wrap:anywhere] font-semibold text-[#17130f]">{value}</dd></div>)}
           </dl>
-          <p className="mt-5 rounded-xl bg-[#edf8e4] p-4 text-sm leading-6 text-[#24472f]">{isIndividual ? "This is your personal professional workspace. It does not represent your employer, institution, bank or professional regulator." : values.organizationType === "BANK_FINANCIAL" ? "You will own this workspace, but official public queue activation remains paused until institutional verification is completed." : "You will be the owner of this organization workspace and can invite team members later. Selected services remain setup choices until you create them."}</p>
+          <p className="mt-5 rounded-xl bg-[#fff0e5] p-4 text-sm leading-6 text-[#71300f]">{isIndividual ? "This personal workspace does not claim affiliation with an employer or institution." : values.organizationType === "BANK_FINANCIAL" ? "Official public activation stays paused until verification is complete." : "You can invite your team after this workspace is created."}</p>
         </section>}
       </fieldset>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-black/10 bg-[#f6f6ef] p-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <button type="button" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0 || pending} className="min-h-12 rounded-xl border border-black/15 bg-white px-6 font-bold text-[#173e31] disabled:invisible">Back</button>
-        {step < 4 ? <button type="button" onClick={continueToNextStep} className="min-h-12 rounded-xl bg-[#008f4c] px-7 font-bold text-white hover:bg-[#007b42]">Continue</button> : <button type="submit" disabled={pending} className="min-h-12 rounded-xl bg-[#b9ee57] px-7 font-bold text-[#08271f] hover:bg-[#a9dd4d] disabled:cursor-wait disabled:opacity-60">{pending ? "Creating your workspace…" : "Create workspace"}</button>}
+      <div className="flex flex-col-reverse gap-3 border-t border-black/10 bg-[#fff8ef] p-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <button type="button" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0 || pending} className="min-h-12 rounded-xl border border-black/15 bg-white px-6 font-bold text-[#17130f] disabled:invisible">Back</button>
+        {step < 4 ? <button type="button" onClick={continueToNextStep} className="min-h-12 rounded-xl bg-[#ff5c1a] px-7 font-bold text-[#17130f] hover:bg-[#ed4d0d]">Continue</button> : <button type="submit" disabled={pending} className="min-h-12 rounded-xl bg-[#17130f] px-7 font-bold text-white hover:bg-[#2b241f] disabled:cursor-wait disabled:opacity-60">{pending ? "Creating workspace…" : "Create workspace"}</button>}
       </div>
       <p role="status" className="sr-only">{pending ? "Saving your workspace. Please wait." : ""}</p>
     </form>

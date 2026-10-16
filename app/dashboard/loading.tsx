@@ -1,1 +1,2 @@
-export default function Loading(){return <div role="status" aria-live="polite"><p className="eyebrow">LOADING YOUR WORKSPACE</p><div aria-hidden="true" className="skeleton-heading"/><div className="metrics-grid" aria-hidden="true">{[1,2,3,4].map(n=><div className="stat-card skeleton-stat" key={n}/>)}</div><div className="skeleton-panel" aria-hidden="true"/><span className="sr-only">Loading your workspace…</span></div>}
+import { PageSkeleton } from "@/components/ui/loading";
+export default function Loading(){return <PageSkeleton cards={4} label="Loading workspace" />}

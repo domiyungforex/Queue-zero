@@ -1,1 +1,2 @@
-export default function LoadingSchoolRecords() { return <p role="status" aria-live="polite" className="p-6">Loading school records…</p>; }
+import { PageSkeleton } from "@/components/ui/loading";
+export default function LoadingSchoolRecords() { return <PageSkeleton cards={3} label="Loading students" />; }

@@ -1,4 +1,5 @@
 import { PublicQueueShell } from "@/components/customer/public-queue-shell";
+import { QrLoader } from "@/components/ui/loading";
 export default function Loading() {
-  return <PublicQueueShell><h1 className="text-2xl font-semibold">Loading ticket…</h1><p role="status" className="mt-3 text-muted">Getting the latest ticket details.</p><div aria-hidden="true" className="mt-8 h-64 animate-pulse rounded-2xl bg-black/5" /></PublicQueueShell>;
+  return <PublicQueueShell><QrLoader label="Opening ticket" /><div aria-hidden="true" className="skeleton-card"><span/><span/><span/></div></PublicQueueShell>;
 }

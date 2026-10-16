@@ -16,7 +16,7 @@ for (const width of [320, 390, 768]) {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await context.setOffline(true);
     await page.goto('/?offline-check=1');
-    await expect(page.getByRole('heading', { name: 'Let’s get you reconnected.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Connection paused.' })).toBeVisible();
     await context.setOffline(false);
     await page.getByRole('link', { name: 'Try again' }).click();
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -35,13 +35,13 @@ test('install metadata and icons are served without authentication', async ({ pa
   await page.goto('/');
   await expect(page).toHaveTitle(/TuRnMaRk/);
   await expect(page.getByRole('link', { name: 'TuRnMaRk home' }).first()).toBeVisible();
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#003d32');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#17130f');
   await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /viewport-fit=cover/);
   await expect(page.locator('meta[name="mobile-web-app-capable"]')).toHaveAttribute('content', 'yes');
   const response = await request.get('/manifest.webmanifest');
   expect(response.ok()).toBe(true);
   const manifest = await response.json();
-  expect(manifest).toMatchObject({ id: '/', start_url: '/', scope: '/', display: 'standalone', theme_color: '#003d32', short_name: 'TuRnMaRk' });
+  expect(manifest).toMatchObject({ id: '/', start_url: '/', scope: '/', display: 'standalone', theme_color: '#17130f', short_name: 'TuRnMaRk' });
   expect(manifest.icons).toEqual(expect.arrayContaining([
     expect.objectContaining({ sizes: '192x192', purpose: 'any' }),
     expect.objectContaining({ sizes: '512x512', purpose: 'any' }),

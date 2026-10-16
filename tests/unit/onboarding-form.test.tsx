@@ -26,9 +26,9 @@ function reachIndividualReview() {
 }
 
 describe("unified onboarding form", () => {
-  it("starts with an accessible six-step account choice", () => {
+  it("starts with an accessible five-step account choice", () => {
     render(<OnboardingForm {...props} action={idle} />);
-    expect(screen.getByText("Step 1 of 6")).toBeTruthy();
+    expect(screen.getByText("Step 1 of 5")).toBeTruthy();
     expect(screen.getByRole("radio", { name: /Individual/ }).getAttribute("aria-checked")).toBe("false");
     expect(screen.getByRole("radio", { name: /Organization/ }).getAttribute("aria-checked")).toBe("false");
     expect(screen.queryByText(/sign in|authenticate/i)).toBeNull();
@@ -38,7 +38,7 @@ describe("unified onboarding form", () => {
     render(<OnboardingForm {...props} action={idle} />);
     continueStep();
     expect(screen.getByText("Choose individual or organization.")).toBeTruthy();
-    expect(screen.getByText("Step 1 of 6")).toBeTruthy();
+    expect(screen.getByText("Step 1 of 5")).toBeTruthy();
   });
 
   it("shows and enables every supported profession", () => {
@@ -68,7 +68,7 @@ describe("unified onboarding form", () => {
     continueStep();
     expect(screen.getByText("Consultations")).toBeTruthy();
     expect(screen.getByText("Authorized practice")).toBeTruthy();
-    expect(screen.getByText(/does not represent your employer/i)).toBeTruthy();
+    expect(screen.getByText(/does not claim affiliation with an employer/i)).toBeTruthy();
   });
 
   it("preserves individual values across Back and reaches review", () => {
@@ -118,7 +118,7 @@ describe("unified onboarding form", () => {
     fireEvent.change(screen.getByLabelText("First location name"), { target: { value: "Central branch" } });
     fireEvent.change(screen.getByLabelText("Location address"), { target: { value: "Lagos" } });
     continueStep();
-    expect(screen.getByText(/activation remains paused until institutional verification/i)).toBeTruthy();
+    expect(screen.getByText(/activation stays paused until verification/i)).toBeTruthy();
   });
 
   it("submits preserved values and shows a loading state", async () => {
@@ -131,7 +131,7 @@ describe("unified onboarding form", () => {
     render(<OnboardingForm {...props} action={action} />);
     reachIndividualReview();
     fireEvent.click(screen.getByRole("button", { name: "Create workspace" }));
-    expect((await screen.findByRole("button", { name: "Creating your workspace…" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((await screen.findByRole("button", { name: "Creating workspace…" }) as HTMLButtonElement).disabled).toBe(true);
     const submitted = action.mock.calls[0]?.[1] as FormData;
     expect(submitted.get("accountType")).toBe("INDIVIDUAL");
     expect(submitted.get("onboardingRequestId")).toBe(props.requestId);
