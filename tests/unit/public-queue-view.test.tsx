@@ -51,14 +51,14 @@ describe("public queue experience", () => {
     render(<PublicQueueView queue={{ ...fixture, description: '<script>alert("x")</script>', business_name: '<img src=x onerror="alert(1)">' }} />);
     expect(screen.getByText('<script>alert("x")</script>')).toBeTruthy();
     expect(document.querySelector("script")).toBeNull();
-    expect(document.querySelector("img")).toBeNull();
+    expect(document.querySelector('img[src="x"]')).toBeNull();
   });
   it("loads a logo without referrer data and falls back on failure", () => {
     render(<PublicQueueView queue={{ ...fixture, business_logo_url: "https://example.com/logo.png" }} />);
     const logo = screen.getByRole("img", { name: `${fixture.business_name} logo` });
     expect(logo.getAttribute("referrerpolicy")).toBe("no-referrer");
     fireEvent.error(logo);
-    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.queryByRole("img", { name: `${fixture.business_name} logo` })).toBeNull();
     expect(screen.getByText(fixture.business_name)).toBeTruthy();
   });
   it("refreshes authoritative queue data on request", () => {

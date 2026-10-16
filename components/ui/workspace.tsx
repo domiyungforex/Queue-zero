@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight,Inbox } from "lucide-react";
+import type { TurnmarkAsset } from "@/lib/brand/assets";
 export function PageHeading({eyebrow,title,description,action}:{eyebrow?:string;title:string;description?:string;action?:React.ReactNode}){return <div className="page-heading"><div><p className="eyebrow">{eyebrow??'YOUR WORKSPACE'}</p><h1>{title}</h1>{description&&<p className="page-description">{description}</p>}</div>{action}</div>}
 export function StatCard({label,value,note,icon}:{label:string;value:React.ReactNode;note?:string;icon?:React.ReactNode}){return <div className="stat-card"><div><span>{label}</span>{icon}</div><strong>{value}</strong>{note&&<p>{note}</p>}</div>}
 export function StatusPill({status}:{status:string}){return <span className={`status-pill status-${status}`}><i/>{status.replaceAll('_',' ')}</span>}
-export function EmptyState({title,description,href,label}:{title:string;description:string;href?:string;label?:string}){return <div className="empty-state"><span className="empty-icon"><Inbox size={28}/></span><h2>{title}</h2><p>{description}</p>{href&&<Link className="button-primary" href={href}>{label??'Get started'}<ArrowUpRight size={18}/></Link>}</div>}
+export function EmptyState({title,description,href,label,illustration}:{title:string;description:string;href?:string;label?:string;illustration?:TurnmarkAsset}){return <div className="empty-state">{illustration?<Image src={illustration.src} width={illustration.width} height={illustration.height} alt={illustration.alt} sizes="160px"/>:<span className="empty-icon"><Inbox size={28}/></span>}<h2>{title}</h2><p>{description}</p>{href&&<Link className="button-primary" href={href}>{label??'Get started'}<ArrowUpRight size={18}/></Link>}</div>}
 export function duration(seconds:number|null){return seconds===null?'—':seconds<60?'< 1 min':`${Math.round(seconds/60)} min`}

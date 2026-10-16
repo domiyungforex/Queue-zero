@@ -24,3 +24,14 @@ describe("approved TuRnMaRk assets", () => {
     expect(asset.alt.trim().length).toBeGreaterThan(0);
   });
 });
+
+describe("TuRnMaRk design tokens", () => {
+  it("keeps the approved palette and gradients in the global token source", () => {
+    const css = readFileSync(join(process.cwd(), "app", "globals.css"), "utf8").toLowerCase();
+    for (const value of ["#ff6b2b", "#ff4765", "#7c3aed", "#fffaf7", "#111318", "#ffffff"]) {
+      expect(css).toContain(value);
+    }
+    expect(css).toContain("linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%)");
+    expect(css).toContain("linear-gradient(135deg, #7c3aed 0%, #ff4765 100%)");
+  });
+});

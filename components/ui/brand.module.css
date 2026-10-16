@@ -1,0 +1,34 @@
+.brand {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  text-decoration: none;
+}
+
+.symbol {
+  width: 35px;
+  height: auto;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.wordmark {
+  width: 137px;
+  height: auto;
+  object-fit: contain;
+}
+
+.compact .symbol {
+  width: 39px;
+}
+
+@media (max-width: 420px) {
+  .brand { gap: 7px; }
+  .symbol { width: 31px; }
+  .wordmark { width: 122px; }
+  .compact .symbol { width: 35px; }
+}

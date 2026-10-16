@@ -38,3 +38,9 @@ export const TURNMARK_ASSETS = {
 } as const;
 
 export type TurnmarkAssetCategory = keyof typeof TURNMARK_ASSETS;
+
+type TurnmarkAssetGroups = typeof TURNMARK_ASSETS;
+
+export type TurnmarkAsset = {
+  [Category in keyof TurnmarkAssetGroups]: TurnmarkAssetGroups[Category][keyof TurnmarkAssetGroups[Category]];
+}[keyof TurnmarkAssetGroups];
