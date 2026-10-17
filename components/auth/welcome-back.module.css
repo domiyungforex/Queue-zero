@@ -77,11 +77,13 @@
 .quote figcaption { color: #84808a; font-size: 9px; }
 
 .authPanel { position: relative; display: grid; place-items: center; padding: 54px clamp(38px, 5vw, 72px); background: rgba(255, 255, 255, .96); }
+.responsiveLayout { display: contents; }
 .authContent { width: min(100%, 520px); }
 .authEyebrow { margin-bottom: 12px; color: #d84b1b; font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
 .authContent h1 { margin: 0; font-size: clamp(42px, 4vw, 58px); line-height: 1; letter-spacing: -.055em; font-weight: 800; }
 .authDescription { margin: 16px 0 34px; color: #6b6b74; font-size: 15px; }
 .mobileBrand { display: none; }
+.responsiveStory { display: none; }
 
 .decoration { position: fixed; z-index: 0; pointer-events: none; opacity: .22; }
 .decorationTop { top: -160px; right: -150px; width: 370px; height: 370px; transform: rotate(14deg); }
@@ -99,21 +101,78 @@
 }
 
 @media (max-width: 900px) {
-  .page { align-items: start; min-height: 100dvh; overflow: auto; padding: 0; background: #fffaf7; }
-  .frame { display: block; width: 100%; min-height: 100dvh; border: 0; border-radius: 0; box-shadow: none; background: #fff; }
+  .page {
+    align-items: start;
+    min-height: 100dvh;
+    overflow: auto;
+    padding: 22px;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(124, 58, 237, .16), transparent 28%),
+      radial-gradient(circle at 0% 100%, rgba(255, 71, 101, .16), transparent 30%),
+      #fffaf7;
+  }
+  .frame { display: block; width: 100%; min-height: calc(100dvh - 44px); border-radius: 30px; background: rgba(255, 255, 255, .76); }
   .story { display: none; }
-  .authPanel { min-height: 100dvh; align-content: start; padding: 28px clamp(30px, 8vw, 78px) 48px; }
-  .mobileBrand { display: block; width: 100%; margin-bottom: clamp(74px, 12vh, 122px); }
-  .authContent { margin: 0 auto; }
-  .authContent h1 { font-size: clamp(42px, 7vw, 54px); }
+  .authPanel {
+    min-height: calc(100dvh - 44px);
+    place-items: stretch;
+    align-content: start;
+    padding: 30px clamp(28px, 5vw, 48px) 34px;
+    background: transparent;
+  }
+  .mobileBrand { display: block; width: 100%; margin-bottom: clamp(28px, 4vh, 44px); }
+  .responsiveLayout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(250px, .92fr); align-items: stretch; gap: 28px; }
+  .authContent {
+    align-self: center;
+    width: 100%;
+    max-width: 480px;
+    padding: clamp(28px, 4vw, 42px);
+    border: 1px solid rgba(73, 49, 38, .09);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 24px 60px rgba(73, 39, 24, .1);
+  }
+  .authContent h1 { font-size: clamp(38px, 5.5vw, 50px); }
+  .responsiveStory {
+    position: relative;
+    display: flex;
+    min-height: 620px;
+    overflow: hidden;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 28px;
+    padding: 30px 28px 0;
+    background:
+      radial-gradient(circle at 85% 22%, rgba(255, 107, 43, .22), transparent 34%),
+      linear-gradient(155deg, #fff 0%, #fff1e9 58%, #ffe7f0 100%);
+  }
+  .responsiveStory::after { content: ""; position: absolute; right: -70px; bottom: -80px; width: 230px; height: 230px; border-radius: 50%; background: linear-gradient(135deg, #ff6b2b, #ff4765 56%, #7c3aed); opacity: .7; }
+  .responsiveStoryCopy { position: relative; z-index: 2; }
+  .responsiveStoryCopy p { color: #c8471a; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+  .responsiveStoryCopy p span { color: #7c3aed; }
+  .responsiveStoryCopy strong { display: block; max-width: 280px; margin-top: 14px; font-size: clamp(26px, 4vw, 36px); line-height: 1.02; letter-spacing: -.05em; }
+  .responsiveStoryCopy small { display: block; max-width: 260px; margin-top: 12px; color: #686770; font-size: 12px; line-height: 1.55; }
+  .responsiveStory img { position: relative; z-index: 1; width: 115%; max-width: none; height: auto; margin-left: -8%; object-fit: contain; object-position: bottom center; }
   .decoration { display: none; }
 }
 
-@media (max-width: 520px) {
-  .authPanel { padding: 22px 22px max(32px, env(safe-area-inset-bottom)); }
-  .mobileBrand { margin-bottom: clamp(58px, 9vh, 82px); }
-  .authContent h1 { font-size: 42px; }
-  .authDescription { margin: 13px 0 30px; font-size: 14px; }
+@media (max-width: 620px) {
+  .page { display: block; padding: 0; background: #fffaf7; }
+  .frame { min-height: 100dvh; overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .authPanel { min-height: 100dvh; padding: 20px 20px max(28px, env(safe-area-inset-bottom)); }
+  .mobileBrand { margin-bottom: 24px; }
+  .responsiveLayout { display: flex; flex-direction: column; gap: 20px; }
+  .authContent { max-width: none; padding: 27px 22px 24px; border-radius: 24px; box-shadow: 0 18px 44px rgba(73, 39, 24, .09); }
+  .authContent h1 { font-size: clamp(34px, 10vw, 40px); }
+  .authEyebrow { margin-bottom: 9px; }
+  .authDescription { margin: 11px 0 24px; font-size: 14px; }
+  .responsiveStory { min-height: 178px; flex-direction: row; align-items: center; padding: 22px 16px 0 22px; border-radius: 24px; }
+  .responsiveStoryCopy { align-self: flex-start; width: 58%; padding-top: 3px; }
+  .responsiveStoryCopy p { font-size: 8px; line-height: 1.45; }
+  .responsiveStoryCopy strong { margin-top: 10px; font-size: 21px; }
+  .responsiveStoryCopy small { display: none; }
+  .responsiveStory img { align-self: flex-end; width: 46%; max-height: 170px; margin: 0 -4px 0 -3%; object-fit: contain; object-position: bottom center; }
+  .responsiveStory::after { right: -38px; bottom: -54px; width: 150px; height: 150px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

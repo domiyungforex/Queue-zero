@@ -36,6 +36,8 @@
   .inputShell { min-height: 54px; }
   .primaryButton { min-height: 56px; }
   .accountPrompt { margin-top: 22px; }
+  .loading, .failed { min-height: 150px; }
+  .loading :global(.qr-loader) { min-height: 132px; transform: scale(.72); }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -66,11 +66,28 @@ export function WelcomeBackShell({ children }: { children: React.ReactNode }) {
 
         <section className={styles.authPanel} aria-labelledby="welcome-back-title">
           <div className={styles.mobileBrand}><Brand priority /></div>
-          <div className={styles.authContent}>
-            <p className={styles.authEyebrow}>Secure access</p>
-            <h1 id="welcome-back-title">Welcome back</h1>
-            <p className={styles.authDescription}>Sign in to your TuRnMaRk account</p>
-            {children}
+          <div className={styles.responsiveLayout}>
+            <div className={styles.authContent}>
+              <p className={styles.authEyebrow}>Secure access</p>
+              <h1 id="welcome-back-title">Welcome back</h1>
+              <p className={styles.authDescription}>Sign in to your TuRnMaRk account</p>
+              {children}
+            </div>
+
+            <aside className={styles.responsiveStory} aria-label="TuRnMaRk product overview">
+              <div className={styles.responsiveStoryCopy}>
+                <p>Queues <span>•</span> Appointments <span>•</span> Attendance</p>
+                <strong>People flow better with TuRnMaRk.</strong>
+                <small>Simple tools for smoother service, from arrival to completion.</small>
+              </div>
+              <Image
+                src={receptionist.src}
+                width={receptionist.width}
+                height={receptionist.height}
+                alt=""
+                sizes="(max-width: 620px) 150px, (max-width: 900px) 38vw, 0px"
+              />
+            </aside>
           </div>
         </section>
       </div>
