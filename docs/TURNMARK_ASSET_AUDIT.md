@@ -15,12 +15,16 @@ This audit is intentionally limited to inspection, classification and safe asset
 
 The approved allowlist is defined in `lib/brand/assets.ts`. Application code should use that manifest instead of adding asset paths ad hoc.
 
+### Supplemental character delivery — 17 October 2026
+
+Three higher-resolution JPEG character files were supplied during the landing-page stage. The healthcare professional and business professional have clean white presentation backgrounds and were approved for decorative industry/profession cards. They are not real customers, staff profiles or endorsements. The supplied student JPEG remains on hold because the checkerboard pattern and faint extraction marks are baked into the JPEG rather than being true transparency; the existing approved transparent student asset remains in use.
+
 ## Approved assets
 
 | Category | Assets | Usage constraint |
 | --- | --- | --- |
 | Branding | `brand_symbol.png`, `brand_wordmark.png` | Official brand artwork. Preserve aspect ratio and transparent background. |
-| Characters | `student_character.png` | Decorative education/persona artwork; not a user avatar. |
+| Characters | `student_character.png`, `healthcare_professional.jpg`, `business_professional.jpg` | Decorative education/persona artwork; not user avatars or customer endorsements. |
 | Industries | `government_building.png`, `hospital_building.png`, `school_building.png` | Decorative industry cards and empty states. |
 | Illustrations | `calendar_3d.png`, `clock_3d.png`, `success_badge.png`, `waiting_chairs.png` | Decorative status/empty-state imagery. Continue to express status semantically in text. |
 | Icons | `analytics_icon_card.png`, `appointment_icon_card.png`, `attendance_icon_card.png`, `bank_icon_card.png`, `business_icon_card.png`, `government_icon_card.png`, `hospital_icon_card.png`, `queue_icon_card.png`, `reports_icon_card.png`, `school_icon_card.png` | Illustration cards only. Use Lucide/CSS icons for controls, navigation and accessible status indicators. |

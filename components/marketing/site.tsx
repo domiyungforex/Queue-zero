@@ -3,6 +3,7 @@ import { siteDetails } from "@/lib/site/config";
 import { jsonLd, siteUrl } from "@/lib/site/metadata";
 import { MarketingAnalytics } from "./analytics";
 import { Brand } from "@/components/ui/brand";
+import { ResponsiveNavigation } from "@/components/ui/turnmark-system";
 import styles from "./site.module.css";
 
 export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
@@ -10,10 +11,10 @@ export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
 }
 export { Brand };
 export function MarketingHeader() {
-  return <header className={styles.header}><Brand /><nav className={styles.desktopNav} aria-label="Main"><Link href="/how-it-works">How it works</Link><Link href="/#for-business">For businesses</Link><Link href="/pricing">Plans</Link><Link href="/solutions/education">Education</Link><Link href="/contact">Contact</Link><Link href="/dashboard">Workspace</Link></nav><div className={styles.headerActions}><Link href="/sign-in" className={styles.signIn}>Log in</Link><Link href="/sign-up" className={styles.smallButton}>Get started <Arrow diagonal /></Link></div><details className={styles.mobileNav}><summary>Menu <span aria-hidden="true">＋</span></summary><nav aria-label="Mobile"><Link href="/how-it-works">How it works</Link><Link href="/#for-business">For businesses</Link><Link href="/pricing">Plans</Link><Link href="/solutions/education">Education</Link><Link href="/contact">Contact</Link><Link href="/sign-in">Log in</Link></nav></details></header>;
+  return <div className={styles.marketingNav}><ResponsiveNavigation items={[{href:"/#product",label:"Product"},{href:"/#solutions",label:"Solutions"},{href:"/pricing",label:"Pricing"},{href:"/how-it-works",label:"Resources"},{href:"/contact",label:"Contact"}]} secondaryAction={{href:"/sign-in",label:"Sign in"}} primaryAction={{href:"/sign-up",label:"Get started"}} /></div>;
 }
 export function MarketingFooter() {
-  return <footer className={styles.footer}><div><Brand /><p>A little less waiting.<br />A lot more living.</p></div><nav aria-label="Footer"><Link href="/how-it-works">How it works</Link><Link href="/pricing">Plans</Link><Link href="/solutions/education">Education</Link><Link href="/contact">Contact</Link><Link href="/sign-in">Business login</Link><Link href="/privacy">Privacy</Link></nav><p className={styles.footerNote}>Made for the people<br />on both sides of the counter.</p><div className={styles.footerBottom}><span>© {new Date().getFullYear()} TuRnMaRk</span><span>Your place, without the line.</span></div></footer>;
+  return <footer className={styles.footer}><div><Brand /><p>People flow better<br />with TuRnMaRk.</p></div><nav aria-label="Footer"><Link href="/#product">Product</Link><Link href="/#solutions">Solutions</Link><Link href="/how-it-works">How it works</Link><Link href="/pricing">Pricing</Link><Link href="/solutions/education">Education</Link><Link href="/contact">Contact</Link><Link href="/sign-in">Sign in</Link><Link href="/privacy">Privacy</Link></nav><p className={styles.footerNote}>Scan. Join.<br />Leave the line.</p><div className={styles.footerBottom}><span>© {new Date().getFullYear()} TuRnMaRk</span><span>Queues first. Better arrivals everywhere.</span></div></footer>;
 }
 export function MarketingFrame({ children }: { children: React.ReactNode }) {
   const details = siteDetails();

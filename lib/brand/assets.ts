@@ -11,6 +11,8 @@ export const TURNMARK_ASSETS = {
   },
   characters: {
     student: { src: "/assets/turnmark/characters/student_character.png", width: 195, height: 215, alt: "Student holding a tablet" },
+    healthcareProfessional: { src: "/assets/turnmark/characters/healthcare_professional.jpg", width: 1066, height: 1280, alt: "Healthcare professional" },
+    businessProfessional: { src: "/assets/turnmark/characters/business_professional.jpg", width: 1066, height: 1280, alt: "Business professional holding a tablet" },
   },
   industries: {
     government: { src: "/assets/turnmark/industries/government_building.png", width: 271, height: 130, alt: "Government service building" },

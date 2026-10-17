@@ -10,17 +10,21 @@ const assets = Object.values(TURNMARK_ASSETS).flatMap((category) => Object.value
 
 describe("approved TuRnMaRk assets", () => {
   it("keeps a unique allowlist of approved public assets", () => {
-    expect(assets).toHaveLength(20);
+    expect(assets).toHaveLength(22);
     expect(new Set(assets.map((asset) => asset.src)).size).toBe(assets.length);
     expect(assets.every((asset) => asset.src.startsWith("/assets/turnmark/"))).toBe(true);
   });
 
-  it.each(assets)("matches the declared PNG metadata for $src", (asset) => {
+  it.each(assets)("matches the declared asset metadata for $src", (asset) => {
     const file = readFileSync(join(process.cwd(), "public", asset.src));
-    const png = PNG.sync.read(file);
-    expect(png.width).toBe(asset.width);
-    expect(png.height).toBe(asset.height);
-    expect(png.alpha).toBe(true);
+    if (asset.src.endsWith(".png")) {
+      const png = PNG.sync.read(file);
+      expect(png.width).toBe(asset.width);
+      expect(png.height).toBe(asset.height);
+      expect(png.alpha).toBe(true);
+    } else {
+      expect([...file.subarray(0, 3)]).toEqual([0xff, 0xd8, 0xff]);
+    }
     expect(asset.alt.trim().length).toBeGreaterThan(0);
   });
 });

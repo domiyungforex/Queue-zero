@@ -1,32 +1,111 @@
-import { FrequentlyAskedQuestions } from "@/components/marketing/faq";
-import { pageMetadata } from "@/lib/site/metadata";
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight, Check, Clock3, QrCode, Radio, ScanLine } from "lucide-react";
+import { FrequentlyAskedQuestions } from "@/components/marketing/faq";
 import { Arrow, MarketingFrame } from "@/components/marketing/site";
+import { FeatureIllustrationCard, IndustryIllustration, ProfessionalCharacter } from "@/components/ui/turnmark-system";
+import { TURNMARK_ASSETS } from "@/lib/brand/assets";
+import { pageMetadata } from "@/lib/site/metadata";
 import styles from "@/components/marketing/site.module.css";
 
 const steps = [
-  { number: "01", title: "Scan.", text: "Open the QR. Enter your first name. Get your number.", symbol: "scan" },
-  { number: "02", title: "Go.", text: "Your live ticket holds your place while you use your time.", symbol: "time" },
-  { number: "03", title: "Return.", text: "Come back when your ticket says your turn is close.", symbol: "return" },
-];
-function StepIcon({ type }: { type: string }) {
-  return <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true"><g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{type === "scan" ? <><path d="M11 5H5v6m16-6h6v6M5 21v6h6m16-6v6h-6M4 16h24" /><path d="M11 10h3v3h-3zm8 0h3v3h-3zm-8 10h3v3h-3zm8 0h3v3h-3z" /></> : type === "time" ? <><circle cx="16" cy="16" r="11" /><path d="M16 9v7l5 3" /></> : <><path d="M9 12h11a7 7 0 0 1 0 14h-3M9 12l6-6m-6 6 6 6" /><circle cx="8" cy="25" r="2" /></>}</g></svg>;
-}
-export const metadata = pageMetadata('Virtual queues that give people their time back', 'Let customers scan a QR code, join without an account and track their place while your staff manage queues in realtime.', '/');
+  { number: "01", title: "Scan", text: "Open the queue QR with the camera already on your phone.", icon: ScanLine },
+  { number: "02", title: "Join", text: "Enter the details requested by the organization and receive a private ticket.", icon: QrCode },
+  { number: "03", title: "Leave the line", text: "Track your place live and return when your turn is close.", icon: Clock3 },
+] as const;
+
+const modules = [
+  { asset: TURNMARK_ASSETS.icons.queue, eyebrow: "QUEUE MANAGEMENT", title: "Smarter queues", description: "Create QR queues, call the next person safely, and keep every ticket current." },
+  { asset: TURNMARK_ASSETS.icons.attendance, eyebrow: "EDUCATION", title: "Accountless attendance", description: "Roster-validated class attendance with live lecturer views and real exports." },
+  { asset: TURNMARK_ASSETS.icons.appointments, eyebrow: "SCHEDULED SERVICES", title: "Supported appointments", description: "Coordinate scheduled arrivals where the workspace has appointment support enabled." },
+  { asset: TURNMARK_ASSETS.icons.analytics, eyebrow: "REPORTING", title: "Operational insight", description: "Review actual queue and attendance activity without invented dashboard data." },
+] as const;
+
+export const metadata = pageMetadata(
+  "Queue management that gives people their time back",
+  "TuRnMaRk lets people scan, join and track their place from their phone while organizations manage every arrival in realtime.",
+  "/",
+);
+
 export default function Home() {
-  return <MarketingFrame><main id="main">
-    <section className={styles.hero} aria-labelledby="hero-title">
-      <div className={styles.heroCopy}><p className={styles.eyebrow}><span /> YOUR TURN. WITHOUT THE LINE.</p><h1 id="hero-title">Scan. Join.<br /><span>Go live.</span><svg className={styles.scribble} viewBox="0 0 350 22" fill="none" aria-hidden="true"><path d="M4 15C76 2 201 1 343 10M27 21C116 9 252 10 317 17" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg></h1><p className={styles.heroDescription}>Join from your phone. Keep your place. Return when it’s time.</p><div className={styles.heroActions}><Link href="/sign-up" className={styles.button}>Create a queue <Arrow diagonal /></Link><Link href="#how-it-works" className={styles.textLink}>See the flow <Arrow diagonal /></Link></div><p className={styles.heroFootnote}><span aria-hidden="true">✓</span> No download. No customer account.</p></div>
-      <div className={styles.heroVisual}><div className={styles.photoFrame}><Image src="/images/cafe.jpg" alt="Warm café interior with pendant lights and a welcoming coffee counter" fill priority sizes="(max-width: 760px) 100vw, 48vw" className={styles.heroPhoto} /><div className={styles.photoCaption}><span>YOUR TIME, WELL SPENT.</span><Arrow diagonal /></div></div><div className={styles.roundNote}>a coffee?<br /><strong>you have time.</strong><svg viewBox="0 0 50 20" fill="none" aria-hidden="true"><path d="M5 5q20 20 40 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></div><span className={styles.visualLabel}>A queue that fits around your day.</span></div>
-    </section>
-    <section className={styles.promiseStrip} aria-label="TuRnMaRk essentials"><p>THE LINE, REBUILT.</p><span><b aria-hidden="true">⌁</b> Scan</span><span><b aria-hidden="true">◎</b> Keep your place</span><span><Arrow diagonal /> Come back on time</span></section>
-    <section id="how-it-works" className={styles.stepsSection}><div className={styles.sectionHeading}><div><p className={styles.eyebrow}>THREE MOVES.</p><h2>A queue that<br /><em>moves with you.</em></h2></div><p>Scan in. Step away. Return at the right time.</p></div><div className={styles.steps}>{steps.map(step => <article className={styles.step} key={step.number}><div className={styles.stepTop}><StepIcon type={step.symbol} /><span>{step.number} /</span></div><h3>{step.title}</h3><p>{step.text}</p></article>)}</div></section>
-    <section className={styles.businessSection} id="for-business"><div className={styles.businessCopy}><p className={styles.eyebrow}>FOR THE OTHER SIDE OF THE COUNTER</p><h2>Less queue chaos.<br /><em>More human service.</em></h2><p>Give every customer a place, and your team a clearer picture. Create a queue, share its QR, and keep the day moving.</p><ul><li>A QR code for every service</li><li>Customer tickets with a clear place in line</li><li>One workspace for your business and locations</li></ul><Link href="/sign-up" className={styles.limeButton}>Make room for better service <Arrow diagonal /></Link></div><div className={styles.businessVisual}><div className={styles.counterCard}><div className={styles.counterHeader}><span><i /> Your business</span><span>YOUR WORKSPACE</span></div><div className={styles.counterName}>A calmer day at the counter.<span>Your services and locations</span></div><div className={styles.counterServing}><span>ONE PERSON AT A TIME</span><strong>Call. Serve. Complete.</strong><span>Every action updates your customer’s ticket.</span></div><div className={styles.counterWaiting}><span>YOUR QUEUE, LIVE</span><Link href="/dashboard">Open your workspace <Arrow /></Link></div></div><div className={styles.businessSticker}><span aria-hidden="true">✳</span> Less admin.<br />More people.</div></div></section>
-    <section className={styles.placesSection}><div className={styles.sectionHeading}><div><p className={styles.eyebrow}>REAL PLACES. REAL PEOPLE.</p><h2>Wherever life<br /><em>forms a line.</em></h2></div><p>A familiar experience, with a better way to wait.<br />Made for the everyday places that matter.</p></div><div className={styles.places}>{[{image:"cafe",title:"Cafés & service counters",description:"A little breathing room in the daily rush.",alt:"Pendant lights inside a welcoming café"},{image:"salon",title:"Barbers & salons",description:"Good hair days. Less waiting around.",alt:"Barber carefully grooming a customer’s beard"},{image:"clinic",title:"Clinics & care",description:"A calmer start to a more personal visit.",alt:"Bright, clean treatment room in a dental clinic"}].map(place=><article className={styles.place} key={place.image}><div className={styles.placeImage}><Image src={`/images/${place.image}.jpg`} alt={place.alt} fill sizes="(max-width: 640px) 100vw, 33vw" /></div><h3>{place.title}<Arrow diagonal /></h3><p>{place.description}</p></article>)}</div></section>
-    <section className={styles.stepsSection}><div className={styles.sectionHeading}><div><p className={styles.eyebrow}>QUEUES COME FIRST.</p><h2>More than <em>queues.</em></h2></div><p>TuRnMaRk helps organizations manage how people arrive, wait, get served and leave. Schools can also track classroom arrival and departure, review attendance and print official records.</p></div><Link href="/solutions/education" className={styles.textLink}>Queues + attendance for modern campuses <Arrow diagonal /></Link></section>
-    <FrequentlyAskedQuestions />
-    <section className={styles.stepsSection} id="case-studies"><div className={styles.sectionHeading}><div><p className={styles.eyebrow}>REAL OPERATIONS. MEASURED RESULTS.</p><h2>Share your queue story.</h2></div><p>Running a TuRnMaRk pilot? Talk to us about documenting your workflow, waiting times and lessons with your permission.</p></div><Link href="/contact" className={styles.textLink}>Discuss a case study <Arrow diagonal /></Link></section>
-    <section className={styles.closing}><p className={styles.eyebrow}>LET’S GIVE PEOPLE THEIR TIME BACK.</p><h2>A better day starts<br />with a shorter <em>line.</em></h2><Link href="/sign-up" className={styles.button}>Get started with TuRnMaRk <Arrow diagonal /></Link><p>For your business. For your customers. For everyone’s day.</p><span className={styles.closingStar} aria-hidden="true">✳</span></section>
-  </main></MarketingFrame>;
+  return (
+    <MarketingFrame>
+      <main id="main">
+        <section className={styles.tmHero} aria-labelledby="hero-title">
+          <div className={styles.tmHeroCopy}>
+            <p className={styles.tmPill}><span>NEW</span> Queues, attendance and supported appointments</p>
+            <h1 id="hero-title">People flow better with <em>TuRnMaRk.</em></h1>
+            <p>Simple, modern queue management that lets people scan, join, leave the line and return when they’re almost next.</p>
+            <div className={styles.tmHeroActions}>
+              <Link href="/sign-up" className={styles.tmPrimaryAction}>Create a queue <ArrowRight size={18} aria-hidden="true" /></Link>
+              <Link href="#how-it-works" className={styles.tmSecondaryAction}><span aria-hidden="true">▶</span> See how it works</Link>
+            </div>
+            <p className={styles.tmAssurance}><Check size={15} aria-hidden="true" /> No download or customer account required.</p>
+          </div>
+          <div className={styles.tmHeroVisual}>
+            <div className={styles.tmHeroPhoto}>
+              <Image src="/images/cafe.jpg" alt="A welcoming service counter where customers can scan to join a queue" fill priority sizes="(max-width: 860px) 100vw, 50vw" />
+            </div>
+            <div className={styles.tmQueueBoard} aria-label="Illustration of the TuRnMaRk queue flow">
+              <div><span>Now serving</span><strong>Your turn</strong></div>
+              <div><span>Next step</span><strong>Return</strong></div>
+              <div><span>Queue state</span><strong>Live</strong></div>
+            </div>
+            <div className={styles.tmScanCard}><QrCode size={28} aria-hidden="true" /><span>Scan to join</span><small>Generated QR codes remain live and secure.</small></div>
+          </div>
+          <div className={styles.tmCapabilityBar} aria-label="Core TuRnMaRk capabilities">
+            <span><ScanLine aria-hidden="true" /><strong>No app</strong><small>Join in the browser</small></span>
+            <span><Radio aria-hidden="true" /><strong>Realtime</strong><small>Live queue position</small></span>
+            <span><Clock3 aria-hidden="true" /><strong>Wait remotely</strong><small>Return when close</small></span>
+            <span><QrCode aria-hidden="true" /><strong>One scan</strong><small>Context-aware entry</small></span>
+          </div>
+        </section>
+
+        <section className={styles.tmFeatureStrip} id="product" aria-labelledby="product-title">
+          <div className={styles.tmSectionHeading}><p>BUILT FOR REAL-WORLD FLOW</p><h2 id="product-title">One platform. Specialized tools.</h2><span>Queues stay fast and focused. Attendance and supported appointments use the same trusted organization foundation.</span></div>
+          <div className={styles.tmFeatureGrid}>{modules.map((module) => <FeatureIllustrationCard key={module.title} {...module} />)}</div>
+        </section>
+
+        <section className={styles.tmSteps} id="how-it-works" aria-labelledby="flow-title">
+          <div className={styles.tmSectionHeading}><p>HOW TURNMARK WORKS</p><h2 id="flow-title">A better queue in three small moves.</h2><span>The customer flow remains deliberately simple, even when the organization behind it is complex.</span></div>
+          <div className={styles.tmStepGrid}>{steps.map(({ number, title, text, icon: Icon }) => <article key={number}><div><Icon size={24} aria-hidden="true" /><span>{number}</span></div><h3>{title}</h3><p>{text}</p></article>)}</div>
+        </section>
+
+        <section className={styles.tmQueueProduct} aria-labelledby="queue-product-title">
+          <div className={styles.tmQueueCopy}><p>QUEUE MANAGEMENT FIRST</p><h2 id="queue-product-title">The line keeps moving, even when people step away.</h2><span>Staff get clear controls. Customers get a private live ticket. Postgres remains authoritative when the connection returns.</span><ul><li><Check aria-hidden="true" />Safe Call Next operations</li><li><Check aria-hidden="true" />Live position and approximate waits</li><li><Check aria-hidden="true" />Pause, resume, complete and no-show controls</li></ul><Link href="/how-it-works">Explore the queue flow <Arrow /></Link></div>
+          <div className={styles.tmProductPanel} aria-label="Illustrative queue workflow">
+            <div className={styles.tmProductTop}><span><i /> Queue open</span><small>Illustrative view</small></div>
+            <div className={styles.tmProductMain}><p>Customer journey</p><strong>Scan → Join → Track → Return</strong><span>The real workspace shows only authorized, database-backed queue information.</span></div>
+            <div className={styles.tmProductActions}><span>Public QR</span><span>Live ticket</span><span>Staff console</span></div>
+          </div>
+        </section>
+
+        <section className={styles.tmSolutions} id="solutions" aria-labelledby="solutions-title">
+          <div className={styles.tmSectionHeading}><p>ONE PLATFORM. MANY PHYSICAL PLACES.</p><h2 id="solutions-title">Built for the moments people arrive.</h2><span>Each workflow stays specific to the service, while organizations, locations, identity and audit history remain connected.</span></div>
+          <div className={styles.tmSolutionGrid}>
+            <article><IndustryIllustration industry="education" /><div><h3>Universities & schools</h3><p>Class attendance and campus service queues.</p><Link href="/solutions/education" aria-label="Explore education solutions"><Arrow /></Link></div></article>
+            <article><ProfessionalCharacter character="healthcareProfessional" /><div><h3>Hospitals & clinics</h3><p>Reception and consultation queues without medical-record collection.</p><Link href="/contact" aria-label="Discuss healthcare queues"><Arrow /></Link></div></article>
+            <article><IndustryIllustration industry="government" /><div><h3>Government services</h3><p>Clear public-service queues across departments and counters.</p><Link href="/contact" aria-label="Discuss government queues"><Arrow /></Link></div></article>
+            <article><ProfessionalCharacter character="businessProfessional" /><div><h3>Professionals & businesses</h3><p>Personal workspaces and service queues without false institutional affiliation.</p><Link href="/sign-up" aria-label="Create a professional workspace"><Arrow /></Link></div></article>
+          </div>
+        </section>
+
+        <section className={styles.tmEducationCallout}>
+          <div><p>MORE THAN QUEUES</p><h2>Queues + attendance for modern campuses.</h2><span>Schools can run classroom attendance, campus clinic queues, bursary queues, registration support and student services from one isolated workspace.</span><Link href="/solutions/education">Explore TuRnMaRk for education <Arrow /></Link></div>
+          <Image src={TURNMARK_ASSETS.characters.student.src} width={TURNMARK_ASSETS.characters.student.width} height={TURNMARK_ASSETS.characters.student.height} alt={TURNMARK_ASSETS.characters.student.alt} />
+        </section>
+
+        <section className={styles.tmPricingPreview}>
+          <div><p>START SMALL. GROW WHEN READY.</p><h2>Choose capacity that fits your operation.</h2><span>See current plans and configured pricing without hidden usage claims.</span></div>
+          <Link href="/pricing" className={styles.tmSecondaryAction}>View plans <ArrowRight size={18} aria-hidden="true" /></Link>
+        </section>
+
+        <FrequentlyAskedQuestions />
+
+        <section className={styles.tmCaseStudy} id="case-studies"><div><p>REAL OPERATIONS. VERIFIED STORIES.</p><h2>Running a TuRnMaRk pilot?</h2><span>We only publish customer results and reviews with permission. Tell us about your workflow, waiting times and lessons.</span></div><Link href="/contact" className={styles.tmPrimaryAction}>Discuss a case study <ArrowRight size={18} aria-hidden="true" /></Link></section>
+
+        <section className={styles.tmClosing}><p>READY TO CHANGE THE WAIT?</p><h2>Give people their place in line—and their time back.</h2><Link href="/sign-up" className={styles.tmPrimaryAction}>Get started free <ArrowRight size={18} aria-hidden="true" /></Link></section>
+      </main>
+    </MarketingFrame>
+  );
 }
