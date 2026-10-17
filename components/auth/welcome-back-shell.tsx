@@ -12,6 +12,7 @@ const benefits = [
 
 export function WelcomeBackShell({ children }: { children: React.ReactNode }) {
   const receptionist = TURNMARK_ASSETS.auth.receptionist;
+  const student = TURNMARK_ASSETS.auth.welcomeStudent;
   const avatars = TURNMARK_ASSETS.auth.trustedAvatars;
   const decoration = TURNMARK_ASSETS.auth.gradientDecoration;
 
@@ -65,6 +66,21 @@ export function WelcomeBackShell({ children }: { children: React.ReactNode }) {
         </section>
 
         <section className={styles.authPanel} aria-labelledby="welcome-back-title">
+          <div className={styles.mobileHero}>
+            <Brand className={styles.mobileHeroBrand} priority />
+            <p>Queues. Attendance.<br />and Appointments.<br />Made Simple.</p>
+            <span className={styles.mobileHeroLoop} aria-hidden="true" />
+            <span className={styles.mobileHeroAccent} aria-hidden="true" />
+            <Image
+              className={styles.mobileStudent}
+              src={student.src}
+              width={student.width}
+              height={student.height}
+              alt={student.alt}
+              priority
+              sizes="(max-width: 620px) 310px, 0px"
+            />
+          </div>
           <div className={styles.mobileBrand}><Brand priority /></div>
           <div className={styles.responsiveLayout}>
             <div className={styles.authContent}>

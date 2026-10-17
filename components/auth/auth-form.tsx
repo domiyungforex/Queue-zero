@@ -202,6 +202,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         <label className={styles.label} htmlFor={fieldId}>{channel === "phone" ? "Phone number" : isWelcomeBack ? "Email" : "Email address"}</label>
         <div className={styles.inputShell} data-invalid={Boolean(error) && !sent ? "true" : undefined}>
           {channel === "email" ? <Mail size={19} aria-hidden="true" /> : null}
+          {channel === "email" && isWelcomeBack ? <span className={styles.mobilePlaceholder} aria-hidden="true">Email</span> : null}
           <input
             id={fieldId}
             aria-label={channel === "phone" ? "Phone number (with country code)" : "Email address"}
@@ -289,6 +290,13 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         {mode === "sign-in" ? "Don’t have an account?" : "Already have an account?"}{" "}
         <Link href={`/${other}?redirect_url=${encodeURIComponent(returnTo)}`}>{mode === "sign-in" ? "Get started" : "Sign in instead"}</Link>
       </p>
+
+      {mode === "sign-in" && !sent ? (
+        <p className={styles.legal}>
+          By continuing, you agree to our <span>Terms of Service</span><br />
+          and <Link href="/privacy">Privacy Policy</Link>
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -307,7 +315,8 @@ function AuthFormLoading() {
         <label className={styles.label} htmlFor="sign-in-loading-email">Email</label>
         <div className={styles.inputShell}>
           <Mail size={19} aria-hidden="true" />
-          <input id="sign-in-loading-email" type="email" placeholder="you@youremail.com" disabled />
+          <span className={styles.mobilePlaceholder} aria-hidden="true">Email</span>
+          <input id="sign-in-loading-email" type="email" placeholder="Email" disabled />
         </div>
         <p className={slow ? styles.connectionError : styles.connectionStatus} role="status">
           {slow ? "Secure sign-in is taking longer than expected." : "Connecting secure sign-in…"}

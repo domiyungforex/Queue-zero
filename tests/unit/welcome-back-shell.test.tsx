@@ -12,6 +12,9 @@ describe("Welcome Back sign-in shell", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Welcome back" })).toBeTruthy();
     expect(screen.getByRole("form", { name: "Clerk sign-in" })).toBeTruthy();
     expect(screen.getByRole("img", { name: "TuRnMaRk receptionist working at a laptop" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "TuRnMaRk student carrying school books" }).getAttribute("src"))
+      .toContain("welcome-student.png");
+    expect(screen.getByText("Queues. Attendance.", { exact: false })).toBeTruthy();
     expect(screen.getByText("Illustrative product scenario")).toBeTruthy();
     expect(screen.getByText("Designed for schools, hospitals,", { exact: false })).toBeTruthy();
   });

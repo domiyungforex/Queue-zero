@@ -11,6 +11,7 @@
 .inputShell svg { flex: 0 0 auto; }
 .inputShell input { min-width: 0; width: 100%; height: 54px; border: 0; outline: 0; color: #111318; background: transparent; font-size: 14px; }
 .inputShell input::placeholder { color: #9a99a2; }
+.mobilePlaceholder { display: none; }
 .codeBlock { display: grid; gap: 11px; margin-top: 4px; }
 .codeBlock p { color: #6b6b74; font-size: 12px; line-height: 1.55; }
 .codeBlock strong { color: #34343a; overflow-wrap: anywhere; }
@@ -27,6 +28,7 @@
 .differentMethod { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; margin-top: 20px; }
 .accountPrompt { margin-top: 26px; color: #76747d; text-align: center; font-size: 12px; }
 .accountPrompt a { margin-left: 4px; color: #d84b1b; font-weight: 800; text-decoration: none; }
+.legal { display: none; }
 .socialMethods { display: grid; gap: 10px; margin-top: 18px; }
 .divider { display: flex; align-items: center; gap: 13px; color: #8b8991; font-size: 10px; font-weight: 700; }
 .divider::before, .divider::after { content: ""; height: 1px; flex: 1; background: #e8e3e0; }
@@ -44,9 +46,73 @@
 .failed { border: 1px solid #f0c4cd; border-radius: 17px; padding: 28px; color: #8d2035; background: #fff8fa; }
 
 @media (max-width: 520px) {
-  .inputShell { min-height: 54px; }
-  .primaryButton { min-height: 56px; }
-  .accountPrompt { margin-top: 22px; }
+  .welcomeBack { max-width: none; }
+  .welcomeBack .form { gap: 13px; }
+  .welcomeBack .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .welcomeBack .inputShell {
+    position: relative;
+    min-height: 58px;
+    border: 0;
+    border-radius: 17px;
+    padding: 0 18px;
+    color: #7d8784;
+    background: #f4f6f5;
+  }
+  .welcomeBack .inputShell:focus-within { box-shadow: 0 0 0 3px rgba(99, 230, 0, .28); }
+  .welcomeBack .inputShell input { height: 58px; color: #063f32; font-size: 15px; }
+  .welcomeBack .inputShell input::placeholder { color: transparent; }
+  .welcomeBack .mobilePlaceholder { position: absolute; left: 49px; display: block; color: #8d9693; font-size: 15px; pointer-events: none; }
+  .welcomeBack .inputShell:focus-within .mobilePlaceholder,
+  .welcomeBack .inputShell:has(input:not(:placeholder-shown)) .mobilePlaceholder { display: none; }
+  .welcomeBack .error { min-height: 0; margin-top: -4px; }
+  .welcomeBack .error:empty { display: none; }
+  .welcomeBack .primaryButton {
+    position: relative;
+    min-height: 58px;
+    justify-content: center;
+    border-radius: 17px;
+    color: #fff;
+    background: #075f46;
+    box-shadow: none;
+    font-size: 16px;
+    font-weight: 750;
+  }
+  .welcomeBack .primaryButton svg { position: absolute; right: 20px; }
+  .welcomeBack .primaryButton:hover:not(:disabled) { transform: none; background: #064e3b; box-shadow: none; filter: none; }
+  .welcomeBack .primaryButton:focus-visible,
+  .welcomeBack .providerButton:focus-visible,
+  .welcomeBack .accountPrompt a:focus-visible { outline-color: rgba(99, 230, 0, .65); }
+  .welcomeBack .socialMethods { gap: 14px; margin-top: 19px; }
+  .welcomeBack .divider { color: #969c9a; font-size: 12px; font-weight: 500; }
+  .welcomeBack .divider::before,
+  .welcomeBack .divider::after { background: #e3e7e5; }
+  .welcomeBack .providerButton {
+    min-height: 56px;
+    border-color: #e2e7e4;
+    border-radius: 17px;
+    color: #063f32;
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .welcomeBack .providerButton:hover:not(:disabled) { border-color: #bbd6ca; background: #f9fdf9; transform: none; }
+  .welcomeBack .googleMark {
+    color: transparent;
+    background: conic-gradient(from -45deg, #4285f4 0 25%, #34a853 0 40%, #fbbc05 0 65%, #ea4335 0 82%, #4285f4 0);
+    background-clip: text;
+    -webkit-background-clip: text;
+  }
+  .welcomeBack .differentMethod,
+  .welcomeBack .accountPrompt { display: none; }
+  .welcomeBack .legal {
+    display: block;
+    margin-top: 30px;
+    color: #909794;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .welcomeBack .legal span,
+  .welcomeBack .legal a { color: #35b65b; font-weight: 650; text-decoration: none; }
   .loading, .failed { min-height: 150px; }
   .loading :global(.qr-loader) { min-height: 132px; transform: scale(.72); }
 }

@@ -10,7 +10,7 @@ const assets = Object.values(TURNMARK_ASSETS).flatMap((category) => Object.value
 
 describe("approved TuRnMaRk assets", () => {
   it("keeps a unique allowlist of approved public assets", () => {
-    expect(assets).toHaveLength(28);
+    expect(assets).toHaveLength(30);
     expect(new Set(assets.map((asset) => asset.src)).size).toBe(assets.length);
     expect(assets.every((asset) => asset.src.startsWith("/assets/turnmark/"))).toBe(true);
   });

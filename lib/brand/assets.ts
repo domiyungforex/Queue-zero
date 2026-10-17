@@ -11,6 +11,8 @@ export const TURNMARK_ASSETS = {
   },
   auth: {
     receptionist: { src: "/assets/turnmark/auth/welcome-receptionist.jpg", width: 1024, height: 1280, alt: "TuRnMaRk receptionist working at a laptop" },
+    receptionistCutout: { src: "/assets/turnmark/auth/welcome-receptionist-cutout.png", width: 1024, height: 1280, alt: "TuRnMaRk receptionist working at a laptop" },
+    welcomeStudent: { src: "/assets/turnmark/auth/welcome-student.png", width: 871, height: 1270, alt: "TuRnMaRk student carrying school books" },
     trustedAvatars: { src: "/assets/turnmark/auth/trusted-avatars.jpg", width: 1280, height: 426, alt: "A group of professionals" },
     gradientDecoration: { src: "/assets/turnmark/auth/auth-gradient-decoration.jpg", width: 1254, height: 1254, alt: "Sunset gradient decoration" },
     testimonialReference: { src: "/assets/turnmark/auth/testimonial-card-reference.jpg", width: 1280, height: 853, alt: "Testimonial card design reference" },
