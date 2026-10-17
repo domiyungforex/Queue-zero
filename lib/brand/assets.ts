@@ -14,6 +14,9 @@ export const TURNMARK_ASSETS = {
     healthcareProfessional: { src: "/assets/turnmark/characters/healthcare_professional.jpg", width: 1066, height: 1280, alt: "Healthcare professional" },
     businessProfessional: { src: "/assets/turnmark/characters/business_professional.jpg", width: 1066, height: 1280, alt: "Business professional holding a tablet" },
   },
+  hero: {
+    reception: { src: "/assets/turnmark/hero/reception-hero.jpg", width: 1280, height: 960, alt: "Customer using TuRnMaRk at a reception desk" },
+  },
   industries: {
     government: { src: "/assets/turnmark/industries/government_building.png", width: 271, height: 130, alt: "Government service building" },
     healthcare: { src: "/assets/turnmark/industries/hospital_building.png", width: 253, height: 127, alt: "Hospital building" },
@@ -24,6 +27,9 @@ export const TURNMARK_ASSETS = {
     clock: { src: "/assets/turnmark/illustrations/clock_3d.png", width: 113, height: 89, alt: "Clock" },
     success: { src: "/assets/turnmark/illustrations/success_badge.png", width: 161, height: 145, alt: "Success check" },
     waitingChairs: { src: "/assets/turnmark/illustrations/waiting_chairs.png", width: 175, height: 140, alt: "Waiting-room chairs" },
+  },
+  queue: {
+    platformScene: { src: "/assets/turnmark/queue/queue-platform-scene.jpg", width: 1280, height: 719, alt: "Illustration of a customer phone beside a TuRnMaRk queue workspace" },
   },
   icons: {
     analytics: { src: "/assets/turnmark/icons/analytics_icon_card.png", width: 121, height: 82, alt: "Analytics" },

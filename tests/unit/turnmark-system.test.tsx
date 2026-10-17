@@ -3,11 +3,13 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { Brand } from "@/components/ui/brand";
 import {
+  DashboardWelcomeBanner,
   IndustryIllustration,
   IndustrySelectionCard,
   ResponsiveNavigation,
   StatusIndicator,
 } from "@/components/ui/turnmark-system";
+import { TURNMARK_ASSETS } from "@/lib/brand/assets";
 
 afterEach(cleanup);
 
@@ -61,5 +63,12 @@ describe("TuRnMaRk shared design system", () => {
   it("announces status labels without relying on color alone", () => {
     render(<StatusIndicator label="Awaiting review" tone="pending" />);
     expect(screen.getByText("Awaiting review")).toBeTruthy();
+  });
+
+  it("uses the requested workspace artwork without replacing live content", () => {
+    render(<DashboardWelcomeBanner title="Campus overview" description="Live workspace data follows." visual={TURNMARK_ASSETS.industries.education} />);
+    expect(screen.getByRole("heading", { name: "Campus overview" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "School building" })).toBeTruthy();
+    expect(screen.getByText("Live workspace data follows.")).toBeTruthy();
   });
 });

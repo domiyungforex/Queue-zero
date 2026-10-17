@@ -31,7 +31,8 @@ describe("TuRnMaRk marketing home", () => {
   it("uses approved artwork with useful alternative text", () => {
     render(<Home />);
 
-    expect(screen.getByRole("img", { name: /welcoming service counter/i })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /customer using TuRnMaRk at a reception desk/i })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /customer phone beside a TuRnMaRk queue workspace/i })).toBeTruthy();
     expect(screen.getByRole("img", { name: "School building" })).toBeTruthy();
     expect(screen.getByRole("img", { name: "Healthcare professional" })).toBeTruthy();
     expect(screen.getByRole("img", { name: "Government service building" })).toBeTruthy();

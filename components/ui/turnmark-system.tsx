@@ -81,11 +81,12 @@ export function FeatureIllustrationCard({ asset, eyebrow, title, description, hr
   );
 }
 
-export function DashboardWelcomeBanner({ eyebrow, title, description, character = "student", actions }: {
+export function DashboardWelcomeBanner({ eyebrow, title, description, character = "student", visual, actions }: {
   eyebrow?: string;
   title: string;
   description: string;
   character?: ProfessionalCharacterName;
+  visual?: TurnmarkAsset;
   actions?: React.ReactNode;
 }) {
   return (
@@ -97,7 +98,7 @@ export function DashboardWelcomeBanner({ eyebrow, title, description, character 
         <span>{description}</span>
         {actions && <div className={styles.welcomeActions}>{actions}</div>}
       </div>
-      <ProfessionalCharacter character={character} className={styles.welcomeCharacter} />
+      <AssetImage asset={visual ?? TURNMARK_ASSETS.characters[character]} className={styles.welcomeCharacter} />
     </section>
   );
 }

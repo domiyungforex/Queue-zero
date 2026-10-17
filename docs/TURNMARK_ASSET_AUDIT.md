@@ -19,14 +19,20 @@ The approved allowlist is defined in `lib/brand/assets.ts`. Application code sho
 
 Three higher-resolution JPEG character files were supplied during the landing-page stage. The healthcare professional and business professional have clean white presentation backgrounds and were approved for decorative industry/profession cards. They are not real customers, staff profiles or endorsements. The supplied student JPEG remains on hold because the checkerboard pattern and faint extraction marks are baked into the JPEG rather than being true transparency; the existing approved transparent student asset remains in use.
 
+### Final scene delivery — 17 October 2026
+
+The reception scene and the cleanest queue-platform scene were approved for presentation-only use. The reception scene is the landing hero. The queue-platform scene is explicitly captioned as illustrative because its embedded QR, ticket, hardware and interface are not functional product controls. Two alternate platform scenes were excluded because their generated interface text is malformed. The supplied landing, attendance and queue composite sheets remain reference images only and are not shipped as application UI.
+
 ## Approved assets
 
 | Category | Assets | Usage constraint |
 | --- | --- | --- |
 | Branding | `brand_symbol.png`, `brand_wordmark.png` | Official brand artwork. Preserve aspect ratio and transparent background. |
 | Characters | `student_character.png`, `healthcare_professional.jpg`, `business_professional.jpg` | Decorative education/persona artwork; not user avatars or customer endorsements. |
+| Hero | `reception-hero.jpg` | Landing hero only. The embedded display and QR are illustrative, not interactive product state. |
 | Industries | `government_building.png`, `hospital_building.png`, `school_building.png` | Decorative industry cards and empty states. |
 | Illustrations | `calendar_3d.png`, `clock_3d.png`, `success_badge.png`, `waiting_chairs.png` | Decorative status/empty-state imagery. Continue to express status semantically in text. |
+| Queue | `queue-platform-scene.jpg` | Marketing explanation only. Real QR codes, tickets and staff controls must remain live HTML backed by application data. |
 | Icons | `analytics_icon_card.png`, `appointment_icon_card.png`, `attendance_icon_card.png`, `bank_icon_card.png`, `business_icon_card.png`, `government_icon_card.png`, `hospital_icon_card.png`, `queue_icon_card.png`, `reports_icon_card.png`, `school_icon_card.png` | Illustration cards only. Use Lucide/CSS icons for controls, navigation and accessible status indicators. |
 
 There are currently no approved assets in `devices/` or `decorations/`. Those directories should remain unused until clean sources are supplied or cleanup is separately approved.

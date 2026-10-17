@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { AlertCircle, ArrowLeft, ArrowRight, Check, CheckCircle2, Pencil, Sparkles } from "lucide-react";
 import { AuthNavigation } from "@/components/auth/auth-navigation";
 import { Brand } from "@/components/ui/brand";
+import type { TurnmarkAsset } from "@/lib/brand/assets";
 import styles from "./onboarding.module.css";
 
 export function OnboardingShell({ children }: { children: React.ReactNode }) {
@@ -32,8 +34,8 @@ export function ScreenHeader({ eyebrow, title, description, brand = false }: { e
   return <><p className={styles.screenEyebrow}>{eyebrow}</p><h1 id="onboarding-step-title" tabIndex={-1}>{brand?<>{title} <span className={styles.gradientText}>TuRnMaRk</span></>:title}</h1><p className={styles.lead}>{description}</p></>;
 }
 
-export function ChoiceCard({ title, description, selected, icon, disabled = false, onSelect }: { title: string; description?: string; selected: boolean; icon: React.ReactNode; disabled?: boolean; onSelect: () => void }) {
-  return <button type="button" role="radio" aria-label={title} aria-checked={selected} disabled={disabled} onClick={onSelect} className={styles.choice}><span className={styles.choiceIcon}>{icon}</span><span className={styles.choiceCopy}><span className={styles.choiceTitle}>{title}</span>{description?<span className={styles.choiceDescription}>{description}</span>:null}</span><span className={styles.choiceCheck} aria-hidden="true"><Check size={13}/></span></button>;
+export function ChoiceCard({ title, description, selected, icon, visual, disabled = false, onSelect }: { title: string; description?: string; selected: boolean; icon: React.ReactNode; visual?: TurnmarkAsset; disabled?: boolean; onSelect: () => void }) {
+  return <button type="button" role="radio" aria-label={title} aria-checked={selected} disabled={disabled} onClick={onSelect} className={styles.choice}><span className={styles.choiceIcon}>{icon}</span><span className={styles.choiceCopy}><span className={styles.choiceTitle}>{title}</span>{description?<span className={styles.choiceDescription}>{description}</span>:null}</span>{visual?<Image className={styles.choiceVisual} src={visual.src} width={visual.width} height={visual.height} alt="" sizes="64px"/>:null}<span className={styles.choiceCheck} aria-hidden="true"><Check size={13}/></span></button>;
 }
 
 export function Field({ id, label, optional, error, hint, className, children }: { id: string; label: string; optional?: boolean; error?: string; hint?: string; className?: string; children: React.ReactNode }) {

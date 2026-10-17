@@ -29,7 +29,7 @@ export const metadata = pageMetadata(
 
 export default function Home() {
   return (
-    <MarketingFrame>
+    <MarketingFrame stickyCta={false}>
       <main id="main">
         <section className={styles.tmHero} aria-labelledby="hero-title">
           <div className={styles.tmHeroCopy}>
@@ -37,21 +37,15 @@ export default function Home() {
             <h1 id="hero-title">People flow better with <em>TuRnMaRk.</em></h1>
             <p>Simple, modern queue management that lets people scan, join, leave the line and return when they’re almost next.</p>
             <div className={styles.tmHeroActions}>
-              <Link href="/sign-up" className={styles.tmPrimaryAction}>Create a queue <ArrowRight size={18} aria-hidden="true" /></Link>
+              <Link href="/sign-up" className={`${styles.tmPrimaryAction} ${styles.tmMobileHiddenPrimary}`}>Create a queue <ArrowRight size={18} aria-hidden="true" /></Link>
               <Link href="#how-it-works" className={styles.tmSecondaryAction}><span aria-hidden="true">▶</span> See how it works</Link>
             </div>
             <p className={styles.tmAssurance}><Check size={15} aria-hidden="true" /> No download or customer account required.</p>
           </div>
           <div className={styles.tmHeroVisual}>
             <div className={styles.tmHeroPhoto}>
-              <Image src="/images/cafe.jpg" alt="A welcoming service counter where customers can scan to join a queue" fill priority sizes="(max-width: 860px) 100vw, 50vw" />
+              <Image src={TURNMARK_ASSETS.hero.reception.src} alt={TURNMARK_ASSETS.hero.reception.alt} fill priority sizes="(max-width: 860px) 100vw, 55vw" />
             </div>
-            <div className={styles.tmQueueBoard} aria-label="Illustration of the TuRnMaRk queue flow">
-              <div><span>Now serving</span><strong>Your turn</strong></div>
-              <div><span>Next step</span><strong>Return</strong></div>
-              <div><span>Queue state</span><strong>Live</strong></div>
-            </div>
-            <div className={styles.tmScanCard}><QrCode size={28} aria-hidden="true" /><span>Scan to join</span><small>Generated QR codes remain live and secure.</small></div>
           </div>
           <div className={styles.tmCapabilityBar} aria-label="Core TuRnMaRk capabilities">
             <span><ScanLine aria-hidden="true" /><strong>No app</strong><small>Join in the browser</small></span>
@@ -73,11 +67,10 @@ export default function Home() {
 
         <section className={styles.tmQueueProduct} aria-labelledby="queue-product-title">
           <div className={styles.tmQueueCopy}><p>QUEUE MANAGEMENT FIRST</p><h2 id="queue-product-title">The line keeps moving, even when people step away.</h2><span>Staff get clear controls. Customers get a private live ticket. Postgres remains authoritative when the connection returns.</span><ul><li><Check aria-hidden="true" />Safe Call Next operations</li><li><Check aria-hidden="true" />Live position and approximate waits</li><li><Check aria-hidden="true" />Pause, resume, complete and no-show controls</li></ul><Link href="/how-it-works">Explore the queue flow <Arrow /></Link></div>
-          <div className={styles.tmProductPanel} aria-label="Illustrative queue workflow">
-            <div className={styles.tmProductTop}><span><i /> Queue open</span><small>Illustrative view</small></div>
-            <div className={styles.tmProductMain}><p>Customer journey</p><strong>Scan → Join → Track → Return</strong><span>The real workspace shows only authorized, database-backed queue information.</span></div>
-            <div className={styles.tmProductActions}><span>Public QR</span><span>Live ticket</span><span>Staff console</span></div>
-          </div>
+          <figure className={styles.tmProductScene}>
+            <Image src={TURNMARK_ASSETS.queue.platformScene.src} width={TURNMARK_ASSETS.queue.platformScene.width} height={TURNMARK_ASSETS.queue.platformScene.height} alt={TURNMARK_ASSETS.queue.platformScene.alt} sizes="(max-width: 820px) 94vw, 52vw" />
+            <figcaption>Illustrative product scene. Real tickets and QR codes are generated from live workspace data; no ticket printer or dedicated hardware is required.</figcaption>
+          </figure>
         </section>
 
         <section className={styles.tmSolutions} id="solutions" aria-labelledby="solutions-title">

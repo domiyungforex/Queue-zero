@@ -12,6 +12,7 @@ import {
   ORGANIZATION_TYPES, PROFESSIONS, type OnboardingAction, type OnboardingField,
   type OnboardingState, type OnboardingValues,
 } from "@/lib/validation/onboarding";
+import { TURNMARK_ASSETS, type TurnmarkAsset } from "@/lib/brand/assets";
 import {
   ActionFooter, ChoiceCard, ErrorBanner, Field, OnboardingFrame, ReviewRow, ScreenHeader,
   onboardingStyles as styles,
@@ -39,6 +40,18 @@ const organizationIcons = {
   UNIVERSITY_SCHOOL: University, HOSPITAL_CLINIC: HeartPulse, BANK_FINANCIAL: Landmark,
   SALON_BARBERSHOP: Scissors, GOVERNMENT_OFFICE: Building2, COMPANY_OTHER: BriefcaseBusiness,
 } as const;
+const professionVisuals: Partial<Record<string, TurnmarkAsset>> = {
+  LECTURER_TEACHER: TURNMARK_ASSETS.characters.student,
+  DOCTOR: TURNMARK_ASSETS.characters.healthcareProfessional,
+  NURSE: TURNMARK_ASSETS.characters.healthcareProfessional,
+  BANKER: TURNMARK_ASSETS.characters.businessProfessional,
+  CONSULTANT: TURNMARK_ASSETS.characters.businessProfessional,
+};
+const organizationVisuals: Partial<Record<string, TurnmarkAsset>> = {
+  UNIVERSITY_SCHOOL: TURNMARK_ASSETS.industries.education,
+  HOSPITAL_CLINIC: TURNMARK_ASSETS.industries.healthcare,
+  GOVERNMENT_OFFICE: TURNMARK_ASSETS.industries.government,
+};
 const serviceIcons: Record<string, typeof Sparkles> = {
   STUDENT_SERVICES: GraduationCap, ADMISSIONS: ClipboardCheck, BURSARY: CircleDollarSign,
   LIBRARY: University, MEDICAL_CENTRE: HeartPulse, DEPARTMENT_OFFICE: Building2,
@@ -209,9 +222,9 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
 
         {currentKey==="account"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Welcome" title="Welcome to" description="Let’s set up your workspace. Choose how you’ll use TuRnMaRk." brand/><div className={styles.choiceGrid} role="radiogroup" aria-describedby={errors.accountType?"accountType-error":undefined}><ChoiceCard title="Individual" description="I want to manage my own work and services." selected={values.accountType==="INDIVIDUAL"} icon={<UserRound/>} onSelect={()=>selectAccount("INDIVIDUAL")}/><ChoiceCard title="Organization" description="I represent a school, hospital, bank, business or other organization." selected={values.accountType==="ORGANIZATION"} icon={<Building2/>} onSelect={()=>selectAccount("ORGANIZATION")}/></div>{errors.accountType?<p id="accountType-error" className={styles.fieldError}>{errors.accountType}</p>:null}<p className={styles.signIn}>Already have a workspace? <Link href="/sign-in">Sign in</Link></p></section>:null}
 
-        {currentKey==="profession"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Individual workspace" title="What’s your profession?" description="Choose the option that best describes the work you manage. You can change supporting details later."/><div className={`${styles.choiceGrid} ${styles.choiceGridCompact}`} role="radiogroup" aria-describedby={errors.professionalCategory?"professionalCategory-error":undefined}>{PROFESSIONS.map((option)=>{const Icon=professionIcons[option.value];return <ChoiceCard key={option.value} title={option.label} description={descriptions[option.value]} selected={values.professionalCategory===option.value} icon={<Icon/>} onSelect={()=>selectProfession(option.value)}/>})}</div>{errors.professionalCategory?<p id="professionalCategory-error" className={styles.fieldError}>{errors.professionalCategory}</p>:null}</section>:null}
+        {currentKey==="profession"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Individual workspace" title="What’s your profession?" description="Choose the option that best describes the work you manage. You can change supporting details later."/><div className={`${styles.choiceGrid} ${styles.choiceGridCompact}`} role="radiogroup" aria-describedby={errors.professionalCategory?"professionalCategory-error":undefined}>{PROFESSIONS.map((option)=>{const Icon=professionIcons[option.value];return <ChoiceCard key={option.value} title={option.label} description={descriptions[option.value]} selected={values.professionalCategory===option.value} icon={<Icon/>} visual={professionVisuals[option.value]} onSelect={()=>selectProfession(option.value)}/>})}</div>{errors.professionalCategory?<p id="professionalCategory-error" className={styles.fieldError}>{errors.professionalCategory}</p>:null}</section>:null}
 
-        {currentKey==="organization"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Organization workspace" title="What type of organization are you registering?" description="Choose the closest match. Entering a name does not verify an institutional affiliation."/><div className={`${styles.choiceGrid} ${styles.choiceGridCompact}`} role="radiogroup" aria-describedby={errors.organizationType?"organizationType-error":undefined}>{ORGANIZATION_TYPES.map((option)=>{const Icon=organizationIcons[option.value];return <ChoiceCard key={option.value} title={option.label} description={descriptions[option.value]} selected={values.organizationType===option.value} icon={<Icon/>} onSelect={()=>selectOrganization(option.value)}/>})}</div>{errors.organizationType?<p id="organizationType-error" className={styles.fieldError}>{errors.organizationType}</p>:null}</section>:null}
+        {currentKey==="organization"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Organization workspace" title="What type of organization are you registering?" description="Choose the closest match. Entering a name does not verify an institutional affiliation."/><div className={`${styles.choiceGrid} ${styles.choiceGridCompact}`} role="radiogroup" aria-describedby={errors.organizationType?"organizationType-error":undefined}>{ORGANIZATION_TYPES.map((option)=>{const Icon=organizationIcons[option.value];return <ChoiceCard key={option.value} title={option.label} description={descriptions[option.value]} selected={values.organizationType===option.value} icon={<Icon/>} visual={organizationVisuals[option.value]} onSelect={()=>selectOrganization(option.value)}/>})}</div>{errors.organizationType?<p id="organizationType-error" className={styles.fieldError}>{errors.organizationType}</p>:null}</section>:null}
 
         {currentKey==="details"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow={isIndividual?"Your details":"Organization details"} title={isIndividual?"Tell us about yourself":"Organization information"} description={isIndividual?"These details shape your personal professional workspace.":"Add the public and operational details needed to create the organization workspace."}/><div className={styles.formGrid}>
           <Field id="workspaceName" label={isIndividual?"Display name":"Organization name"} error={errors.workspaceName} className={styles.full}><input {...input("workspaceName")} maxLength={160} autoComplete={isIndividual?"name":"organization"} placeholder={isIndividual?"e.g. Ada’s teaching workspace":"e.g. Olabisi Onabanjo University"}/></Field>

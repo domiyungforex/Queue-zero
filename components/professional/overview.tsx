@@ -6,6 +6,7 @@ import { getDashboardQueues } from "@/lib/dashboard/data";
 import { getProfessionalWorkspaceProfile } from "@/lib/professional/data";
 import { PROFESSIONAL_DASHBOARD_COPY, PROFESSIONAL_LABELS, type ProfessionalCategory } from "@/lib/professional/contracts";
 import { getBusinessMetrics } from "@/lib/queue/console";
+import { DashboardWelcomeBanner } from "@/components/ui/turnmark-system";
 
 type ServiceProfession = Exclude<ProfessionalCategory, "LECTURER_TEACHER">;
 
@@ -23,7 +24,7 @@ export async function ProfessionalOverview({ category, canManage }: {
 
   return <>
     <PageHeading eyebrow={copy.eyebrow} title={copy.title} description={copy.description} action={canManage && <Link className="button-primary" href="/dashboard/queues/new"><Plus size={18} />Create queue</Link>} />
-    <div className="overview-banner"><div><span className="status-dot" /><strong>{queues.filter(queue => queue.status === "open").length} open {queues.filter(queue => queue.status === "open").length === 1 ? "queue" : "queues"}</strong><span>{profile?.service_name ?? "Your service"} is ready for real customer arrivals.</span></div></div>
+    <DashboardWelcomeBanner eyebrow={`${queues.filter(queue => queue.status === "open").length} OPEN ${queues.filter(queue => queue.status === "open").length === 1 ? "QUEUE" : "QUEUES"}`} title={profile?.service_name ?? PROFESSIONAL_LABELS[category]} description="Your live metrics and service controls remain connected to real customer arrivals." character={category === "DOCTOR" || category === "NURSE" ? "healthcareProfessional" : "businessProfessional"} />
     <div className="metrics-grid">
       <StatCard label="Waiting now" value={metrics.waiting} icon={<Users size={20} />} note="Across your accessible queues" />
       <StatCard label="Serving now" value={metrics.serving} icon={<UserRound size={20} />} note="Current live service" />
