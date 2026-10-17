@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({send:vi.fn(),verify:vi.fn(),create:vi.fn(),signupSend:vi.fn(),signupVerify:vi.fn(),finalize:vi.fn(),search:new URLSearchParams(),phoneSend:vi.fn(),signedIn:false,state:{status:"needs_identifier"}}));
+const mocks = vi.hoisted(() => ({send:vi.fn(),verify:vi.fn(),create:vi.fn(),signupSend:vi.fn(),signupVerify:vi.fn(),finalize:vi.fn(),oauth:vi.fn(),search:new URLSearchParams(),phoneSend:vi.fn(),signedIn:false,state:{status:"needs_identifier",factors:[] as Array<{strategy:string}>}}));
 vi.mock("next/navigation",()=>({useSearchParams:()=>mocks.search}));
 vi.mock("@clerk/nextjs",()=>({
  useAuth:()=>({isSignedIn:mocks.signedIn}),
  ClerkLoaded:({children}:{children:React.ReactNode})=>children,ClerkLoading:()=>null,ClerkFailed:()=>null,
  SignIn:({forceRedirectUrl}:{forceRedirectUrl:string})=><p>Secure additional verification {forceRedirectUrl}</p>,SignUp:()=> <p>Additional signup requirements</p>,
- useSignIn:()=>({signIn:{get status(){return mocks.state.status},emailCode:{sendCode:mocks.send,verifyCode:mocks.verify},phoneCode:{sendCode:mocks.phoneSend,verifyCode:mocks.verify},finalize:mocks.finalize}}),
+ useSignIn:()=>({signIn:{get status(){return mocks.state.status},get supportedFirstFactors(){return mocks.state.factors},emailCode:{sendCode:mocks.send,verifyCode:mocks.verify},phoneCode:{sendCode:mocks.phoneSend,verifyCode:mocks.verify},sso:mocks.oauth,finalize:mocks.finalize}}),
  useSignUp:()=>({signUp:{get status(){return mocks.state.status},create:mocks.create,verifications:{sendEmailCode:mocks.signupSend,verifyEmailCode:mocks.signupVerify,sendPhoneCode:mocks.signupSend,verifyPhoneCode:mocks.signupVerify},finalize:mocks.finalize}}),
 }));
 import {AuthForm} from "@/components/auth/auth-form";
-beforeEach(()=>{mocks.search=new URLSearchParams("redirect_url=%2Fattend%3Ftoken%3Dopaque-token");mocks.signedIn=false;mocks.state.status="needs_identifier";for(const mock of [mocks.send,mocks.verify,mocks.create,mocks.signupSend,mocks.signupVerify,mocks.finalize,mocks.phoneSend])mock.mockResolvedValue({error:null});});
+beforeEach(()=>{mocks.search=new URLSearchParams("redirect_url=%2Fattend%3Ftoken%3Dopaque-token");mocks.signedIn=false;mocks.state.status="needs_identifier";mocks.state.factors=[];for(const mock of [mocks.send,mocks.verify,mocks.create,mocks.signupSend,mocks.signupVerify,mocks.finalize,mocks.phoneSend,mocks.oauth])mock.mockResolvedValue({error:null});});
 afterEach(()=>{cleanup();vi.unstubAllEnvs()});
 async function send(mode:"sign-in"|"sign-up"="sign-in"){render(<AuthForm mode={mode}/>);fireEvent.change(screen.getByLabelText("Email address"),{target:{value:"student@school.test"}});fireEvent.click(screen.getByRole("button",{name:mode==="sign-in"?"Continue":"Email me a code"}));await screen.findByLabelText("Verification code")}
 describe("custom Clerk OTP",()=>{
@@ -21,5 +21,6 @@ describe("custom Clerk OTP",()=>{
  it("shows a safe provider error without pretending sign-in succeeded",async()=>{mocks.send.mockResolvedValueOnce({error:{message:"Code temporarily unavailable"}});render(<AuthForm mode="sign-in"/>);fireEvent.change(screen.getByLabelText("Email address"),{target:{value:"student@school.test"}});fireEvent.click(screen.getByRole("button",{name:"Continue"}));expect((await screen.findByRole("alert")).textContent).toBe("We couldn't sign you in right now. Try again.");expect(mocks.finalize).not.toHaveBeenCalled()});
  it("validates and normalizes email before Clerk submission",async()=>{render(<AuthForm mode="sign-in"/>);fireEvent.change(screen.getByLabelText("Email address"),{target:{value:"not-an-email"}});fireEvent.click(screen.getByRole("button",{name:"Continue"}));expect((await screen.findByRole("alert")).textContent).toBe("Enter a valid email address.");expect(mocks.send).not.toHaveBeenCalled();fireEvent.change(screen.getByLabelText("Email address"),{target:{value:"  USER@School.Test  "}});fireEvent.click(screen.getByRole("button",{name:"Continue"}));await screen.findByLabelText("Verification code");expect(mocks.send).toHaveBeenCalledWith({emailAddress:"user@school.test"})});
  it("offers phone OTP only when explicitly enabled",async()=>{vi.stubEnv("NEXT_PUBLIC_CLERK_PHONE_AUTH_ENABLED","true");render(<AuthForm mode="sign-in"/>);fireEvent.change(screen.getByRole("combobox"),{target:{value:"phone"}});fireEvent.change(screen.getByLabelText("Phone number (with country code)"),{target:{value:"+2348123456789"}});fireEvent.click(screen.getByRole("button",{name:"Continue"}));await screen.findByLabelText("Verification code");expect(mocks.phoneSend).toHaveBeenCalledWith({phoneNumber:"+2348123456789"})});
+ it("shows and starts only OAuth providers reported by Clerk",async()=>{mocks.state.factors=[{strategy:"oauth_google"}];render(<AuthForm mode="sign-in"/>);expect(screen.queryByRole("button",{name:"Continue with Apple"})).toBeNull();fireEvent.click(screen.getByRole("button",{name:"Continue with Google"}));await waitFor(()=>expect(mocks.oauth).toHaveBeenCalledWith({strategy:"oauth_google",redirectUrl:"/attend?token=opaque-token",redirectCallbackUrl:"/sign-in/sso-callback"}))});
  it("keeps the signed-in transition routed through the validated return path",()=>{mocks.signedIn=true;render(<AuthForm mode="sign-up"/>);expect(screen.getByRole("link",{name:/Continue to TuRnMaRk/}).getAttribute("href")).toBe("/attend?token=opaque-token")});
 });

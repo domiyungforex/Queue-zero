@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, ChevronDown, Mail } from "lucide-react";
+import { Apple, ArrowRight, ChevronDown, Mail } from "lucide-react";
 import { ClerkFailed, ClerkLoaded, ClerkLoading, SignIn, SignUp, useAuth, useSignIn, useSignUp } from "@clerk/nextjs";
-import { QrLoader } from "@/components/ui/loading";
 import { authErrorMessage, isValidAuthEmail, normalizeAuthEmail } from "@/lib/auth/ui";
 import { publicEnv } from "@/lib/env";
 import { safeAuthReturn } from "@/lib/school-student/return-url";
@@ -24,6 +23,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [advanced, setAdvanced] = useState(false);
+  const [socialBusy, setSocialBusy] = useState<"google" | "apple" | null>(null);
   const other = mode === "sign-in" ? "sign-up" : "sign-in";
   const isWelcomeBack = mode === "sign-in";
 
@@ -110,6 +110,25 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     setSent(false);
     setCode("");
     setError("");
+  }
+
+  const supportsGoogle = mode === "sign-in" && Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_google"));
+  const supportsApple = mode === "sign-in" && Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_apple"));
+
+  async function authenticateWithProvider(provider: "google" | "apple") {
+    if (busy || socialBusy) return;
+    setSocialBusy(provider);
+    setError("");
+    try {
+      await signIn.sso({
+        strategy: provider === "google" ? "oauth_google" : "oauth_apple",
+        redirectUrl: returnTo,
+        redirectCallbackUrl: "/sign-in/sso-callback",
+      });
+    } catch (cause) {
+      setError(authErrorMessage(cause, "sign-in"));
+      setSocialBusy(null);
+    }
   }
 
   if (isSignedIn && !advanced) {
@@ -235,6 +254,24 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         </button>
       </form>
 
+      {!sent && (supportsGoogle || supportsApple) ? (
+        <div className={styles.socialMethods}>
+          <div className={styles.divider}><span>OR</span></div>
+          {supportsGoogle ? (
+            <button type="button" className={styles.providerButton} disabled={Boolean(socialBusy)} onClick={() => authenticateWithProvider("google")}>
+              <span className={styles.googleMark} aria-hidden="true">G</span>
+              {socialBusy === "google" ? "Opening Google…" : "Continue with Google"}
+            </button>
+          ) : null}
+          {supportsApple ? (
+            <button type="button" className={styles.providerButton} disabled={Boolean(socialBusy)} onClick={() => authenticateWithProvider("apple")}>
+              <Apple size={20} fill="currentColor" aria-hidden="true" />
+              {socialBusy === "apple" ? "Opening Apple…" : "Continue with Apple"}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {sent ? (
         <div className={styles.inlineActions}>
           <button type="button" disabled={busy} onClick={resend}>Resend code</button>
@@ -256,19 +293,37 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   );
 }
 
-export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+function AuthFormLoading() {
   const [slow, setSlow] = useState(false);
+
   useEffect(() => {
-    const timer = setTimeout(() => setSlow(true), 12000);
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(() => setSlow(true), 12000);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (
+    <div className={`${styles.formWrap} ${styles.welcomeBack}`} aria-busy="true">
+      <div className={styles.form}>
+        <label className={styles.label} htmlFor="sign-in-loading-email">Email</label>
+        <div className={styles.inputShell}>
+          <Mail size={19} aria-hidden="true" />
+          <input id="sign-in-loading-email" type="email" placeholder="you@youremail.com" disabled />
+        </div>
+        <p className={slow ? styles.connectionError : styles.connectionStatus} role="status">
+          {slow ? "Secure sign-in is taking longer than expected." : "Connecting secure sign-in…"}
+        </p>
+        <button className={styles.primaryButton} type="button" disabled>Continue <ArrowRight size={18} aria-hidden="true" /></button>
+      </div>
+      {slow ? <button className={styles.retryButton} type="button" onClick={() => window.location.reload()}>Try again</button> : null}
+    </div>
+  );
+}
+
+export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+  return (
     <div className={styles.root}>
       <ClerkLoading>
-        <div className={styles.loading}>
-          {slow ? <><p>Secure sign-in is taking longer than expected.</p><button className="button-secondary" onClick={() => window.location.reload()}>Try again</button><Link href="/" className="button-quiet">Back home</Link></> : <QrLoader label="Opening sign-in" />}
-        </div>
+        <AuthFormLoading />
       </ClerkLoading>
       <ClerkFailed>
         <div className={styles.failed} role="alert">
@@ -277,7 +332,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         </div>
       </ClerkFailed>
       <ClerkLoaded>
-        <Suspense fallback={<QrLoader label="Opening sign-in" />}><CodeForm mode={mode} /></Suspense>
+        <Suspense fallback={<AuthFormLoading />}><CodeForm mode={mode} /></Suspense>
       </ClerkLoaded>
     </div>
   );
