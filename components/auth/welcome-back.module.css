@@ -1,0 +1,121 @@
+.page {
+  min-height: 100dvh;
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #111318;
+  background:
+    radial-gradient(circle at 4% 94%, rgba(255, 71, 101, .2), transparent 25%),
+    radial-gradient(circle at 96% 3%, rgba(124, 58, 237, .14), transparent 24%),
+    #fffaf7;
+}
+
+.frame {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(470px, .82fr);
+  width: min(100%, 1540px);
+  min-height: min(900px, calc(100dvh - 48px));
+  overflow: hidden;
+  border: 1px solid rgba(76, 52, 40, .1);
+  border-radius: 34px;
+  background: rgba(255, 255, 255, .78);
+  box-shadow: 0 32px 90px rgba(58, 28, 16, .12);
+}
+
+.story {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: 46px 52px 38px;
+  background:
+    radial-gradient(circle at 80% 34%, rgba(255, 107, 43, .14), transparent 30%),
+    linear-gradient(145deg, #fff 0%, #fff6f0 62%, #ffe9ee 100%);
+}
+
+.story::after {
+  content: "";
+  position: absolute;
+  right: -110px;
+  bottom: -170px;
+  width: 390px;
+  height: 390px;
+  border-radius: 45% 55% 68% 32%;
+  background: linear-gradient(135deg, rgba(255, 107, 43, .75), rgba(255, 71, 101, .68) 55%, rgba(124, 58, 237, .54));
+  filter: blur(2px);
+}
+
+.brand { position: relative; z-index: 4; }
+.storyCopy { position: relative; z-index: 3; width: min(54%, 430px); margin-top: 46px; }
+.pill { display: inline-flex; gap: 9px; align-items: center; min-height: 36px; margin-bottom: 24px; padding: 7px 14px; border: 1px solid rgba(255, 107, 43, .35); border-radius: 999px; color: #b84113; background: rgba(255, 255, 255, .7); font-size: 11px; font-weight: 700; }
+.pill span { color: #ff4765; }
+.storyCopy h2 { margin: 0; font-size: clamp(48px, 4.2vw, 64px); line-height: .96; letter-spacing: -.06em; font-weight: 800; }
+.storyCopy h2 span { color: transparent; background: linear-gradient(135deg, #ff6b2b, #ff4765 72%); background-clip: text; -webkit-background-clip: text; }
+.storyDescription { max-width: 330px; margin-top: 22px; color: #62636b; font-size: 14px; line-height: 1.7; }
+
+.benefits { display: grid; gap: 14px; margin-top: 26px; padding: 0; list-style: none; }
+.benefits li { display: flex; align-items: center; gap: 12px; }
+.benefitIcon { display: grid; place-items: center; flex: 0 0 42px; height: 42px; border-radius: 13px; color: #fff; background: linear-gradient(135deg, #ff6b2b, #ff4765); box-shadow: 0 8px 18px rgba(255, 71, 101, .18); }
+.benefits li:nth-child(2) .benefitIcon { background: linear-gradient(135deg, #7c3aed, #ff4765); }
+.benefits li:nth-child(3) .benefitIcon { background: linear-gradient(135deg, #ff4765, #7c3aed); }
+.benefits strong, .benefits small { display: block; }
+.benefits strong { font-size: 13px; }
+.benefits small { margin-top: 2px; color: #74737b; font-size: 10px; line-height: 1.4; }
+
+.character { position: absolute; z-index: 2; top: 118px; right: 20px; width: 40%; max-width: 430px; overflow: hidden; border-radius: 34px 34px 90px 34px; background: #fff; box-shadow: 0 26px 58px rgba(68, 37, 22, .1); }
+.character img { display: block; width: 100%; height: auto; object-fit: contain; }
+.trust { position: absolute; z-index: 4; left: 52px; bottom: 128px; display: flex; align-items: center; gap: 12px; }
+.trust img { width: 136px; height: auto; border-radius: 999px; }
+.trust p { color: #5f6068; font-size: 10px; line-height: 1.5; }
+
+.quote { position: absolute; z-index: 4; left: 52px; right: 52px; bottom: 32px; display: grid; grid-template-columns: 44px 1fr; gap: 2px 14px; min-height: 92px; padding: 18px 22px; border: 1px solid rgba(88, 62, 47, .1); border-radius: 22px; background: rgba(255, 255, 255, .9); box-shadow: 0 16px 40px rgba(69, 38, 21, .08); }
+.quote > span { grid-row: 1 / 3; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; color: #6d3524; background: #ffe6d7; font-size: 26px; font-weight: 800; }
+.quote blockquote { max-width: 440px; font-size: 13px; line-height: 1.5; font-weight: 650; }
+.quote figcaption { color: #84808a; font-size: 9px; }
+
+.authPanel { position: relative; display: grid; place-items: center; padding: 54px clamp(38px, 5vw, 72px); background: rgba(255, 255, 255, .96); }
+.authContent { width: min(100%, 520px); }
+.authEyebrow { margin-bottom: 12px; color: #d84b1b; font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+.authContent h1 { margin: 0; font-size: clamp(42px, 4vw, 58px); line-height: 1; letter-spacing: -.055em; font-weight: 800; }
+.authDescription { margin: 16px 0 34px; color: #6b6b74; font-size: 15px; }
+.mobileBrand { display: none; }
+
+.decoration { position: fixed; z-index: 0; pointer-events: none; opacity: .22; }
+.decorationTop { top: -160px; right: -150px; width: 370px; height: 370px; transform: rotate(14deg); }
+
+@media (max-width: 1180px) {
+  .page { padding: 18px; }
+  .frame { grid-template-columns: minmax(0, 1fr) minmax(410px, .86fr); min-height: calc(100dvh - 36px); }
+  .story { padding: 36px 34px 30px; }
+  .storyCopy { width: 54%; margin-top: 34px; }
+  .storyCopy h2 { font-size: 48px; }
+  .character { top: 145px; right: 8px; width: 40%; }
+  .trust { left: 34px; bottom: 124px; }
+  .quote { left: 34px; right: 34px; bottom: 28px; }
+  .authPanel { padding: 42px 38px; }
+}
+
+@media (max-width: 900px) {
+  .page { align-items: start; min-height: 100dvh; overflow: auto; padding: 0; background: #fffaf7; }
+  .frame { display: block; width: 100%; min-height: 100dvh; border: 0; border-radius: 0; box-shadow: none; background: #fff; }
+  .story { display: none; }
+  .authPanel { min-height: 100dvh; align-content: start; padding: 28px clamp(30px, 8vw, 78px) 48px; }
+  .mobileBrand { display: block; width: 100%; margin-bottom: clamp(74px, 12vh, 122px); }
+  .authContent { margin: 0 auto; }
+  .authContent h1 { font-size: clamp(42px, 7vw, 54px); }
+  .decoration { display: none; }
+}
+
+@media (max-width: 520px) {
+  .authPanel { padding: 22px 22px max(32px, env(safe-area-inset-bottom)); }
+  .mobileBrand { margin-bottom: clamp(58px, 9vh, 82px); }
+  .authContent h1 { font-size: 42px; }
+  .authDescription { margin: 13px 0 30px; font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *, .page *::before, .page *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

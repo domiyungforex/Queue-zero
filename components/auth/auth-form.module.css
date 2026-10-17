@@ -1,0 +1,44 @@
+.root { display: flex; width: 100%; align-items: flex-start; justify-content: center; }
+.formWrap { width: 100%; max-width: 390px; }
+.welcomeBack { max-width: 520px; }
+.form { display: grid; gap: 12px; }
+.label, .methodLabel { color: #25252b; font-size: 13px; font-weight: 750; }
+.methodLabel { display: grid; gap: 8px; }
+.methodLabel select { min-height: 52px; border: 1px solid #dedbd9; border-radius: 14px; padding: 0 14px; color: #111318; background: #fff; }
+.inputShell { display: flex; align-items: center; gap: 11px; min-height: 56px; border: 1px solid #dedbd9; border-radius: 15px; padding: 0 16px; color: #898893; background: #fff; transition: border-color .16s, box-shadow .16s, background .16s; }
+.inputShell:focus-within { border-color: #7c3aed; box-shadow: 0 0 0 4px rgba(124, 58, 237, .12); }
+.inputShell[data-invalid="true"] { border-color: #d92d4f; background: #fffafb; }
+.inputShell svg { flex: 0 0 auto; }
+.inputShell input { min-width: 0; width: 100%; height: 54px; border: 0; outline: 0; color: #111318; background: transparent; font-size: 14px; }
+.inputShell input::placeholder { color: #9a99a2; }
+.codeBlock { display: grid; gap: 11px; margin-top: 4px; }
+.codeBlock p { color: #6b6b74; font-size: 12px; line-height: 1.55; }
+.codeBlock strong { color: #34343a; overflow-wrap: anywhere; }
+.codeInput { width: 100%; min-height: 58px; border: 1px solid #dedbd9; border-radius: 15px; padding: 0 16px; color: #111318; background: #fff; text-align: center; font-size: 19px; font-weight: 750; letter-spacing: .42em; outline: none; }
+.codeInput:focus { border-color: #7c3aed; box-shadow: 0 0 0 4px rgba(124, 58, 237, .12); }
+.codeInput[aria-invalid="true"] { border-color: #d92d4f; }
+.error { min-height: 20px; color: #b4233d; font-size: 12px; line-height: 1.55; }
+.primaryButton { display: inline-flex; width: 100%; min-height: 58px; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 15px; padding: 14px 18px; color: #fff; background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%); box-shadow: 0 14px 28px rgba(255, 71, 101, .2); font-size: 14px; font-weight: 800; text-decoration: none; transition: transform .16s, box-shadow .16s, filter .16s; }
+.primaryButton:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 17px 32px rgba(255, 71, 101, .26); filter: saturate(1.08); }
+.primaryButton:focus-visible, .differentMethod:focus-visible, .inlineActions button:focus-visible, .accountPrompt a:focus-visible { outline: 3px solid rgba(124, 58, 237, .35); outline-offset: 3px; }
+.primaryButton:disabled { cursor: wait; opacity: .62; }
+.inlineActions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.inlineActions button, .differentMethod { min-height: 44px; border: 0; padding: 8px 0; color: #5f4c69; background: transparent; font-size: 12px; font-weight: 700; }
+.differentMethod { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; margin-top: 20px; }
+.accountPrompt { margin-top: 26px; color: #76747d; text-align: center; font-size: 12px; }
+.accountPrompt a { margin-left: 4px; color: #d84b1b; font-weight: 800; text-decoration: none; }
+.signedIn { display: flex; align-items: flex-start; width: 100%; }
+.loading, .failed { display: grid; width: 100%; min-height: 260px; place-items: center; align-content: center; gap: 14px; color: #6b6b74; font-size: 13px; text-align: center; }
+.loading :global(.qr-loader) { min-height: 220px; }
+.failed { border: 1px solid #f0c4cd; border-radius: 17px; padding: 28px; color: #8d2035; background: #fff8fa; }
+
+@media (max-width: 520px) {
+  .inputShell { min-height: 54px; }
+  .primaryButton { min-height: 56px; }
+  .accountPrompt { margin-top: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryButton, .inputShell { transition: none; }
+  .primaryButton:hover:not(:disabled) { transform: none; }
+}

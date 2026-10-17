@@ -23,11 +23,16 @@ Three higher-resolution JPEG character files were supplied during the landing-pa
 
 The reception scene and the cleanest queue-platform scene were approved for presentation-only use. The reception scene is the landing hero. The queue-platform scene is explicitly captioned as illustrative because its embedded QR, ticket, hardware and interface are not functional product controls. Two alternate platform scenes were excluded because their generated interface text is malformed. The supplied landing, attendance and queue composite sheets remain reference images only and are not shipped as application UI.
 
+### Welcome Back delivery — 17 October 2026
+
+The receptionist and professional-avatar artwork are approved for the sign-in marketing panel. The sunset emblem is a low-prominence background decoration. The supplied testimonial card is retained as a design reference only: the application recreates its structure in semantic HTML and labels the scenario as illustrative instead of presenting an unverified customer endorsement. Clerk continues to render and control authentication state; none of these assets contain functional sign-in controls.
+
 ## Approved assets
 
 | Category | Assets | Usage constraint |
 | --- | --- | --- |
 | Branding | `brand_symbol.png`, `brand_wordmark.png` | Official brand artwork. Preserve aspect ratio and transparent background. |
+| Authentication | `welcome-receptionist.jpg`, `trusted-avatars.jpg`, `auth-gradient-decoration.jpg`, `testimonial-card-reference.jpg` | Sign-in presentation only. Testimonial reference is not rendered as a customer claim. |
 | Characters | `student_character.png`, `healthcare_professional.jpg`, `business_professional.jpg` | Decorative education/persona artwork; not user avatars or customer endorsements. |
 | Hero | `reception-hero.jpg` | Landing hero only. The embedded display and QR are illustrative, not interactive product state. |
 | Industries | `government_building.png`, `hospital_building.png`, `school_building.png` | Decorative industry cards and empty states. |

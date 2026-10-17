@@ -9,6 +9,12 @@ export const TURNMARK_ASSETS = {
     symbol: { src: "/assets/turnmark/branding/brand_symbol.png", width: 115, height: 98, alt: "TuRnMaRk symbol" },
     wordmark: { src: "/assets/turnmark/branding/brand_wordmark.png", width: 280, height: 62, alt: "TuRnMaRk" },
   },
+  auth: {
+    receptionist: { src: "/assets/turnmark/auth/welcome-receptionist.jpg", width: 1024, height: 1280, alt: "TuRnMaRk receptionist working at a laptop" },
+    trustedAvatars: { src: "/assets/turnmark/auth/trusted-avatars.jpg", width: 1280, height: 426, alt: "A group of professionals" },
+    gradientDecoration: { src: "/assets/turnmark/auth/auth-gradient-decoration.jpg", width: 1254, height: 1254, alt: "Sunset gradient decoration" },
+    testimonialReference: { src: "/assets/turnmark/auth/testimonial-card-reference.jpg", width: 1280, height: 853, alt: "Testimonial card design reference" },
+  },
   characters: {
     student: { src: "/assets/turnmark/characters/student_character.png", width: 195, height: 215, alt: "Student holding a tablet" },
     healthcareProfessional: { src: "/assets/turnmark/characters/healthcare_professional.jpg", width: 1066, height: 1280, alt: "Healthcare professional" },

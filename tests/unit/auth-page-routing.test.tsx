@@ -17,6 +17,7 @@ vi.mock("@/lib/env", () => ({
 }));
 vi.mock("@/components/auth/auth-form", () => ({ AuthForm: () => null }));
 vi.mock("@/components/auth/auth-shell", () => ({ AuthShell: () => null }));
+vi.mock("@/components/auth/welcome-back-shell", () => ({ WelcomeBackShell: () => null }));
 
 import SignInPage from "@/app/(auth)/sign-in/[[...sign-in]]/page";
 import SignUpPage from "@/app/(auth)/sign-up/[[...sign-up]]/page";

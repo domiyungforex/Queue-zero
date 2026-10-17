@@ -45,6 +45,12 @@ describe("authentication UI helpers", () => {
     );
   });
 
+  it("maps an unknown account without exposing Clerk internals", () => {
+    expect(authErrorMessage({ code: "form_identifier_not_found" }, "sign-in")).toBe(
+      "We couldn't continue with that email. Check it or create an account.",
+    );
+  });
+
   it("maps rate limits and unknown failures", () => {
     expect(authErrorMessage({ code: "too_many_requests" }, "sign-in")).toBe(
       "Too many attempts. Please wait a moment and try again.",

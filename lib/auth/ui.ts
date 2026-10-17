@@ -37,6 +37,14 @@ export function authErrorMessage(cause: unknown, action: AuthAction) {
   }
 
   if (
+    text.includes("identifier_not_found") ||
+    text.includes("account_not_found") ||
+    text.includes("couldn't find your account")
+  ) {
+    return "We couldn't continue with that email. Check it or create an account.";
+  }
+
+  if (
     text.includes("form_code_incorrect") ||
     text.includes("verification_invalid") ||
     text.includes("code_incorrect") ||

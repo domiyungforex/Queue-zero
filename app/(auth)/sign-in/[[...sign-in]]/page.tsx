@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
-import { AuthShell } from "@/components/auth/auth-shell";
+import { WelcomeBackShell } from "@/components/auth/welcome-back-shell";
 import { publicEnv } from "@/lib/env";
 import { safeAuthReturn } from "@/lib/school-student/return-url";
 
@@ -18,8 +18,8 @@ export default async function Page({ searchParams }: PageProps = {}) {
   }
 
   return (
-    <AuthShell title="Welcome back" description="Sign in to your TuRnMaRk account.">
+    <WelcomeBackShell>
       <AuthForm mode="sign-in" />
-    </AuthShell>
+    </WelcomeBackShell>
   );
 }
