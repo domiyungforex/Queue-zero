@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { FrequentlyAskedQuestions } from "@/components/marketing/faq";
 import { pageMetadata } from "@/lib/site/metadata";
 import Image from "next/image";
