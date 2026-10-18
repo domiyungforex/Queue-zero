@@ -7,12 +7,13 @@ import { AuthForm } from "@/components/auth/auth-form";
 
 export function AuthEntry() {
   const [screen, setScreen] = useState<"welcome" | "email">("welcome");
+  const [otherMethods, setOtherMethods] = useState(false);
   return (
     <div className="min-h-[100dvh] bg-[#FFFAF7] text-[#111318]">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col px-5 pb-[max(24px,env(safe-area-inset-bottom))] pt-[max(24px,env(safe-area-inset-top))] md:max-w-[480px]">
         <header className="flex min-h-12 items-center justify-between">
           {screen === "email" ? (
-            <button type="button" aria-label="Back to welcome" onClick={() => setScreen("welcome")} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6B2B]"><ArrowLeft size={20} /></button>
+            <button type="button" aria-label="Back to welcome" onClick={() => { setScreen("welcome"); setOtherMethods(false); }} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6B2B]"><ArrowLeft size={20} /></button>
           ) : <span />}
           <span className="text-xl font-extrabold tracking-[-.06em]"><span className="text-[#FF6B2B]">Tu</span>Rn<span className="text-[#FF4765]">MaRk</span></span>
         </header>
@@ -26,16 +27,18 @@ export function AuthEntry() {
               <h1 className="text-[23px] font-extrabold tracking-tight">Welcome to <span className="text-[#FF4765]">TuRnMaRk</span></h1>
               <p className="mt-1 text-sm text-[#73788A]">Sign in or create your account to get started.</p>
               <button type="button" onClick={() => setScreen("email")} className="mt-6 flex min-h-14 w-full items-center justify-between rounded-2xl bg-gradient-to-r from-[#FF6B2B] to-[#FF4765] px-5 font-semibold text-white shadow-[0_8px_18px_rgba(255,107,43,.18)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6B2B]"><Mail size={19} />Continue with email<ArrowRight size={20} /></button>
-              <p className="mt-5 text-center text-xs text-[#73788A]">Have an account? Continue with email to sign in.</p>
+              <div className="my-5 flex items-center gap-3 text-xs text-[#73788A]"><span className="h-px flex-1 bg-[#E7DFDB]" />OR<span className="h-px flex-1 bg-[#E7DFDB]" /></div>
+              <button type="button" onClick={() => { setOtherMethods(true); setScreen("email"); }} className="flex min-h-12 w-full items-center justify-center rounded-xl border border-[#D8D9DE] bg-white text-sm font-semibold">Other sign-in methods</button>
+              <p className="mt-3 text-center text-xs text-[#73788A]">Google and Apple appear only when enabled in Clerk.</p>
               <p className="mt-6 text-center text-[11px] leading-5 text-[#73788A]">By continuing, you agree to TuRnMaRk's applicable terms and privacy policies.</p>
             </section>
           </main>
         ) : (
           <main className="flex flex-1 flex-col justify-center pb-20">
-            <h1 className="text-[29px] font-extrabold tracking-tight">Sign in</h1>
-            <p className="mb-7 mt-1 text-sm text-[#73788A]">Enter your email to continue</p>
+            <h1 className="text-[29px] font-extrabold tracking-tight">{otherMethods ? "Sign-in options" : "Sign in"}</h1>
+            <p className="mb-7 mt-1 text-sm text-[#73788A]">{otherMethods ? "Choose an available secure sign-in method" : "Enter your email to continue"}</p>
             <div className="[&_input]:border-[#D8D9DE] [&_input]:bg-white [&_input]:focus-visible:outline-[#FF6B2B] [&_button.button-primary]:min-h-14 [&_button.button-primary]:rounded-2xl [&_button.button-primary]:bg-gradient-to-r [&_button.button-primary]:from-[#FF6B2B] [&_button.button-primary]:to-[#FF4765]">
-              <AuthForm mode="sign-in" />
+              <AuthForm key={otherMethods ? "other" : "email"} mode="sign-in" startAdvanced={otherMethods} />
             </div>
             <p className="mt-8 text-center text-xs text-[#73788A]">New to TuRnMaRk? <Link className="font-semibold text-[#FF6B2B]" href="/sign-up">Create an account</Link></p>
           </main>
