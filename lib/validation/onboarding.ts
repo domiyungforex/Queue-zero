@@ -82,7 +82,7 @@ export const ORGANIZATION_SERVICE_TEMPLATES = {
   ],
   COMPANY_OTHER: [{ value: "CUSTOM_SERVICE", label: "Custom service queue" }],
 } as const;
-export const ONBOARDING_FIELDS = ["onboardingRequestId", "accountType", "professionalCategory", "organizationType", "organizationSubtype", "workspaceName", "legalName", "representativeName", "serviceTemplates", "teachingLevel", "institutionName", "serviceName", "country", "timezone", "locationName", "locationAddress"] as const;
+export const ONBOARDING_FIELDS = ["onboardingRequestId", "accountType", "professionalCategory", "organizationType", "organizationSubtype", "workspaceName", "legalName", "representativeName", "serviceTemplates", "teachingLevel", "institutionName", "serviceName", "country", "timezone", "locationName", "locationAddress", "authorizationDeclaration"] as const;
 export type OnboardingField = (typeof ONBOARDING_FIELDS)[number];
 export type OnboardingValues = Record<OnboardingField, string>;
 
@@ -114,6 +114,7 @@ export const onboardingSchema = z.union([
     serviceTemplates: z.literal(""),
     locationName: z.literal(""),
     locationAddress: z.literal(""),
+    authorizationDeclaration: z.literal(""),
   }).strict(),
   z.object({
     ...workspaceDetails,
@@ -129,6 +130,7 @@ export const onboardingSchema = z.union([
     serviceTemplates: z.literal(""),
     locationName: requiredText("Practice location", 160),
     locationAddress: requiredText("Location address", 500),
+    authorizationDeclaration: z.literal(""),
   }).strict(),
   z.object({
     ...workspaceDetails,
@@ -144,6 +146,7 @@ export const onboardingSchema = z.union([
     serviceName: z.literal(""),
     locationName: requiredText("Location name", 160),
     locationAddress: requiredText("Location address", 500),
+    authorizationDeclaration: z.string().refine((value) => value === "true", "Confirm that you are authorized to register this organization."),
   }).strict().superRefine((value, context) => {
     const subtypes = ORGANIZATION_SUBTYPES[value.organizationType].map((option) => option.value as string);
     if (!subtypes.includes(value.organizationSubtype)) {

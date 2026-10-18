@@ -14,9 +14,11 @@ import {
   ListOrdered,
   MapPin,
   Settings2,
+  MoreHorizontal,
   UsersRound,
 } from "lucide-react";
 import type { Database } from "@/lib/db/database.types";
+import styles from "./workspace-shell.module.css";
 
 type WorkspaceOwnership = Database["public"]["Enums"]["workspace_ownership"];
 type ProfessionalCategory = Database["public"]["Enums"]["professional_category"];
@@ -31,6 +33,7 @@ type DashboardNavigationProps = {
   institution?: boolean;
   institutionTeaching?: boolean;
   institutionStaffManagement?: boolean;
+  variant?: "desktop" | "mobile";
 };
 
 type NavigationLink = {
@@ -48,6 +51,7 @@ export function DashboardNavigation({
   institution = false,
   institutionTeaching = false,
   institutionStaffManagement = false,
+  variant = "desktop",
 }: DashboardNavigationProps) {
   const pathname = usePathname();
   const manager = role === "owner" || role === "admin";
@@ -58,7 +62,7 @@ export function DashboardNavigation({
   const teaching = education && (manager || role === "lecturer" || institutionTeaching);
   const links: NavigationLink[] = [];
 
-  if (role !== "student") links.push({ href: "/dashboard", label: "Overview", icon: LayoutDashboard });
+  if (role !== "student") links.push({ href: "/dashboard", label: variant === "mobile" ? "Home" : "Dashboard", icon: LayoutDashboard });
 
   if (individualLecturer) {
     links.push(
@@ -107,9 +111,18 @@ export function DashboardNavigation({
     );
   }
 
-  return <nav aria-label="Workspace navigation" className="workspace-nav">
-    {links.map((link) => <Link href={link.href} key={link.href} aria-current={(link.href === "/dashboard" ? pathname === link.href : pathname.startsWith(link.href)) ? "page" : undefined}>
-      <link.icon size={19} />{link.label}
-    </Link>)}
+  const active = (href: string) => href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+  if (variant === "desktop") return <nav aria-label="Workspace navigation" className={styles.desktopNav}>
+    {links.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={18} />{link.label}</Link>)}
+  </nav>;
+
+  const preferred = education
+    ? ["Home", "Classes", "Attendance", "Students"]
+    : ["Home", "Queues", "Services", "Customers"];
+  const primary = preferred.map((label) => links.find((link) => link.label === label)).filter((link): link is NavigationLink => Boolean(link));
+  const secondary = links.filter((link) => !primary.includes(link));
+  return <nav aria-label="Mobile workspace navigation" className={styles.mobileNav}>
+    {primary.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={19} />{link.label}</Link>)}
+    <details className={styles.more}><summary className={styles.moreSummary}><MoreHorizontal size={20} />More</summary><div className={styles.moreMenu}>{secondary.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={17} />{link.label}</Link>)}</div></details>
   </nav>;
 }

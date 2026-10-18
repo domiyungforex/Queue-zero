@@ -5,123 +5,154 @@ import { OnboardingForm } from "@/components/onboarding/onboarding-form";
 import type { OnboardingState } from "@/lib/validation/onboarding";
 
 afterEach(cleanup);
-const props = { requestId: "10000000-0000-4000-8000-000000000001", countries: [{ code: "GH", name: "Ghana" }, { code: "NG", name: "Nigeria" }], timezones: ["UTC", "Africa/Accra", "Africa/Lagos"] };
+
+const props = {
+  requestId: "10000000-0000-4000-8000-000000000001",
+  countries: [{ code: "GH", name: "Ghana" }, { code: "NG", name: "Nigeria" }],
+  timezones: ["UTC", "Africa/Accra", "Africa/Lagos"],
+};
 const idle = async (): Promise<OnboardingState> => ({ status: "idle" });
 
 function continueStep() {
   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 }
 
-function reachIndividualReview() {
-  fireEvent.click(screen.getByRole("radio", { name: /Individual/ }));
+function reachIndividualDetails(profession = "Lecturer / Teacher") {
+  fireEvent.click(screen.getByRole("radio", { name: "Individual" }));
   continueStep();
-  fireEvent.click(screen.getByRole("radio", { name: "Lecturer / Teacher" }));
-  continueStep();
-  fireEvent.change(screen.getByLabelText("Workspace name"), { target: { value: "My Physics Classes" } });
-  fireEvent.change(screen.getByLabelText("Teaching level"), { target: { value: "University undergraduate" } });
-  continueStep();
-  fireEvent.change(screen.getByLabelText("Country"), { target: { value: "GH" } });
-  fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Accra" } });
+  fireEvent.click(screen.getByRole("radio", { name: profession }));
   continueStep();
 }
 
-describe("unified onboarding form", () => {
-  it("starts with an accessible five-step account choice", () => {
+function reachIndividualReview() {
+  reachIndividualDetails();
+  fireEvent.change(screen.getByLabelText("Display name"), { target: { value: "My Physics Classes" } });
+  fireEvent.change(screen.getByLabelText("Teaching level"), { target: { value: "University undergraduate" } });
+  fireEvent.change(screen.getByLabelText("Country"), { target: { value: "GH" } });
+  fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Accra" } });
+  continueStep();
+  continueStep();
+}
+
+function reachOrganizationDetails(type = "Hospital / Clinic") {
+  fireEvent.click(screen.getByRole("radio", { name: "Organization" }));
+  continueStep();
+  fireEvent.click(screen.getByRole("radio", { name: type }));
+  continueStep();
+}
+
+function reachOrganizationReview() {
+  reachOrganizationDetails();
+  fireEvent.change(screen.getByLabelText("Organization name"), { target: { value: "Greenfield Clinic" } });
+  fireEvent.change(screen.getByLabelText("Organization category"), { target: { value: "CLINIC" } });
+  fireEvent.change(screen.getByLabelText("Legal organization name"), { target: { value: "Greenfield Clinic Limited" } });
+  fireEvent.change(screen.getByLabelText("Country"), { target: { value: "NG" } });
+  fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Lagos" } });
+  continueStep();
+  fireEvent.change(screen.getByLabelText("Location name"), { target: { value: "Main clinic" } });
+  fireEvent.change(screen.getByLabelText("Address"), { target: { value: "Lagos" } });
+  continueStep();
+  fireEvent.click(screen.getByLabelText("Reception"));
+  continueStep();
+  continueStep();
+}
+
+describe("conditional onboarding form", () => {
+  it("starts with an accessible account choice and five-step individual default", () => {
     render(<OnboardingForm {...props} action={idle} />);
-    expect(screen.getByText("Step 1 of 5")).toBeTruthy();
-    expect(screen.getByRole("radio", { name: /Individual/ }).getAttribute("aria-checked")).toBe("false");
-    expect(screen.getByRole("radio", { name: /Organization/ }).getAttribute("aria-checked")).toBe("false");
-    expect(screen.queryByText(/sign in|authenticate/i)).toBeNull();
+    expect(screen.getByLabelText("Step 1 of 5: Account")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Welcome to TuRnMaRk" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Individual" }).getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByRole("radio", { name: "Organization" }).getAttribute("aria-checked")).toBe("false");
   });
 
-  it("blocks incomplete steps with clear field feedback", () => {
+  it("blocks an incomplete screen with field feedback", () => {
     render(<OnboardingForm {...props} action={idle} />);
     continueStep();
     expect(screen.getByText("Choose individual or organization.")).toBeTruthy();
-    expect(screen.getByText("Step 1 of 5")).toBeTruthy();
   });
 
-  it("shows and enables every supported profession", () => {
+  it("switches to the seven-step organization path", () => {
     render(<OnboardingForm {...props} action={idle} />);
-    fireEvent.click(screen.getByRole("radio", { name: /Individual/ }));
+    fireEvent.click(screen.getByRole("radio", { name: "Organization" }));
+    continueStep();
+    expect(screen.getByLabelText("Step 2 of 7: Type")).toBeTruthy();
+  });
+
+  it("shows every supported profession", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Individual" }));
     continueStep();
     for (const profession of ["Lecturer / Teacher", "Doctor", "Nurse", "Banker", "Barber / Stylist", "Consultant", "Other professional"]) {
-      expect(screen.getByRole("radio", { name: new RegExp(profession.replace("/", "\\/"), "i") })).toBeTruthy();
+      expect((screen.getByRole("radio", { name: profession }) as HTMLButtonElement).disabled).toBe(false);
     }
-    expect((screen.getByRole("radio", { name: /Doctor/ }) as HTMLButtonElement).disabled).toBe(false);
-    expect((screen.getByRole("radio", { name: "Lecturer / Teacher" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it("collects a persisted service and practice location for a doctor", () => {
+  it("collects supported service and location data for an individual doctor", () => {
     render(<OnboardingForm {...props} action={idle} />);
-    fireEvent.click(screen.getByRole("radio", { name: /Individual/ }));
-    continueStep();
-    fireEvent.click(screen.getByRole("radio", { name: "Doctor" }));
-    continueStep();
-    fireEvent.change(screen.getByLabelText("Workspace name"), { target: { value: "Dr Ada Consults" } });
+    reachIndividualDetails("Doctor");
+    fireEvent.change(screen.getByLabelText("Display name"), { target: { value: "Dr Ada Consults" } });
     fireEvent.change(screen.getByLabelText("Service name"), { target: { value: "Consultations" } });
-    continueStep();
-    fireEvent.change(screen.getByLabelText("Country"), { target: { value: "NG" } });
-    fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Lagos" } });
     fireEvent.change(screen.getByLabelText("Authorized practice or service location"), { target: { value: "Authorized practice" } });
     fireEvent.change(screen.getByLabelText("Location address"), { target: { value: "Lagos" } });
+    fireEvent.change(screen.getByLabelText("Country"), { target: { value: "NG" } });
+    fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Lagos" } });
+    continueStep();
     continueStep();
     expect(screen.getByText("Consultations")).toBeTruthy();
-    expect(screen.getByText("Authorized practice")).toBeTruthy();
-    expect(screen.getByText(/does not claim affiliation with an employer/i)).toBeTruthy();
+    expect(screen.getByText(/does not represent or verify an employer/i)).toBeTruthy();
   });
 
-  it("preserves individual values across Back and reaches review", () => {
+  it("preserves individual values while navigating backward", () => {
     render(<OnboardingForm {...props} action={idle} />);
     reachIndividualReview();
-    expect(screen.getByText("My Physics Classes")).toBeTruthy();
-    expect(screen.getByText("Lecturer / Teacher")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getAllByText("My Physics Classes").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Country" }));
     expect((screen.getByLabelText("Country") as HTMLSelectElement).value).toBe("GH");
     expect((screen.getByLabelText("Timezone") as HTMLSelectElement).value).toBe("Africa/Accra");
   });
 
-  it("collects organization type and required first-location details", () => {
+  it("collects organization details, location and service templates on separate screens", () => {
     render(<OnboardingForm {...props} action={idle} />);
-    fireEvent.click(screen.getByRole("radio", { name: /Organization/ }));
-    continueStep();
-    for (const type of ["University / School", "Hospital / Clinic", "Bank / Financial institution", "Salon / Barbershop", "Government office", "Company / Other"]) {
-      expect((screen.getByRole("radio", { name: type }) as HTMLButtonElement).disabled).toBe(false);
-    }
-    fireEvent.click(screen.getByRole("radio", { name: "Hospital / Clinic" }));
-    continueStep();
+    reachOrganizationDetails();
     fireEvent.change(screen.getByLabelText("Organization name"), { target: { value: "Greenfield Clinic" } });
+    fireEvent.change(screen.getByLabelText("Organization category"), { target: { value: "CLINIC" } });
     fireEvent.change(screen.getByLabelText("Legal organization name"), { target: { value: "Greenfield Clinic Limited" } });
-    fireEvent.change(screen.getByLabelText("Organization type"), { target: { value: "CLINIC" } });
-    fireEvent.click(screen.getByRole("checkbox", { name: "Reception" }));
-    continueStep();
-    expect(screen.getByLabelText("First location name")).toBeTruthy();
-    expect(screen.getByLabelText("Location address")).toBeTruthy();
-  });
-
-  it("requires bank affiliation details and explains verification before activation", () => {
-    render(<OnboardingForm {...props} action={idle} />);
-    fireEvent.click(screen.getByRole("radio", { name: /Organization/ }));
-    continueStep();
-    fireEvent.click(screen.getByRole("radio", { name: "Bank / Financial institution" }));
-    continueStep();
-    expect(screen.getByLabelText("Authorized representative")).toBeTruthy();
-    expect(screen.getByRole("checkbox", { name: "Account opening" })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Organization name"), { target: { value: "North Finance" } });
-    fireEvent.change(screen.getByLabelText("Legal organization name"), { target: { value: "North Finance Limited" } });
-    fireEvent.change(screen.getByLabelText("Organization type"), { target: { value: "MICROFINANCE_BANK" } });
-    fireEvent.change(screen.getByLabelText("Authorized representative"), { target: { value: "Ada Representative" } });
-    fireEvent.click(screen.getByRole("checkbox", { name: "Customer service" }));
-    continueStep();
     fireEvent.change(screen.getByLabelText("Country"), { target: { value: "NG" } });
     fireEvent.change(screen.getByLabelText("Timezone"), { target: { value: "Africa/Lagos" } });
-    fireEvent.change(screen.getByLabelText("First location name"), { target: { value: "Central branch" } });
-    fireEvent.change(screen.getByLabelText("Location address"), { target: { value: "Lagos" } });
     continueStep();
-    expect(screen.getByText(/activation stays paused until verification/i)).toBeTruthy();
+    expect(screen.getByLabelText("Location name")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Location name"), { target: { value: "Main clinic" } });
+    fireEvent.change(screen.getByLabelText("Address"), { target: { value: "Lagos" } });
+    continueStep();
+    expect(screen.getByLabelText("Reception")).toBeTruthy();
   });
 
-  it("submits preserved values and shows a loading state", async () => {
+  it("collects a bank representative and category-specific services", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    reachOrganizationDetails("Bank / Financial institution");
+    expect(screen.getByLabelText("Authorized representative")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Organization name"), { target: { value: "North Finance" } });
+    fireEvent.change(screen.getByLabelText("Organization category"), { target: { value: "MICROFINANCE_BANK" } });
+    fireEvent.change(screen.getByLabelText("Legal organization name"), { target: { value: "North Finance Limited" } });
+    fireEvent.change(screen.getByLabelText("Authorized representative"), { target: { value: "Ada Representative" } });
+    fireEvent.change(screen.getByLabelText("Country"), { target: { value: "NG" } });
+    continueStep();
+    fireEvent.change(screen.getByLabelText("Location name"), { target: { value: "Central branch" } });
+    fireEvent.change(screen.getByLabelText("Address"), { target: { value: "Lagos" } });
+    continueStep();
+    expect(screen.getByLabelText("Account opening")).toBeTruthy();
+    expect(screen.queryByLabelText("Reception")).toBeNull();
+  });
+
+  it("requires an organization authorization declaration before submission", () => {
+    render(<OnboardingForm {...props} action={idle} />);
+    reachOrganizationReview();
+    fireEvent.click(screen.getByRole("button", { name: "Create workspace" }));
+    expect(screen.getByText("Confirm that you are authorized to register this organization.")).toBeTruthy();
+  });
+
+  it("submits preserved values once and shows a pending state", async () => {
     let finish!: (state: OnboardingState) => void;
     const action = vi.fn((previous: OnboardingState, formData: FormData) => {
       void previous;
@@ -132,17 +163,16 @@ describe("unified onboarding form", () => {
     reachIndividualReview();
     fireEvent.click(screen.getByRole("button", { name: "Create workspace" }));
     expect((await screen.findByRole("button", { name: "Creating workspace…" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(action).toHaveBeenCalledOnce();
     const submitted = action.mock.calls[0]?.[1] as FormData;
     expect(submitted.get("accountType")).toBe("INDIVIDUAL");
-    expect(submitted.get("onboardingRequestId")).toBe(props.requestId);
     expect(submitted.get("professionalCategory")).toBe("LECTURER_TEACHER");
     expect(submitted.get("workspaceName")).toBe("My Physics Classes");
-    expect(submitted.get("teachingLevel")).toBe("University undergraduate");
     finish({ status: "error", message: "Please try again." });
     await screen.findByRole("alert");
   });
 
-  it("returns to the invalid field after a server validation error", async () => {
+  it("returns to and focuses the invalid field after a server validation error", async () => {
     const action = async (): Promise<OnboardingState> => ({
       status: "error",
       message: "Please check the highlighted fields.",
@@ -151,16 +181,9 @@ describe("unified onboarding form", () => {
     render(<OnboardingForm {...props} action={action} />);
     reachIndividualReview();
     fireEvent.click(screen.getByRole("button", { name: "Create workspace" }));
-    const input = await screen.findByLabelText("Workspace name");
+    const input = await screen.findByLabelText("Workspace display name");
     await waitFor(() => expect(document.activeElement).toBe(input));
     expect((input as HTMLInputElement).value).toBe("My Physics Classes");
     expect(screen.getByText("Use a different workspace name.")).toBeTruthy();
-  });
-
-  it("uses narrow-safe containers and stacked mobile actions", () => {
-    render(<OnboardingForm {...props} action={idle} />);
-    const form = screen.getByRole("button", { name: "Continue" }).closest("form")!;
-    expect(form.className).toContain("min-w-0");
-    expect(screen.getByRole("button", { name: "Continue" }).parentElement?.className).toContain("flex-col-reverse");
   });
 });

@@ -1,297 +1,252 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
-  ACCOUNT_TYPES,
-  ONBOARDING_FIELDS,
-  ORGANIZATION_SERVICE_TEMPLATES,
-  ORGANIZATION_SUBTYPES,
-  ORGANIZATION_TYPES,
-  PROFESSIONS,
-  type OnboardingAction,
-  type OnboardingField,
-  type OnboardingState,
-  type OnboardingValues,
+  Banknote, BriefcaseBusiness, Building2, Check, CircleDollarSign, ClipboardCheck,
+  CreditCard, GraduationCap, HeartPulse, Landmark, MapPin, MessageCircleQuestion,
+  Scissors, ShieldCheck, Sparkles, Stethoscope, University, UserRound, UsersRound,
+} from "lucide-react";
+import {
+  ACCOUNT_TYPES, ONBOARDING_FIELDS, ORGANIZATION_SERVICE_TEMPLATES, ORGANIZATION_SUBTYPES,
+  ORGANIZATION_TYPES, PROFESSIONS, type OnboardingAction, type OnboardingField,
+  type OnboardingState, type OnboardingValues,
 } from "@/lib/validation/onboarding";
+import { TURNMARK_ASSETS, type TurnmarkAsset } from "@/lib/brand/assets";
+import {
+  ActionFooter, ChoiceCard, ErrorBanner, Field, OnboardingFrame, ReviewRow, ScreenHeader,
+  onboardingStyles as styles,
+} from "./onboarding-ui";
 
 const initialState: OnboardingState = { status: "idle" };
 const initialValues: OnboardingValues = {
-  onboardingRequestId: "",
-  accountType: "",
-  professionalCategory: "",
-  organizationType: "",
-  organizationSubtype: "",
-  workspaceName: "",
-  legalName: "",
-  representativeName: "",
-  serviceTemplates: "",
-  teachingLevel: "",
-  institutionName: "",
-  serviceName: "",
-  country: "",
-  timezone: "UTC",
-  locationName: "",
-  locationAddress: "",
+  onboardingRequestId: "", accountType: "", professionalCategory: "", organizationType: "",
+  organizationSubtype: "", workspaceName: "", legalName: "", representativeName: "",
+  serviceTemplates: "", teachingLevel: "", institutionName: "", serviceName: "",
+  country: "", timezone: "UTC", locationName: "", locationAddress: "", authorizationDeclaration: "",
 };
-const stepNames = ["Start", "Type", "Details", "Set up", "Review"] as const;
-const fieldSteps: Record<OnboardingField, number> = {
-  onboardingRequestId: 0,
-  accountType: 0,
-  professionalCategory: 1,
-  organizationType: 1,
-  organizationSubtype: 2,
-  workspaceName: 2,
-  legalName: 2,
-  representativeName: 2,
-  serviceTemplates: 2,
-  teachingLevel: 2,
-  institutionName: 2,
-  serviceName: 2,
-  country: 3,
-  timezone: 3,
-  locationName: 3,
-  locationAddress: 3,
-};
-const controlClass = "mt-2 min-h-12 min-w-0 w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-base text-foreground shadow-sm aria-invalid:border-red-700 aria-invalid:ring-1 aria-invalid:ring-red-700";
 
-function FieldError({ id, message }: { id: string; message?: string }) {
-  return message ? <p id={`${id}-error`} className="mt-2 text-sm font-medium text-red-800">{message}</p> : null;
+type StepKey = "account" | "profession" | "organization" | "details" | "location" | "services" | "workspace" | "review";
+const individualSteps = ["Account", "Profession", "Details", "Workspace", "Review"] as const;
+const individualKeys: readonly StepKey[] = ["account", "profession", "details", "workspace", "review"];
+const organizationSteps = ["Account", "Type", "Details", "Location", "Services", "Workspace", "Review"] as const;
+const organizationKeys: readonly StepKey[] = ["account", "organization", "details", "location", "services", "workspace", "review"];
+
+const professionIcons = {
+  LECTURER_TEACHER: GraduationCap, DOCTOR: Stethoscope, NURSE: HeartPulse, BANKER: Landmark,
+  BARBER_STYLIST: Scissors, CONSULTANT: BriefcaseBusiness, OTHER_PROFESSIONAL: Sparkles,
+} as const;
+const organizationIcons = {
+  UNIVERSITY_SCHOOL: University, HOSPITAL_CLINIC: HeartPulse, BANK_FINANCIAL: Landmark,
+  SALON_BARBERSHOP: Scissors, GOVERNMENT_OFFICE: Building2, COMPANY_OTHER: BriefcaseBusiness,
+} as const;
+const professionVisuals: Partial<Record<string, TurnmarkAsset>> = {
+  LECTURER_TEACHER: TURNMARK_ASSETS.characters.student,
+  DOCTOR: TURNMARK_ASSETS.characters.healthcareProfessional,
+  NURSE: TURNMARK_ASSETS.characters.healthcareProfessional,
+  BANKER: TURNMARK_ASSETS.characters.businessProfessional,
+  CONSULTANT: TURNMARK_ASSETS.characters.businessProfessional,
+};
+const organizationVisuals: Partial<Record<string, TurnmarkAsset>> = {
+  UNIVERSITY_SCHOOL: TURNMARK_ASSETS.industries.education,
+  HOSPITAL_CLINIC: TURNMARK_ASSETS.industries.healthcare,
+  GOVERNMENT_OFFICE: TURNMARK_ASSETS.industries.government,
+};
+const serviceIcons: Record<string, typeof Sparkles> = {
+  STUDENT_SERVICES: GraduationCap, ADMISSIONS: ClipboardCheck, BURSARY: CircleDollarSign,
+  LIBRARY: University, MEDICAL_CENTRE: HeartPulse, DEPARTMENT_OFFICE: Building2,
+  RECEPTION: UsersRound, CONSULTATION: Stethoscope, LABORATORY: HeartPulse, PHARMACY_PICKUP: ClipboardCheck,
+  CUSTOMER_SERVICE: UsersRound, ACCOUNT_OPENING: ClipboardCheck, DEPOSITS: Banknote,
+  WITHDRAWALS: Banknote, CARD_SERVICES: CreditCard, LOAN_ENQUIRIES: CircleDollarSign,
+  COMPLAINTS: MessageCircleQuestion, DOCUMENT_VERIFICATION: ShieldCheck, WALK_IN_SERVICE: Scissors,
+  GENERAL_ENQUIRIES: MessageCircleQuestion, DOCUMENT_SERVICES: ClipboardCheck, PAYMENTS: CircleDollarSign,
+  CUSTOM_SERVICE: Sparkles,
+};
+const descriptions: Record<string,string> = {
+  LECTURER_TEACHER: "Courses, class sessions and QR attendance.", DOCTOR: "Consultation queues without medical records.",
+  NURSE: "Manage an independent service workflow.", BANKER: "A personal service workspace without bank affiliation.",
+  BARBER_STYLIST: "Services, customer queues and supported appointments.", CONSULTANT: "A flexible client service workspace.",
+  OTHER_PROFESSIONAL: "Configure a service around how you work.", UNIVERSITY_SCHOOL: "Courses, attendance and campus service queues.",
+  HOSPITAL_CLINIC: "Reception and consultation service flow.", BANK_FINANCIAL: "Branch services with verification before activation.",
+  SALON_BARBERSHOP: "Walk-ins, services and supported appointments.", GOVERNMENT_OFFICE: "Public service counters and queues.",
+  COMPANY_OTHER: "Locations, custom services and team operations.",
+};
+
+function stepForField(field: OnboardingField, individual: boolean): StepKey {
+  if (field === "accountType") return "account";
+  if (field === "professionalCategory") return "profession";
+  if (field === "organizationType") return "organization";
+  if (field === "locationName" || field === "locationAddress") return individual ? "details" : "location";
+  if (field === "serviceTemplates") return "services";
+  if (field === "workspaceName") return "workspace";
+  if (field === "authorizationDeclaration") return "review";
+  return "details";
 }
 
 export function OnboardingForm({ action, countries, timezones, requestId }: {
-  action: OnboardingAction;
-  countries: { code: string; name: string }[];
-  timezones: string[];
-  requestId: string;
+  action: OnboardingAction; countries: { code: string; name: string }[]; timezones: string[]; requestId: string;
 }) {
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<OnboardingValues>({ ...initialValues, onboardingRequestId: requestId });
-  const [clientErrors, setClientErrors] = useState<Partial<Record<OnboardingField, string>>>({});
+  const [clientErrors, setClientErrors] = useState<Partial<Record<OnboardingField,string>>>({});
+  const formRef = useRef<HTMLFormElement>(null);
+  const firstRender = useRef(true);
+  const isIndividual = values.accountType !== "ORGANIZATION";
+  const isLecturer = isIndividual && values.professionalCategory === "LECTURER_TEACHER";
+  const isProfessionalService = isIndividual && Boolean(values.professionalCategory) && !isLecturer;
+  const keys = isIndividual ? individualKeys : organizationKeys;
+  const labels = isIndividual ? individualSteps : organizationSteps;
+  const currentKey = keys[Math.min(step, keys.length - 1)];
+
   async function submitAction(previous: OnboardingState, formData: FormData) {
     const result = await action(previous, formData);
+    const submittedIndividual = (result.values?.accountType ?? values.accountType) !== "ORGANIZATION";
     const firstField = ONBOARDING_FIELDS.find((field) => result.fieldErrors?.[field]?.length);
-    if (firstField) setStep(fieldSteps[firstField]);
+    if (firstField) {
+      const targetKeys = submittedIndividual ? individualKeys : organizationKeys;
+      setStep(Math.max(0, targetKeys.indexOf(stepForField(firstField, submittedIndividual))));
+    }
     return result;
   }
   const [state, formAction, pending] = useActionState(submitAction, initialState);
-  const formRef = useRef<HTMLFormElement>(null);
-  const errors = { ...Object.fromEntries(Object.entries(state.fieldErrors ?? {}).map(([field, messages]) => [field, messages?.[0]])), ...clientErrors };
-  const isIndividual = values.accountType === "INDIVIDUAL";
-  const isLecturer = isIndividual && values.professionalCategory === "LECTURER_TEACHER";
-  const isProfessionalService = isIndividual && Boolean(values.professionalCategory) && !isLecturer;
-  const needsLocation = !isIndividual || isProfessionalService;
+  const serverErrors = Object.fromEntries(Object.entries(state.fieldErrors ?? {}).map(([field,messages])=>[field,messages?.[0]]));
+  const errors = { ...serverErrors, ...clientErrors } as Partial<Record<OnboardingField,string>>;
 
   useEffect(() => {
+    if (firstRender.current) { firstRender.current = false; return; }
+    document.getElementById("onboarding-step-title")?.focus();
+  }, [step]);
+  useEffect(() => {
     if (state.status !== "error") return;
-    requestAnimationFrame(() => {
-      const target = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')
-        ?? formRef.current?.querySelector<HTMLElement>('[role="alert"]');
+    requestAnimationFrame(()=>{
+      const target = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]') ?? formRef.current?.querySelector<HTMLElement>('[role="alert"]');
       target?.focus();
     });
   }, [state]);
 
   function update(field: OnboardingField, value: string) {
-    setValues((current) => ({ ...current, [field]: value }));
-    setClientErrors((current) => {
-      const next = { ...current };
-      delete next[field];
-      return next;
-    });
+    setValues((current)=>({ ...current, [field]: value }));
+    setClientErrors((current)=>{ const next={...current}; delete next[field]; return next; });
   }
-
   function selectAccount(accountType: (typeof ACCOUNT_TYPES)[number]) {
-    setValues((current) => ({
-      ...current,
-      accountType,
+    setValues((current)=>({
+      ...current, accountType,
       professionalCategory: accountType === "INDIVIDUAL" ? current.professionalCategory : "",
       organizationType: accountType === "ORGANIZATION" ? current.organizationType : "",
       organizationSubtype: accountType === "ORGANIZATION" ? current.organizationSubtype : "",
       legalName: accountType === "ORGANIZATION" ? current.legalName : "",
       representativeName: accountType === "ORGANIZATION" ? current.representativeName : "",
       serviceTemplates: accountType === "ORGANIZATION" ? current.serviceTemplates : "",
+      authorizationDeclaration: accountType === "ORGANIZATION" ? current.authorizationDeclaration : "",
       teachingLevel: accountType === "INDIVIDUAL" ? current.teachingLevel : "",
       institutionName: accountType === "INDIVIDUAL" ? current.institutionName : "",
       serviceName: accountType === "INDIVIDUAL" ? current.serviceName : "",
     }));
     setClientErrors({});
   }
-
-  function selectOrganization(organizationType: string) {
-    setValues((current) => ({
-      ...current,
-      organizationType,
-      organizationSubtype: "",
-      representativeName: "",
-      serviceTemplates: "",
+  function selectProfession(category: string) {
+    const lecturer = category === "LECTURER_TEACHER";
+    setValues((current)=>({ ...current, professionalCategory: category,
+      teachingLevel: lecturer ? current.teachingLevel : "", institutionName: lecturer ? current.institutionName : "",
+      serviceName: lecturer ? "" : current.serviceName, locationName: lecturer ? "" : current.locationName,
+      locationAddress: lecturer ? "" : current.locationAddress,
     }));
     setClientErrors({});
   }
-
+  function selectOrganization(type: string) {
+    setValues((current)=>({ ...current, organizationType:type, organizationSubtype:"", representativeName:"", serviceTemplates:"", authorizationDeclaration:"" }));
+    setClientErrors({});
+  }
   function toggleTemplate(template: string) {
     const selected = new Set(values.serviceTemplates.split(",").filter(Boolean));
     if (selected.has(template)) selected.delete(template); else selected.add(template);
     update("serviceTemplates", [...selected].join(","));
   }
 
-  function selectProfession(professionalCategory: string) {
-    const lecturer = professionalCategory === "LECTURER_TEACHER";
-    setValues((current) => ({
-      ...current,
-      professionalCategory,
-      teachingLevel: lecturer ? current.teachingLevel : "",
-      institutionName: lecturer ? current.institutionName : "",
-      serviceName: lecturer ? "" : current.serviceName,
-      locationName: lecturer ? "" : current.locationName,
-      locationAddress: lecturer ? "" : current.locationAddress,
-    }));
-    setClientErrors({});
-  }
-
-  function validateCurrentStep() {
-    const nextErrors: Partial<Record<OnboardingField, string>> = {};
-    if (step === 0 && !values.accountType) nextErrors.accountType = "Choose individual or organization.";
-    if (step === 1 && isIndividual && !values.professionalCategory) nextErrors.professionalCategory = "Choose an available profession.";
-    if (step === 1 && !isIndividual && !values.organizationType) nextErrors.organizationType = "Choose an organization type.";
-    if (step === 2) {
-      if (!values.workspaceName.trim()) nextErrors.workspaceName = "Workspace name is required.";
-      if (isLecturer && !values.teachingLevel.trim()) nextErrors.teachingLevel = "Teaching level is required.";
-      if (isProfessionalService && !values.serviceName.trim()) nextErrors.serviceName = "Service name is required.";
-      if (!isIndividual) {
-        if (!values.organizationSubtype) nextErrors.organizationSubtype = "Choose an organization subtype.";
-        if (!values.legalName.trim()) nextErrors.legalName = "Legal organization name is required.";
-        if (values.organizationType === "BANK_FINANCIAL" && !values.representativeName.trim()) nextErrors.representativeName = "Authorized representative is required.";
-        if (!values.serviceTemplates) nextErrors.serviceTemplates = "Choose at least one service.";
-      }
-    }
-    if (step === 3) {
-      if (!values.country) nextErrors.country = "Choose a country.";
-      if (!values.timezone) nextErrors.timezone = "Choose a timezone.";
-      if (needsLocation && !values.locationName.trim()) nextErrors.locationName = "Location name is required.";
-      if (needsLocation && !values.locationAddress.trim()) nextErrors.locationAddress = "Location address is required.";
-    }
-    setClientErrors(nextErrors);
-    const firstField = ONBOARDING_FIELDS.find((field) => nextErrors[field]);
-    if (firstField) {
-      requestAnimationFrame(() => document.getElementById(firstField)?.focus());
-      return false;
-    }
-    return true;
-  }
-
-  function continueToNextStep() {
-    if (validateCurrentStep()) setStep((current) => Math.min(current + 1, 4));
-  }
-
-  const organization = ORGANIZATION_TYPES.find(({ value }) => value === values.organizationType);
   const organizationType = values.organizationType as keyof typeof ORGANIZATION_SUBTYPES;
   const organizationSubtypes = values.organizationType ? ORGANIZATION_SUBTYPES[organizationType] : [];
   const organizationTemplates = values.organizationType ? ORGANIZATION_SERVICE_TEMPLATES[organizationType] : [];
-  const selectedTemplates = new Set(values.serviceTemplates.split(",").filter(Boolean));
-  const profession = PROFESSIONS.find(({ value }) => value === values.professionalCategory);
-  const accountLabel = isIndividual ? "Individual" : "Organization";
+  const selectedTemplates = useMemo(()=>new Set(values.serviceTemplates.split(",").filter(Boolean)),[values.serviceTemplates]);
+  const profession = PROFESSIONS.find((item)=>item.value===values.professionalCategory);
+  const organization = ORGANIZATION_TYPES.find((item)=>item.value===values.organizationType);
 
-  return (
-    <form ref={formRef} action={formAction} onReset={(event) => event.preventDefault()} aria-busy={pending} className="min-w-0 w-full max-w-4xl overflow-hidden rounded-3xl border border-black/10 bg-white shadow-[0_24px_70px_rgba(22,26,63,0.10)]">
-      {ONBOARDING_FIELDS.map((field) => <input key={field} type="hidden" name={field} value={values[field]} />)}
-      <div className="bg-[#17130f] px-5 py-5 text-white sm:px-8">
-        <div className="flex items-end justify-between gap-4">
-          <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffc857]">Step {step + 1} of 5</p><p className="mt-1 text-xs text-white/65">{stepNames[step]}</p></div>
-          <span className="text-sm font-semibold text-[#ff7a40]">{Math.round(((step + 1) / 5) * 100)}%</span>
-        </div>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/15" aria-hidden="true"><div className="h-full rounded-full bg-[#ff5c1a] transition-[width]" style={{ width: `${((step + 1) / 5) * 100}%` }} /></div>
-      </div>
+  function validateCurrentStep() {
+    const next: Partial<Record<OnboardingField,string>> = {};
+    if (currentKey === "account" && !values.accountType) next.accountType = "Choose individual or organization.";
+    if (currentKey === "profession" && !values.professionalCategory) next.professionalCategory = "Choose a profession.";
+    if (currentKey === "organization" && !values.organizationType) next.organizationType = "Choose an organization type.";
+    if (currentKey === "details") {
+      if (!values.workspaceName.trim()) next.workspaceName = isIndividual ? "Display name is required." : "Organization name is required.";
+      if (!values.country) next.country = "Choose a country.";
+      if (!values.timezone) next.timezone = "Choose a timezone.";
+      if (isLecturer && !values.teachingLevel.trim()) next.teachingLevel = "Teaching level is required.";
+      if (isProfessionalService && !values.serviceName.trim()) next.serviceName = "Service name is required.";
+      if (isProfessionalService && !values.locationName.trim()) next.locationName = "Service location is required.";
+      if (isProfessionalService && !values.locationAddress.trim()) next.locationAddress = "Location address is required.";
+      if (!isIndividual) {
+        if (!values.organizationSubtype) next.organizationSubtype = "Choose an organization category.";
+        if (!values.legalName.trim()) next.legalName = "Legal organization name is required.";
+        if (values.organizationType === "BANK_FINANCIAL" && !values.representativeName.trim()) next.representativeName = "Authorized representative is required.";
+      }
+    }
+    if (currentKey === "location") {
+      if (!values.locationName.trim()) next.locationName = "Location name is required.";
+      if (!values.locationAddress.trim()) next.locationAddress = "Location address is required.";
+    }
+    if (currentKey === "services" && !values.serviceTemplates) next.serviceTemplates = "Choose at least one service.";
+    if (currentKey === "workspace" && !values.workspaceName.trim()) next.workspaceName = "Workspace display name is required.";
+    if (currentKey === "review" && !isIndividual && values.authorizationDeclaration !== "true") next.authorizationDeclaration = "Confirm that you are authorized to register this organization.";
+    setClientErrors(next);
+    const first = ONBOARDING_FIELDS.find((field)=>next[field]);
+    if (first) requestAnimationFrame(()=>document.getElementById(first)?.focus());
+    return !first;
+  }
+  function nextStep() { if (validateCurrentStep()) setStep((current)=>Math.min(current+1,keys.length-1)); }
+  function goTo(key: StepKey) { const index=keys.indexOf(key); if (index>=0) setStep(index); }
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (currentKey !== "review") {
+      event.preventDefault();
+      nextStep();
+      return;
+    }
+    if (!validateCurrentStep()) event.preventDefault();
+  }
+  const input = (field: OnboardingField) => ({ id:field, className:styles.control, value:values[field], onChange:(event:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>)=>update(field,event.target.value), "aria-invalid":errors[field]?true:undefined, "aria-describedby":errors[field]?`${field}-error`:undefined });
+  const countryName = countries.find((item)=>item.code===values.country)?.name;
 
-      <fieldset disabled={pending} className="min-w-0 p-5 sm:p-8 lg:p-10">
-        <legend className="sr-only">TuRnMaRk workspace onboarding</legend>
-        {state.status === "error" && <div role="alert" tabIndex={-1} className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{state.message}</div>}
+  return <form ref={formRef} action={formAction} onSubmit={onSubmit} onReset={(event)=>event.preventDefault()} aria-busy={pending} className="min-w-0">
+    {ONBOARDING_FIELDS.map((field)=><input key={field} type="hidden" name={field} value={values[field]}/>) }
+    <OnboardingFrame steps={labels} step={step}>
+      <fieldset disabled={pending} className={styles.content}><legend className="sr-only">TuRnMaRk workspace onboarding</legend><div className={styles.contentInner}>
+        {state.status==="error"?<ErrorBanner message={state.message??"We couldn’t complete setup. Try again."}/>:null}
 
-        {step === 0 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">Start</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f] sm:text-4xl">Who is this workspace for?</h2>
-          <p className="mt-3 max-w-2xl leading-7 text-muted">Choose the option that reflects who owns the work. You can still belong to other TuRnMaRk organizations later.</p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2" role="radiogroup" aria-describedby={errors.accountType ? "accountType-error" : undefined}>
-            {[
-              { value: "INDIVIDUAL", title: "Individual", description: "I want to manage my own work." },
-              { value: "ORGANIZATION", title: "Organization", description: "I represent an organization." },
-            ].map((option) => <button key={option.value} type="button" role="radio" aria-checked={values.accountType === option.value} onClick={() => selectAccount(option.value as (typeof ACCOUNT_TYPES)[number])} className={`min-h-28 rounded-2xl border p-5 text-left transition-colors ${values.accountType === option.value ? "border-[#ff5c1a] bg-[#fff0e5] ring-2 ring-[#ff5c1a]/15" : "border-black/10 bg-white hover:border-[#ff5c1a]/50"}`}>
-              <span className="block text-xl font-bold text-[#17130f]">{option.title}</span><span className="mt-2 block text-sm leading-6 text-muted">{option.description}</span>
-            </button>)}
-          </div>
-          <FieldError id="accountType" message={errors.accountType} />
-        </section>}
+        {currentKey==="account"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Welcome" title="Welcome to" description="Let’s set up your workspace. Choose how you’ll use TuRnMaRk." brand/><div className={styles.choiceGrid} role="radiogroup" aria-describedby={errors.accountType?"accountType-error":undefined}><ChoiceCard title="Individual" description="I want to manage my own work and services." selected={values.accountType==="INDIVIDUAL"} icon={<UserRound/>} onSelect={()=>selectAccount("INDIVIDUAL")}/><ChoiceCard title="Organization" description="I represent a school, hospital, bank, business or other organization." selected={values.accountType==="ORGANIZATION"} icon={<Building2/>} onSelect={()=>selectAccount("ORGANIZATION")}/></div>{errors.accountType?<p id="accountType-error" className={styles.fieldError}>{errors.accountType}</p>:null}<p className={styles.signIn}>Already have a workspace? <Link href="/sign-in">Sign in</Link></p></section>:null}
 
-        {step === 1 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">{accountLabel}</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f]">{isIndividual ? "What best describes your work?" : "What kind of organization is this?"}</h2>
-          <p className="mt-3 leading-7 text-muted">{isIndividual ? "Choose the work you manage personally. This does not claim affiliation with an employer or institution." : "This helps us prepare the right operational tools without asking unnecessary questions."}</p>
-          <div className="mt-7 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-describedby={isIndividual ? "professionalCategory-error" : "organizationType-error"}>
-            {(isIndividual ? PROFESSIONS : ORGANIZATION_TYPES).map((option) => {
-              const unavailable = "available" in option && !option.available;
-              const selected = isIndividual ? values.professionalCategory === option.value : values.organizationType === option.value;
-              return <button key={option.value} type="button" role="radio" aria-checked={selected} disabled={unavailable} onClick={() => isIndividual ? selectProfession(option.value) : selectOrganization(option.value)} className={`flex min-h-16 items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left ${selected ? "border-[#ff5c1a] bg-[#fff0e5] ring-2 ring-[#ff5c1a]/15" : "border-black/10 bg-white"} disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-black/40`}>
-                <span className="font-semibold">{option.label}</span>{unavailable && <span className="shrink-0 rounded-full bg-black/5 px-2 py-1 text-[10px] font-bold uppercase tracking-wide">Coming later</span>}
-              </button>;
-            })}
-          </div>
-          <FieldError id={isIndividual ? "professionalCategory" : "organizationType"} message={isIndividual ? errors.professionalCategory : errors.organizationType} />
-        </section>}
+        {currentKey==="profession"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Individual workspace" title="What’s your profession?" description="Choose the option that best describes the work you manage. You can change supporting details later."/><div className={`${styles.choiceGrid} ${styles.choiceGridCompact}`} role="radiogroup" aria-describedby={errors.professionalCategory?"professionalCategory-error":undefined}>{PROFESSIONS.map((option)=>{const Icon=professionIcons[option.value];return <ChoiceCard key={option.value} title={option.label} description={descriptions[option.value]} selected={values.professionalCategory===option.value} icon={<Icon/>} visual={professionVisuals[option.value]} onSelect={()=>selectProfession(option.value)}/>})}</div>{errors.professionalCategory?<p id="professionalCategory-error" className={styles.fieldError}>{errors.professionalCategory}</p>:null}</section>:null}
 
-        {step === 2 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">Details</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f]">{isIndividual ? "Tell us about your work" : "Tell us about your organization"}</h2>
-          <p className="mt-3 max-w-2xl leading-7 text-muted">{isIndividual ? "Use a workspace name your students or customers will recognize. It does not claim official affiliation with another organization." : "We only need the public name used by your team and visitors."}</p>
-          <div className="mt-8 grid max-w-2xl gap-5">
-            <label htmlFor="workspaceName" className="text-sm font-bold">{isIndividual ? "Workspace name" : "Organization name"}</label>
-            <input id="workspaceName" value={values.workspaceName} onChange={(event) => update("workspaceName", event.target.value)} className={controlClass} maxLength={160} autoComplete="organization" placeholder={isIndividual ? "e.g. My Physics Classes" : "e.g. Greenfield Clinic"} aria-invalid={errors.workspaceName ? true : undefined} aria-describedby={errors.workspaceName ? "workspaceName-error" : undefined} />
-            <FieldError id="workspaceName" message={errors.workspaceName} />
-            {isLecturer && <><div><label htmlFor="teachingLevel" className="text-sm font-bold">Teaching level</label><input id="teachingLevel" value={values.teachingLevel} onChange={(event) => update("teachingLevel", event.target.value)} className={controlClass} maxLength={100} placeholder="e.g. University undergraduate" aria-invalid={errors.teachingLevel ? true : undefined} aria-describedby={errors.teachingLevel ? "teachingLevel-error" : undefined}/><FieldError id="teachingLevel" message={errors.teachingLevel}/></div><div><label htmlFor="institutionName" className="text-sm font-bold">Institution name <span className="font-normal text-muted">(optional)</span></label><input id="institutionName" value={values.institutionName} onChange={(event) => update("institutionName", event.target.value)} className={controlClass} maxLength={160} placeholder="For context only — no affiliation claim" aria-invalid={errors.institutionName ? true : undefined} aria-describedby={errors.institutionName ? "institutionName-error" : undefined}/><FieldError id="institutionName" message={errors.institutionName}/></div></>}
-            {isProfessionalService && <div><label htmlFor="serviceName" className="text-sm font-bold">Service name</label><input id="serviceName" value={values.serviceName} onChange={(event) => update("serviceName", event.target.value)} className={controlClass} maxLength={160} placeholder="e.g. Consultations" aria-invalid={errors.serviceName ? true : undefined} aria-describedby={errors.serviceName ? "serviceName-error" : undefined}/><FieldError id="serviceName" message={errors.serviceName}/></div>}
-            {!isIndividual && <>
-              <div><label htmlFor="legalName" className="text-sm font-bold">Legal organization name</label><input id="legalName" value={values.legalName} onChange={(event) => update("legalName", event.target.value)} className={controlClass} maxLength={200} autoComplete="organization" placeholder="Registered or official name" aria-invalid={errors.legalName ? true : undefined} aria-describedby={errors.legalName ? "legalName-error" : undefined}/><FieldError id="legalName" message={errors.legalName}/></div>
-              <div><label htmlFor="organizationSubtype" className="text-sm font-bold">Organization type</label><select id="organizationSubtype" value={values.organizationSubtype} onChange={(event) => update("organizationSubtype", event.target.value)} className={controlClass} aria-invalid={errors.organizationSubtype ? true : undefined} aria-describedby={errors.organizationSubtype ? "organizationSubtype-error" : undefined}><option value="" disabled>Choose a type</option>{organizationSubtypes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><FieldError id="organizationSubtype" message={errors.organizationSubtype}/></div>
-              {values.organizationType === "BANK_FINANCIAL" && <div><label htmlFor="representativeName" className="text-sm font-bold">Authorized representative</label><input id="representativeName" value={values.representativeName} onChange={(event) => update("representativeName", event.target.value)} className={controlClass} maxLength={160} autoComplete="name" placeholder="Full name" aria-invalid={errors.representativeName ? true : undefined} aria-describedby={errors.representativeName ? "representativeName-error" : undefined}/><FieldError id="representativeName" message={errors.representativeName}/></div>}
-              <fieldset id="serviceTemplates" tabIndex={-1} className="rounded-xl border border-black/10 bg-white p-4" aria-invalid={errors.serviceTemplates ? true : undefined} aria-describedby={errors.serviceTemplates ? "serviceTemplates-error" : undefined}><legend className="px-1 text-sm font-bold">Services to configure</legend><p className="mb-3 text-sm text-muted">These choices guide setup. They do not create live queues.</p><div className="grid gap-2 sm:grid-cols-2">{organizationTemplates.map((option) => <label key={option.value} className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={selectedTemplates.has(option.value)} onChange={() => toggleTemplate(option.value)}/><span>{option.label}</span></label>)}</div><FieldError id="serviceTemplates" message={errors.serviceTemplates}/></fieldset>
-            </>}
-          </div>
-        </section>}
+        {currentKey==="organization"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Organization workspace" title="What type of organization are you registering?" description="Choose the closest match. Entering a name does not verify an institutional affiliation."/><div className={`${styles.choiceGrid} ${styles.choiceGridCompact}`} role="radiogroup" aria-describedby={errors.organizationType?"organizationType-error":undefined}>{ORGANIZATION_TYPES.map((option)=>{const Icon=organizationIcons[option.value];return <ChoiceCard key={option.value} title={option.label} description={descriptions[option.value]} selected={values.organizationType===option.value} icon={<Icon/>} visual={organizationVisuals[option.value]} onSelect={()=>selectOrganization(option.value)}/>})}</div>{errors.organizationType?<p id="organizationType-error" className={styles.fieldError}>{errors.organizationType}</p>:null}</section>:null}
 
-        {step === 3 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">Set up</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f]">Set your local details</h2>
-          <p className="mt-3 max-w-2xl leading-7 text-muted">Times and records use these settings. {isLecturer ? "No institution address is required." : "Your first service location can be changed later."}</p>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2">
-            <div><label htmlFor="country" className="text-sm font-bold">Country</label><select id="country" value={values.country} onChange={(event) => update("country", event.target.value)} className={controlClass} autoComplete="country" aria-invalid={errors.country ? true : undefined} aria-describedby={errors.country ? "country-error" : undefined}><option value="" disabled>Choose a country</option>{countries.map(({ code, name }) => <option key={code} value={code}>{name}</option>)}</select><FieldError id="country" message={errors.country} /></div>
-            <div><label htmlFor="timezone" className="text-sm font-bold">Timezone</label><select id="timezone" value={values.timezone} onChange={(event) => update("timezone", event.target.value)} className={controlClass} aria-invalid={errors.timezone ? true : undefined} aria-describedby={errors.timezone ? "timezone-error" : undefined}>{timezones.map((timezone) => <option key={timezone} value={timezone}>{timezone.replaceAll("_", " ")}</option>)}</select><FieldError id="timezone" message={errors.timezone} /></div>
-            {needsLocation && <><div><label htmlFor="locationName" className="text-sm font-bold">{isIndividual ? "Authorized practice or service location" : "First location name"}</label><input id="locationName" value={values.locationName} onChange={(event) => update("locationName", event.target.value)} className={controlClass} maxLength={160} placeholder="e.g. Main office" aria-invalid={errors.locationName ? true : undefined} aria-describedby={errors.locationName ? "locationName-error" : undefined} /><FieldError id="locationName" message={errors.locationName} /></div><div><label htmlFor="locationAddress" className="text-sm font-bold">Location address</label><textarea id="locationAddress" value={values.locationAddress} onChange={(event) => update("locationAddress", event.target.value)} className={controlClass} rows={3} maxLength={500} autoComplete="street-address" placeholder="Street address, city or town" aria-invalid={errors.locationAddress ? true : undefined} aria-describedby={errors.locationAddress ? "locationAddress-error" : undefined} /><FieldError id="locationAddress" message={errors.locationAddress} /></div></>}
-          </div>
-        </section>}
+        {currentKey==="details"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow={isIndividual?"Your details":"Organization details"} title={isIndividual?"Tell us about yourself":"Organization information"} description={isIndividual?"These details shape your personal professional workspace.":"Add the public and operational details needed to create the organization workspace."}/><div className={styles.formGrid}>
+          <Field id="workspaceName" label={isIndividual?"Display name":"Organization name"} error={errors.workspaceName} className={styles.full}><input {...input("workspaceName")} maxLength={160} autoComplete={isIndividual?"name":"organization"} placeholder={isIndividual?"e.g. Ada’s teaching workspace":"e.g. Olabisi Onabanjo University"}/></Field>
+          {isIndividual?<Field id="profession" label="Profession"><output id="profession" className={styles.readOnly}><BriefcaseBusiness size={17}/>{profession?.label}</output></Field>:<Field id="organizationSubtype" label="Organization category" error={errors.organizationSubtype}><select {...input("organizationSubtype")}><option value="" disabled>Choose a category</option>{organizationSubtypes.map((option)=><option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>}
+          {!isIndividual?<Field id="legalName" label="Legal organization name" error={errors.legalName}><input {...input("legalName")} maxLength={200} autoComplete="organization" placeholder="Registered or official name"/></Field>:null}
+          {!isIndividual&&values.organizationType==="BANK_FINANCIAL"?<Field id="representativeName" label="Authorized representative" error={errors.representativeName} hint="This records the representative making the request; it does not verify the institution."><input {...input("representativeName")} maxLength={160} autoComplete="name" placeholder="Full name"/></Field>:null}
+          {isLecturer?<><Field id="teachingLevel" label="Teaching level" error={errors.teachingLevel}><input {...input("teachingLevel")} maxLength={100} placeholder="e.g. University undergraduate"/></Field><Field id="institutionName" label="Workplace or institution description" optional error={errors.institutionName} hint="Context only. It does not claim official affiliation."><input {...input("institutionName")} maxLength={160} placeholder="e.g. Independent lecturer"/></Field></>:null}
+          {isProfessionalService?<><Field id="serviceName" label="Service name" error={errors.serviceName}><input {...input("serviceName")} maxLength={160} placeholder="e.g. Consultations"/></Field><Field id="locationName" label="Authorized practice or service location" error={errors.locationName}><input {...input("locationName")} maxLength={160} placeholder="e.g. Main office"/></Field><Field id="locationAddress" label="Location address" error={errors.locationAddress} className={styles.full}><textarea {...input("locationAddress")} maxLength={500} rows={3} autoComplete="street-address" placeholder="Street address, city or town"/></Field></>:null}
+          <Field id="country" label="Country" error={errors.country}><select {...input("country")} autoComplete="country"><option value="" disabled>Choose a country</option>{countries.map((country)=><option key={country.code} value={country.code}>{country.name}</option>)}</select></Field>
+          <Field id="timezone" label="Timezone" error={errors.timezone}><select {...input("timezone")}>{timezones.map((timezone)=><option key={timezone} value={timezone}>{timezone.replaceAll("_"," ")}</option>)}</select></Field>
+        </div><div className={styles.notice}><ShieldCheck size={17}/><span>Your Clerk account remains your identity. TuRnMaRk does not create another login or infer authorization from an email domain.</span></div></section>:null}
 
-        {step === 4 && <section aria-labelledby="onboarding-step-title">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#db3f00]">Review</p>
-          <h2 id="onboarding-step-title" className="mt-3 text-3xl font-semibold text-[#17130f]">Ready to create your workspace?</h2>
-          <p className="mt-3 leading-7 text-muted">Review the details below. TuRnMaRk creates the workspace only after you confirm.</p>
-          <dl className="mt-8 divide-y divide-black/10 rounded-2xl border border-black/10 bg-white px-5 sm:px-7">
-            {[
-              ["Account type", accountLabel],
-              [isIndividual ? "Profession" : "Organization type", isIndividual ? profession?.label : organization?.label],
-              ["Workspace", values.workspaceName],
-              ...(isLecturer ? [["Teaching level", values.teachingLevel], ...(values.institutionName ? [["Institution (context only)", values.institutionName]] : [])] : []),
-              ...(isProfessionalService ? [["Service", values.serviceName]] : []),
-              ...(!isIndividual ? [["Legal name", values.legalName], ["Organization subtype", organizationSubtypes.find((option) => option.value === values.organizationSubtype)?.label], ...(values.representativeName ? [["Authorized representative", values.representativeName]] : []), ["Services to configure", organizationTemplates.filter((option) => selectedTemplates.has(option.value)).map((option) => option.label).join(", ")]] : []),
-              ["Country", countries.find(({ code }) => code === values.country)?.name],
-              ["Timezone", values.timezone.replaceAll("_", " ")],
-              ...(needsLocation ? [["First location", values.locationName], ["Address", values.locationAddress]] : []),
-            ].map(([label, value]) => <div key={label} className="grid gap-1 py-4 sm:grid-cols-[160px_1fr] sm:gap-5"><dt className="text-sm text-muted">{label}</dt><dd className="min-w-0 [overflow-wrap:anywhere] font-semibold text-[#17130f]">{value}</dd></div>)}
-          </dl>
-          <p className="mt-5 rounded-xl bg-[#fff0e5] p-4 text-sm leading-6 text-[#71300f]">{isIndividual ? "This personal workspace does not claim affiliation with an employer or institution." : values.organizationType === "BANK_FINANCIAL" ? "Official public activation stays paused until verification is complete." : "You can invite your team after this workspace is created."}</p>
-        </section>}
-      </fieldset>
+        {currentKey==="location"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="First location" title="Add your first location" description="Add the campus, branch, premises or service location where this workspace will operate."/><div className={styles.formGrid}><Field id="locationName" label="Location name" error={errors.locationName}><input {...input("locationName")} maxLength={160} placeholder="e.g. Main campus"/></Field><Field id="locationAddress" label="Address" error={errors.locationAddress} className={styles.full}><textarea {...input("locationAddress")} maxLength={500} rows={4} autoComplete="street-address" placeholder="Street address, city or town"/></Field><Field id="locationCountry" label="Country"><output id="locationCountry" className={styles.readOnly}><MapPin size={17}/>{countryName}</output></Field><Field id="locationTimezone" label="Timezone"><output id="locationTimezone" className={styles.readOnly}>{values.timezone.replaceAll("_"," ")}</output></Field></div></section>:null}
 
-      <div className="flex flex-col-reverse gap-3 border-t border-black/10 bg-[#fff8ef] p-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <button type="button" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0 || pending} className="min-h-12 rounded-xl border border-black/15 bg-white px-6 font-bold text-[#17130f] disabled:invisible">Back</button>
-        {step < 4 ? <button type="button" onClick={continueToNextStep} className="min-h-12 rounded-xl bg-[#ff5c1a] px-7 font-bold text-[#17130f] hover:bg-[#ed4d0d]">Continue</button> : <button type="submit" disabled={pending} className="min-h-12 rounded-xl bg-[#17130f] px-7 font-bold text-white hover:bg-[#2b241f] disabled:cursor-wait disabled:opacity-60">{pending ? "Creating workspace…" : "Create workspace"}</button>}
-      </div>
-      <p role="status" className="sr-only">{pending ? "Saving your workspace. Please wait." : ""}</p>
-    </form>
-  );
+        {currentKey==="services"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Services" title="What services will you offer?" description="Choose the templates relevant to your organization. These selections guide setup and never create active public queues."/><div id="serviceTemplates" tabIndex={-1} className={styles.serviceGrid} aria-invalid={errors.serviceTemplates?true:undefined} aria-describedby={errors.serviceTemplates?"serviceTemplates-error":undefined}>{organizationTemplates.map((option)=>{const Icon=serviceIcons[option.value]??Sparkles;return <label key={option.value} className={styles.service}><input type="checkbox" checked={selectedTemplates.has(option.value)} onChange={()=>toggleTemplate(option.value)}/><span className={styles.serviceMark}><Icon size={15}/></span><span>{option.label}</span><span className={styles.serviceBox}><Check size={13}/></span></label>})}</div>{errors.serviceTemplates?<p id="serviceTemplates-error" className={styles.fieldError}>{errors.serviceTemplates}</p>:null}</section>:null}
+
+        {currentKey==="workspace"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Workspace" title="Set up your workspace" description="Confirm the name people will recognize and how the first setup should begin."/><div className={styles.formGrid}><Field id="workspaceName" label="Workspace display name" error={errors.workspaceName} className={styles.full}><input {...input("workspaceName")} maxLength={160}/></Field><Field id="language" label="Preferred language"><output id="language" className={styles.readOnly}>English</output><p className={styles.fieldHint}>English is currently the supported workspace language.</p></Field></div><div className={styles.setupGrid}><div className={`${styles.setupCard} ${isIndividual?styles.setupCardSelected:styles.setupCardDisabled}`}><span className={styles.setupRadio}/><div><strong>Start with an empty workspace</strong><p>{isIndividual?"Create your first course, service or queue from the dashboard.":"Organization setup currently requires the service templates selected in the previous step."}</p></div></div><div className={`${styles.setupCard} ${!isIndividual?styles.setupCardSelected:styles.setupCardDisabled}`}><span className={styles.setupRadio}/><div><strong>Use recommended setup</strong><p>{!isIndividual?"Keep your selected services as setup guidance. No live queue is created.":"Recommended automation is not required for personal workspaces."}</p></div></div></div></section>:null}
+
+        {currentKey==="review"?<section className={styles.screen} aria-labelledby="onboarding-step-title"><ScreenHeader eyebrow="Final check" title="Review your information" description="Confirm every detail before creating the workspace. You can return to any section without losing progress."/><dl className={styles.review}><ReviewRow label="Account type" value={isIndividual?"Individual":"Organization"} onEdit={()=>goTo("account")}/><ReviewRow label={isIndividual?"Profession":"Organization type"} value={isIndividual?profession?.label:organization?.label} onEdit={()=>goTo(isIndividual?"profession":"organization")}/><ReviewRow label={isIndividual?"Display name":"Organization name"} value={values.workspaceName} onEdit={()=>goTo("details")}/>{isLecturer?<ReviewRow label="Teaching level" value={values.teachingLevel} onEdit={()=>goTo("details")}/>:null}{isProfessionalService?<ReviewRow label="Service" value={values.serviceName} onEdit={()=>goTo("details")}/>:null}{!isIndividual?<><ReviewRow label="Category" value={organizationSubtypes.find((option)=>option.value===values.organizationSubtype)?.label} onEdit={()=>goTo("details")}/><ReviewRow label="Location" value={`${values.locationName}, ${values.locationAddress}`} onEdit={()=>goTo("location")}/><ReviewRow label="Services" value={organizationTemplates.filter((option)=>selectedTemplates.has(option.value)).map((option)=>option.label).join(", ")} onEdit={()=>goTo("services")}/></>:null}<ReviewRow label="Country" value={countryName} onEdit={()=>goTo("details")}/><ReviewRow label="Timezone" value={values.timezone.replaceAll("_"," ")} onEdit={()=>goTo("details")}/><ReviewRow label="Workspace" value={values.workspaceName} onEdit={()=>goTo("workspace")}/></dl>{!isIndividual?<><label className={styles.declaration}><input id="authorizationDeclaration" type="checkbox" checked={values.authorizationDeclaration==="true"} onChange={(event)=>update("authorizationDeclaration",event.target.checked?"true":"")} aria-invalid={errors.authorizationDeclaration?true:undefined} aria-describedby={errors.authorizationDeclaration?"authorizationDeclaration-error":undefined}/><span>I confirm that I am authorized to register this organization and agree to the Terms of Service and Privacy Policy.</span></label>{errors.authorizationDeclaration?<p id="authorizationDeclaration-error" className={styles.fieldError}>{errors.authorizationDeclaration}</p>:null}</>:<div className={styles.notice}><ShieldCheck size={17}/><span>This is a personal professional workspace. It does not represent or verify an employer, institution, bank or regulator.</span></div>}</section>:null}
+      </div></fieldset>
+      <ActionFooter first={step===0} final={currentKey==="review"} pending={pending} onBack={()=>setStep((current)=>Math.max(0,current-1))} onContinue={nextStep}/>
+      <p role="status" className="sr-only">{pending?"Saving your workspace. Please wait.":""}</p>
+    </OnboardingFrame>
+  </form>;
 }

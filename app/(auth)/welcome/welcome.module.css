@@ -1,0 +1,72 @@
+.viewport {
+  min-height: 100dvh;
+  overflow-x: clip;
+  color: #111318;
+  background: #f5f3f2;
+  font-family: "Sora Variable", Sora, Arial, sans-serif;
+}
+
+.screen {
+  position: relative;
+  width: min(100%, 430px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  padding: max(28px, env(safe-area-inset-top)) 27px max(22px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 8% 82%, rgba(255, 171, 126, .2), transparent 23%),
+    #fff;
+}
+
+.header { display: flex; min-height: 44px; align-items: center; justify-content: space-between; }
+.brand { transform: scale(.84); transform-origin: left center; }
+.skip { display: inline-flex; min-width: 54px; min-height: 42px; align-items: center; justify-content: center; border-radius: 999px; color: #111318; background: #fff1eb; font-size: 14px; font-weight: 700; text-decoration: none; }
+
+.intro { margin-top: 25px; }
+.eyebrow { color: #ef5427; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; }
+.eyebrow span { color: #ff6b2b; padding: 0 4px; }
+.intro h1 { margin: 18px 0 0; font-size: clamp(43px, 12vw, 50px); font-weight: 800; line-height: .99; letter-spacing: -.065em; }
+.intro h1 strong { color: #f4512c; font-weight: inherit; }
+.description { max-width: 355px; margin-top: 14px; color: #696a73; font-size: 15px; line-height: 1.52; letter-spacing: -.02em; }
+
+.visual { position: relative; height: 300px; margin: 5px -27px 0; overflow: hidden; }
+.orangeShape { position: absolute; z-index: 0; top: 0; right: -82px; width: 300px; height: 285px; border-radius: 48% 0 0 48%; background: linear-gradient(145deg, #ffb174 0%, #ff7b3f 48%, #ff4f26 100%); }
+.orangeShape::after { content: ""; position: absolute; left: -182px; bottom: -62px; width: 260px; height: 110px; border-radius: 50% 50% 0 0; background: linear-gradient(145deg, #ffe4d3, #ff9d6d); transform: rotate(-13deg); }
+.benefits { position: absolute; z-index: 3; top: 15px; left: 27px; display: grid; width: 190px; gap: 24px; margin: 0; padding: 0; list-style: none; }
+.benefits li { display: grid; grid-template-columns: 49px 1fr; align-items: center; gap: 11px; }
+.icon { display: grid; width: 44px; height: 44px; place-items: center; border: 1.5px solid #f4512c; border-radius: 13px; color: #f4512c; background: rgba(255, 255, 255, .92); }
+.benefits strong, .benefits small { display: block; }
+.benefits strong { font-size: 14px; line-height: 1.08; letter-spacing: -.035em; }
+.benefits small { margin-top: 3px; color: #70717a; font-size: 10px; line-height: 1.35; letter-spacing: -.025em; }
+.receptionist { position: absolute; z-index: 2; top: -25px; right: -65px; width: 330px; height: auto; object-fit: contain; }
+
+.quote { position: relative; z-index: 5; display: grid; grid-template-columns: 44px 1fr; gap: 13px; min-height: 88px; margin: -3px 0 0; padding: 14px 17px; border: 1px solid #ebe8e7; border-radius: 21px; background: rgba(255, 255, 255, .97); box-shadow: 0 10px 25px rgba(50, 32, 22, .06); }
+.quote > span { display: grid; width: 39px; height: 39px; place-items: center; border-radius: 50%; color: #ff5e25; background: #fff0e8; font-size: 30px; font-weight: 800; line-height: 1; }
+.quote blockquote { margin: 0; font-size: 11px; font-weight: 650; line-height: 1.5; letter-spacing: -.02em; }
+.quote figcaption { margin-top: 4px; color: #8b8a91; font-size: 9px; }
+
+.pagination { display: flex; height: 24px; align-items: center; justify-content: center; gap: 13px; }
+.pagination span { width: 8px; height: 8px; border-radius: 50%; background: #ebe9eb; }
+.pagination .active { background: #ff5a28; }
+
+.getStarted { display: flex; width: 100%; min-height: 57px; align-items: center; justify-content: center; gap: 18px; border-radius: 999px; color: #fff; background: linear-gradient(105deg, #ff5a16 0%, #ff3d18 100%); box-shadow: 0 15px 28px rgba(255, 75, 27, .18); font-size: 16px; font-weight: 700; text-decoration: none; }
+.getStarted:active { transform: translateY(1px); }
+
+@media (max-width: 370px) {
+  .screen { padding-inline: 22px; }
+  .intro { margin-top: 20px; }
+  .intro h1 { font-size: 40px; }
+  .description { font-size: 14px; }
+  .visual { height: 300px; margin-inline: -22px; }
+  .benefits { left: 22px; width: 178px; gap: 19px; }
+  .receptionist { right: -48px; width: 306px; }
+}
+
+@media (min-width: 431px) {
+  .viewport { padding: 24px; }
+  .screen { min-height: min(900px, calc(100dvh - 48px)); border-radius: 32px; box-shadow: 0 25px 70px rgba(61, 35, 24, .12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .getStarted:active { transform: none; }
+}
