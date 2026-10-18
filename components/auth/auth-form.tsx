@@ -7,6 +7,7 @@ import { ClerkFailed, ClerkLoaded, ClerkLoading, SignIn, SignUp, useSignIn, useS
 import { safeAuthReturn } from "@/lib/school-student/return-url";
 import { publicEnv } from "@/lib/env";
 import { QrLoader } from "@/components/ui/loading";
+import { authErrorMessage, isValidAuthEmail, normalizeAuthEmail } from "@/lib/auth/ui";
 
 function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const { isSignedIn } = useAuth();
@@ -36,6 +37,11 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (busy) return; setBusy(true); setError("");
     try {
+      if (!sent && channel === "email") {
+        const normalized = normalizeAuthEmail(email);
+        if (!isValidAuthEmail(normalized)) { setError("Enter a valid email address."); return; }
+        setEmail(normalized);
+      }
       if (!sent) { await send(); return; }
       const flow = mode === "sign-in" ? signIn : signUp;
       const result = mode === "sign-in" ? (channel === "phone" ? await signIn.phoneCode.verifyCode({ code }) : await signIn.emailCode.verifyCode({ code })) : (channel === "phone" ? await signUp.verifications.verifyPhoneCode({ code }) : await signUp.verifications.verifyEmailCode({ code }));
@@ -47,7 +53,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         } });
         if (finalized.error) throw new Error(finalized.error.message);
       } else { setAdvanced(true); }
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to sign in. Please try again."); }
+    } catch (cause) { setError(authErrorMessage(cause, sent ? "verify" : mode)); }
     finally { setBusy(false); }
   }
   if (isSignedIn && !advanced) return <Link className="button-primary" href={returnTo}>Continue to TuRnMaRk</Link>;
