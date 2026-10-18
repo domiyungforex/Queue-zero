@@ -30,7 +30,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       const result = channel === "phone" ? await signIn.phoneCode.sendCode({ phoneNumber: address }) : await signIn.emailCode.sendCode({ emailAddress: address });
       if (result.error) throw new Error(result.error.message);
     } else {
-      if (!sent) { const result = await signUp.create(channel === "phone" ? { phoneNumber: email } : { emailAddress: email }); if (result.error) throw new Error(result.error.message); }
+      if (!sent) { const result = await signUp.create(channel === "phone" ? { phoneNumber: address } : { emailAddress: address }); if (result.error) throw new Error(result.error.message); }
       const result = channel === "phone" ? await signUp.verifications.sendPhoneCode() : await signUp.verifications.sendEmailCode();
       if (result.error) throw new Error(result.error.message);
     }
@@ -51,7 +51,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       const flow = mode === "sign-in" ? signIn : signUp;
       const result = mode === "sign-in" ? (channel === "phone" ? await signIn.phoneCode.verifyCode({ code }) : await signIn.emailCode.verifyCode({ code })) : (channel === "phone" ? await signUp.verifications.verifyPhoneCode({ code }) : await signUp.verifications.verifyEmailCode({ code }));
       if (result.error) throw new Error(result.error.message);
-      if (flow.status === "complete") {
+      if (result.status === "complete") {
         const finalized = await flow.finalize({ navigate: ({ session, decorateUrl }) => {
           if (session.currentTask) { setAdvanced(true); return; }
           window.location.assign(decorateUrl(returnTo));
