@@ -1,6 +1,19 @@
+import { CalendarCheck, ChevronRight, FileDown } from "lucide-react";
 import Link from "next/link";
-import { getSchoolSnapshot } from "@/lib/school/data";
+import { EducationEmpty, EducationHeading } from "@/components/school/education-ui";
+import styles from "@/components/school/education-pages.module.css";
 import { schoolTime } from "@/lib/school/contracts";
-import { EmptyState, PageHeading } from "@/components/ui/workspace";
-import "@/components/school/school.css";
-export default async function ExportsPage() { const { snapshot: data } = await getSchoolSnapshot(); const classes = data.classes.filter(item => item.status === "COMPLETED"); return <><PageHeading eyebrow="OFFICIAL RECORDS" title="Attendance, ready to share." description="Download finalized attendance registers. Access is checked again for every export." />{classes.length ? <div className="school-table-wrap"><table className="school-table"><thead><tr><th>Course</th><th>Class start (UTC)</th><th>Register</th></tr></thead><tbody>{classes.map(session => <tr key={session.id}><th>{data.courses.find(course => course.id === session.course_id)?.code}</th><td>{schoolTime(session.starts_at)}</td><td><Link href={`/dashboard/attendance/${session.id}`}>Open register & exports →</Link></td></tr>)}</tbody></table></div> : <EmptyState title="No finalized registers" description="End a class to generate its official attendance register." href="/dashboard/attendance" label="Open attendance" />}</>; }
+import { getSchoolSnapshot } from "@/lib/school/data";
+
+export default async function ExportsPage() {
+  const { snapshot: data } = await getSchoolSnapshot();
+  const classes = data.classes.filter((item) => item.status === "COMPLETED").sort((a, b) => (b.starts_at ?? "").localeCompare(a.starts_at ?? ""));
+  return <main className={styles.page}>
+    <EducationHeading eyebrow="REPORTS" title="Reports" description="Finalized attendance records, ready to review and export." />
+    {classes.length ? <section className={styles.panel}><header className={styles.panelHeader}><div><h2>Recent reports</h2><p>Access is checked again for every register and export.</p></div><FileDown size={20} aria-hidden="true" /></header>{classes.map((session) => {
+      const course = data.courses.find((item) => item.id === session.course_id);
+      const records = data.attendance.filter((item) => item.class_session_id === session.id);
+      return <Link className={styles.reportRow} href={`/dashboard/attendance/${session.id}`} key={session.id}><span><strong>{course?.code ?? "Class"} · {course?.title ?? "Attendance register"}</strong><span>{schoolTime(session.starts_at)} · {records.length} {records.length === 1 ? "record" : "records"}</span></span><ChevronRight className={styles.chevron} size={17} aria-hidden="true" /></Link>;
+    })}</section> : <EducationEmpty title="No finalized registers" description="Finish your first class to create an official attendance report." href="/dashboard/attendance" label="Open attendance" icon={CalendarCheck} />}
+  </main>;
+}

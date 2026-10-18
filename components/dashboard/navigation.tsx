@@ -101,7 +101,7 @@ export function DashboardNavigation({
       );
     }
     if (manager || (institution && institutionStaffManagement)) links.push({ href: institution ? "/dashboard/people" : "/dashboard/team", label: "Staff & roles", icon: UsersRound });
-    if (manager || teaching) links.push({ href: manager ? "/dashboard/analytics" : "/dashboard/exports", label: "Reports", icon: FileText });
+    if (manager || teaching) links.push({ href: education ? "/dashboard/exports" : manager ? "/dashboard/analytics" : "/dashboard/exports", label: "Reports", icon: FileText });
   }
 
   if (owner) {
@@ -111,15 +111,27 @@ export function DashboardNavigation({
     );
   }
 
-  const active = (href: string) => href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+  const moreRoutes = ["/dashboard/more", "/dashboard/team", "/dashboard/settings", "/dashboard/exports", "/dashboard/billing"];
+  const active = (href: string) => href === "/dashboard" ? pathname === href : href === "/dashboard/more" ? moreRoutes.some((route) => pathname.startsWith(route)) : pathname.startsWith(href);
   if (variant === "desktop") return <nav aria-label="Workspace navigation" className={styles.desktopNav}>
     {links.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={18} />{link.label}</Link>)}
   </nav>;
 
+  if (education) {
+    const educationLinks: NavigationLink[] = [
+      { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+      { href: "/dashboard/classes", label: "Classes", icon: CalendarDays },
+      { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardCheck },
+      { href: "/dashboard/students", label: "Students", icon: UsersRound },
+      { href: "/dashboard/more", label: "More", icon: MoreHorizontal },
+    ];
+    return <nav aria-label="Mobile workspace navigation" className={styles.mobileNav}>
+      {educationLinks.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={19} />{link.label}</Link>)}
+    </nav>;
+  }
+
   const preferred = individualService
     ? ["Home", "Services", "Queues", "Customers", "Analytics"]
-    : education
-    ? ["Home", "Classes", "Attendance", "Students"]
     : ["Home", "Queues", "Services", "Customers"];
   const primary = preferred.map((label) => links.find((link) => link.label === label)).filter((link): link is NavigationLink => Boolean(link));
   const secondary = links.filter((link) => !primary.includes(link));

@@ -1,7 +1,37 @@
+import { ChevronRight, Plus, Search, UsersRound } from "lucide-react";
 import Link from "next/link";
-import { getSchoolSnapshot } from "@/lib/school/data";
-import { EnrollmentForm } from "@/components/school/forms";
 import { LiveRefresh } from "@/components/realtime/refresh";
-import { EmptyState, PageHeading } from "@/components/ui/workspace";
-import "@/components/school/school.css";
-export default async function StudentsPage() { const { snapshot: data, canManage } = await getSchoolSnapshot(); return <><PageHeading eyebrow={data.organization.mode === "HYBRID" ? "PEOPLE" : "STUDENTS"} title="Your student register." description="The official roster uses student names and matric numbers. Students do not need TuRnMaRk accounts to mark attendance." action={data.organization.mode === "HYBRID" && canManage ? <Link href="/dashboard/customers" className="button-secondary">Customer visits</Link> : undefined} /><LiveRefresh topic={`school:${data.organization.id}`} authenticated />{data.students.length ? <div className="school-table-wrap"><table className="school-table"><thead><tr><th>Name</th><th>Matric number</th><th>Department</th><th>Level</th><th>Courses</th></tr></thead><tbody>{data.students.map(student => <tr key={student.id}><th>{student.full_name}</th><td>{student.matric_number}</td><td>{data.departments.find(item => item.id === student.department_id)?.name}</td><td>{student.level === "UNSPECIFIED" ? "—" : student.level}</td><td>{data.enrollments.filter(item => item.student_id === student.id).map(item => data.courses.find(course => course.id === item.course_id)?.code).join(", ")}</td></tr>)}</tbody></table></div> : <EmptyState title="No enrolled students yet" description="Import the official course roster with each student’s name and matric number." />}{data.courses.length > 0 && <EnrollmentForm snapshot={data} />}</>; }
+import { EducationEmpty, EducationHeading, EducationStatus, initials } from "@/components/school/education-ui";
+import styles from "@/components/school/education-pages.module.css";
+import { EnrollmentForm } from "@/components/school/forms";
+import { getSchoolSnapshot } from "@/lib/school/data";
+
+type StudentFilter = "all" | "present" | "absent" | "late";
+const tone = (status?: string) => status === "PRESENT" ? "success" as const : status === "ABSENT" ? "warning" as const : status === "LATE" ? "warning" as const : "muted" as const;
+
+export default async function StudentsPage({ searchParams = Promise.resolve({}) }: { searchParams?: Promise<{ q?: string; filter?: string }> } = {}) {
+  const [{ snapshot: data }, query] = await Promise.all([getSchoolSnapshot(), searchParams]);
+  const search = query.q?.trim().toLocaleLowerCase() ?? "";
+  const filter: StudentFilter = ["present", "absent", "late"].includes(query.filter ?? "") ? query.filter as StudentFilter : "all";
+  const latestByStudent = new Map<string, (typeof data.attendance)[number]>();
+  for (const record of data.attendance.slice().sort((a, b) => (b.check_in_at ?? "").localeCompare(a.check_in_at ?? ""))) if (!latestByStudent.has(record.student_id)) latestByStudent.set(record.student_id, record);
+  const students = data.students.filter((student) => {
+    const status = latestByStudent.get(student.id)?.status.toLocaleLowerCase();
+    const matches = !search || `${student.full_name} ${student.matric_number}`.toLocaleLowerCase().includes(search);
+    return matches && (filter === "all" || status === filter);
+  });
+  const tabs: { value: StudentFilter; label: string }[] = [{ value: "all", label: "All" }, { value: "present", label: "Present" }, { value: "absent", label: "Absent" }, { value: "late", label: "Late" }];
+
+  return <main className={styles.page}>
+    <EducationHeading eyebrow="STUDENTS" title="Students" description="Manage your students and view details." action={data.courses.length ? <a className={styles.primary} href="#import-roster"><Plus size={18} aria-hidden="true" />Add students</a> : undefined} />
+    <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
+    <form className={styles.toolbar} role="search"><label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">Search students</span><input name="q" type="search" defaultValue={query.q} placeholder="Search students…" /><input type="hidden" name="filter" value={filter} /></label><button className={styles.secondary} type="submit">Search</button></form>
+    <nav className={styles.filters} aria-label="Filter students">{tabs.map((tab) => <Link className={styles.tab} data-active={filter === tab.value} key={tab.value} href={{ pathname: "/dashboard/students", query: { ...(query.q ? { q: query.q } : {}), ...(tab.value === "all" ? {} : { filter: tab.value }) } }}>{tab.label}</Link>)}</nav>
+    {students.length ? <section className={styles.panel} aria-label="Students"><ul className={styles.rows}>{students.map((student) => {
+      const latest = latestByStudent.get(student.id);
+      const courseCodes = data.enrollments.filter((item) => item.student_id === student.id).map((item) => data.courses.find((course) => course.id === item.course_id)?.code).filter(Boolean).join(", ");
+      return <li key={student.id}><span className={styles.avatar}>{initials(student.full_name)}</span><span className={styles.rowMain}><strong>{student.full_name}</strong><span>{student.matric_number} · {courseCodes || "No class assigned"}</span></span><span className={styles.rowEnd}>{latest ? <EducationStatus tone={tone(latest.status)}>{latest.status.replaceAll("_", " ")}</EducationStatus> : <EducationStatus tone="muted">No record</EducationStatus>}</span><ChevronRight className={styles.chevron} size={17} aria-hidden="true" /></li>;
+    })}</ul></section> : <EducationEmpty title={search || filter !== "all" ? "No matching students" : "No students yet"} description={search || filter !== "all" ? "Try another search or attendance status." : "Import the official roster with each student’s name and matric number."} href={data.courses.length ? "#import-roster" : "/dashboard/courses?create=1#course-setup"} label={data.courses.length ? "Add students" : "Create a class"} icon={UsersRound} />}
+    {data.courses.length ? <section id="import-roster" className={`${styles.panel} ${styles.formWrap}`}><EnrollmentForm snapshot={data} /></section> : null}
+  </main>;
+}

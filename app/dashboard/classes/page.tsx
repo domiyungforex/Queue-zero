@@ -1,32 +1,59 @@
+import { BookOpen, CalendarClock, ChevronRight, Plus, Search, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { LiveRefresh } from "@/components/realtime/refresh";
-import { EmptyState, PageHeading, StatusPill } from "@/components/ui/workspace";
-import { schoolTime } from "@/lib/school/contracts";
+import { EducationEmpty, EducationHeading, EducationStatus, formatTime } from "@/components/school/education-ui";
+import styles from "@/components/school/education-pages.module.css";
 import { getSchoolSnapshot } from "@/lib/school/data";
-import "@/components/school/school.css";
 
-export default async function ClassesPage() {
-  const { snapshot } = await getSchoolSnapshot();
-  const classes = snapshot.classes.slice().sort((first, second) => (second.starts_at ?? "").localeCompare(first.starts_at ?? ""));
-  const courseById = new Map(snapshot.courses.map((course) => [course.id, course]));
-  const arrivalsByClass = new Map<string, number>();
-  for (const record of snapshot.attendance) {
-    if (record.check_in_at) arrivalsByClass.set(record.class_session_id, (arrivalsByClass.get(record.class_session_id) ?? 0) + 1);
-  }
+type ClassFilter = "all" | "upcoming" | "ongoing" | "past";
 
-  return <>
-    <PageHeading eyebrow="CLASSES" title="Every class session, in one place." description="Start a class from its course, then manage the attendance window and live register here." action={<Link className="button-primary" href="/dashboard/courses">Manage courses</Link>} />
+function sessionGroup(status: string): ClassFilter {
+  if (status === "OPEN") return "ongoing";
+  if (status === "COMPLETED") return "past";
+  return "upcoming";
+}
+
+function statusView(status?: string) {
+  if (status === "OPEN") return { label: "Live", tone: "success" as const };
+  if (status === "COMPLETED") return { label: "Completed", tone: "muted" as const };
+  return { label: status ? "Upcoming" : "No session", tone: "info" as const };
+}
+
+export default async function ClassesPage({ searchParams = Promise.resolve({}) }: { searchParams?: Promise<{ q?: string; filter?: string }> } = {}) {
+  const [{ snapshot }, query] = await Promise.all([getSchoolSnapshot(), searchParams]);
+  const search = query.q?.trim().toLocaleLowerCase() ?? "";
+  const filter: ClassFilter = ["upcoming", "ongoing", "past"].includes(query.filter ?? "") ? query.filter as ClassFilter : "all";
+  const sessionsByCourse = new Map(snapshot.courses.map((course) => [course.id, snapshot.classes.filter((session) => session.course_id === course.id).sort((a, b) => (b.starts_at ?? "").localeCompare(a.starts_at ?? ""))]));
+  const courses = snapshot.courses.filter((course) => {
+    const sessions = sessionsByCourse.get(course.id) ?? [];
+    const latest = sessions.find((session) => session.status === "OPEN") ?? sessions[0];
+    return (!search || `${course.code} ${course.title}`.toLocaleLowerCase().includes(search)) && (filter === "all" || (latest && sessionGroup(latest.status) === filter));
+  });
+  const tabs: { value: ClassFilter; label: string }[] = [{ value: "all", label: "All" }, { value: "upcoming", label: "Upcoming" }, { value: "ongoing", label: "Ongoing" }, { value: "past", label: "Past" }];
+
+  return <main className={styles.page}>
+    <EducationHeading eyebrow="CLASSES" title="Classes" description="Manage your classes, schedules and students." action={<Link className={styles.primary} href="/dashboard/courses?create=1#course-setup"><Plus size={18} aria-hidden="true" />Create class</Link>} />
     <LiveRefresh topic={`school:${snapshot.organization.id}`} authenticated />
-    {classes.length ? <div className="school-grid">
-      {classes.map((session) => {
-        const course = courseById.get(session.course_id);
-        const arrivals = arrivalsByClass.get(session.id) ?? 0;
-        return <Link className="school-card" key={session.id} href={`/dashboard/attendance/${session.id}`}>
-          <div className="flex items-start justify-between gap-3"><h2>{course?.code ?? "Class"}</h2><StatusPill status={session.status.toLowerCase()} /></div>
-          <p>{course?.title ?? "Course session"}</p>
-          <p>{schoolTime(session.starts_at)} · {arrivals} {arrivals === 1 ? "arrival" : "arrivals"}</p>
+    <form className={styles.toolbar} role="search">
+      <label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">Search classes</span><input name="q" type="search" defaultValue={query.q} placeholder="Search classes…" /><input type="hidden" name="filter" value={filter} /></label>
+      <button className={styles.secondary} type="submit">Search</button>
+    </form>
+    <nav className={styles.filters} aria-label="Filter classes">
+      {tabs.map((tab) => <Link className={styles.tab} data-active={filter === tab.value} key={tab.value} href={{ pathname: "/dashboard/classes", query: { ...(query.q ? { q: query.q } : {}), ...(tab.value === "all" ? {} : { filter: tab.value }) } }}>{tab.label}</Link>)}
+    </nav>
+    {courses.length ? <section className={styles.grid} aria-label="Classes">
+      {courses.map((course) => {
+        const sessions = sessionsByCourse.get(course.id) ?? [];
+        const session = sessions.find((item) => item.status === "OPEN") ?? sessions[0];
+        const roster = (snapshot.enrollments ?? []).filter((item) => item.course_id === course.id).length;
+        const arrivals = session ? snapshot.attendance.filter((item) => item.class_session_id === session.id && item.check_in_at).length : 0;
+        const status = statusView(session?.status);
+        return <Link className={styles.card} href={session?.status === "OPEN" ? `/dashboard/attendance/${session.id}` : `/dashboard/courses/${course.id}`} key={course.id}>
+          <span className={styles.icon}><BookOpen size={21} aria-hidden="true" /></span>
+          <span className={styles.cardCopy}><strong>{course.code}</strong><span>{course.title}</span><span className={styles.meta}><UsersRound size={13} aria-hidden="true" />{session?.status === "OPEN" ? `${arrivals} ${arrivals === 1 ? "arrival" : "arrivals"}` : `${roster} ${roster === 1 ? "student" : "students"}`}<CalendarClock size={13} aria-hidden="true" />{formatTime(session?.starts_at ?? null)}</span></span>
+          <span><EducationStatus tone={status.tone}>{status.label}</EducationStatus><ChevronRight className={styles.chevron} size={18} aria-hidden="true" /></span>
         </Link>;
       })}
-    </div> : <EmptyState title="No classes yet" description="Create a course, add its roster and start your first class session." href="/dashboard/courses" label="Open courses" />}
-  </>;
+    </section> : <EducationEmpty title={search || filter !== "all" ? "No matching classes" : "No classes yet"} description={search || filter !== "all" ? "Try another search or class status." : "Create your course structure, add students and schedule the first class."} href="/dashboard/courses?create=1#course-setup" label="Create class" icon={BookOpen} />}
+  </main>;
 }
