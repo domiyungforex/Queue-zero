@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { AuthForm } from "@/components/auth/auth-form";
-import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthEntry } from "@/components/auth/auth-entry";
+
 import { publicEnv } from "@/lib/env";
 import { safeAuthReturn } from "@/lib/school-student/return-url";
 
@@ -17,9 +17,5 @@ export default async function Page({ searchParams }: PageProps = {}) {
     redirect(safeAuthReturn(typeof redirectUrl === "string" ? redirectUrl : null, "/dashboard", publicEnv.NEXT_PUBLIC_APP_URL));
   }
 
-  return (
-    <AuthShell title="Welcome back" description="Sign in to your TuRnMaRk account.">
-      <AuthForm mode="sign-in" />
-    </AuthShell>
-  );
+  return <AuthEntry />;
 }
