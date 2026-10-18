@@ -23,9 +23,10 @@ export default async function Page({ searchParams }: DashboardPageProps = {}) {
   const organizationStatus = organizationProfile ? <OrganizationSetupStatus profile={organizationProfile} /> : null;
 
   if (membership.role === "student") return <>{success}<PageHeading eyebrow="YOUR WORKSPACE" title={membership.businessName} description="Use the workspace switcher above to move between organizations you belong to." /></>;
+  const educationWorkspace = membership.organizationMode === "SCHOOL" || membership.organizationMode === "HYBRID" || membership.organizationType === "UNIVERSITY_SCHOOL";
+  if (educationWorkspace && membership.role !== "staff") return <>{success}{organizationStatus}<SchoolOverview individual={membership.workspaceOwnership === "INDIVIDUAL"} /></>;
   if (membership.institutionType) return <>{success}{organizationStatus}<InstitutionOverview /></>;
   if (membership.workspaceOwnership === "INDIVIDUAL" && membership.professionalCategory && membership.professionalCategory !== "LECTURER_TEACHER") return <>{success}<ProfessionalOverview category={membership.professionalCategory} canManage={membership.role === "owner" || membership.role === "admin"} /></>;
-  if ((membership.organizationMode === "SCHOOL" || membership.organizationMode === "HYBRID") && membership.role !== "staff") return <>{success}<SchoolOverview individual={membership.workspaceOwnership === "INDIVIDUAL"} /></>;
 
   const [queues, metrics] = await Promise.all([getDashboardQueues(), getBusinessMetrics()]);
   const openQueues = queues.filter((queue) => queue.status === "open").length;
