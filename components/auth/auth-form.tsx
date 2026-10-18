@@ -51,7 +51,7 @@ function CodeForm({ mode, startAdvanced = false }: { mode: "sign-in" | "sign-up"
       const flow = mode === "sign-in" ? signIn : signUp;
       const result = mode === "sign-in" ? (channel === "phone" ? await signIn.phoneCode.verifyCode({ code }) : await signIn.emailCode.verifyCode({ code })) : (channel === "phone" ? await signUp.verifications.verifyPhoneCode({ code }) : await signUp.verifications.verifyEmailCode({ code }));
       if (result.error) throw new Error(result.error.message);
-      if (result.status === "complete") {
+      if (flow.status === "complete") {
         const finalized = await flow.finalize({ navigate: ({ session, decorateUrl }) => {
           if (session.currentTask) { setAdvanced(true); return; }
           window.location.assign(decorateUrl(returnTo));
