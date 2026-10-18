@@ -23,9 +23,9 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const [error, setError] = useState("");
   const [advanced, setAdvanced] = useState(false);
   const other = mode === "sign-in" ? "sign-up" : "sign-in";
-  async function send() {
+  async function send(address = email) {
     if (mode === "sign-in") {
-      const result = channel === "phone" ? await signIn.phoneCode.sendCode({ phoneNumber: email }) : await signIn.emailCode.sendCode({ emailAddress: email });
+      const result = channel === "phone" ? await signIn.phoneCode.sendCode({ phoneNumber: address }) : await signIn.emailCode.sendCode({ emailAddress: address });
       if (result.error) throw new Error(result.error.message);
     } else {
       if (!sent) { const result = await signUp.create(channel === "phone" ? { phoneNumber: email } : { emailAddress: email }); if (result.error) throw new Error(result.error.message); }
@@ -37,12 +37,14 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (busy) return; setBusy(true); setError("");
     try {
+      let address = email;
       if (!sent && channel === "email") {
         const normalized = normalizeAuthEmail(email);
         if (!isValidAuthEmail(normalized)) { setError("Enter a valid email address."); return; }
         setEmail(normalized);
+        address = normalized;
       }
-      if (!sent) { await send(); return; }
+      if (!sent) { await send(address); return; }
       const flow = mode === "sign-in" ? signIn : signUp;
       const result = mode === "sign-in" ? (channel === "phone" ? await signIn.phoneCode.verifyCode({ code }) : await signIn.emailCode.verifyCode({ code })) : (channel === "phone" ? await signUp.verifications.verifyPhoneCode({ code }) : await signUp.verifications.verifyEmailCode({ code }));
       if (result.error) throw new Error(result.error.message);
