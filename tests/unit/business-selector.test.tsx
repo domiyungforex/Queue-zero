@@ -35,11 +35,12 @@ describe("BusinessSelector", () => {
   });
 
   it("renders the compact mobile selector with only authorized memberships", () => {
-    render(<MobileWorkspaceSwitcher businessId="personal" memberships={[
+    render(<MobileWorkspaceSwitcher businessId="personal" contextLabel="Lecturer · School" education memberships={[
       { businessId: "personal", businessName: "My practice", workspaceOwnership: "INDIVIDUAL", role: "owner" },
       { businessId: "clinic", businessName: "General Clinic", workspaceOwnership: "ORGANIZATION", role: "staff" },
     ]} />);
     expect(screen.getAllByText("My practice")).toHaveLength(2);
+    expect(screen.getByText("Lecturer · School")).toBeTruthy();
     expect(screen.getAllByText(/Personal Workspace/).length).toBeGreaterThan(0);
     expect(screen.getByText("General Clinic")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Add workspace" }).getAttribute("href")).toBe("/onboarding?new=workspace");

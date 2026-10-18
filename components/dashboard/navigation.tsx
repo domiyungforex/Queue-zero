@@ -58,7 +58,7 @@ export function DashboardNavigation({
   const owner = role === "owner";
   const individualLecturer = workspaceOwnership === "INDIVIDUAL" && professionalCategory === "LECTURER_TEACHER";
   const individualService = workspaceOwnership === "INDIVIDUAL" && Boolean(professionalCategory) && !individualLecturer;
-  const education = mode !== "BUSINESS" || organizationType === "UNIVERSITY_SCHOOL";
+  const education = mode !== "BUSINESS" || organizationType === "UNIVERSITY_SCHOOL" || individualLecturer;
   const teaching = education && (manager || role === "lecturer" || institutionTeaching);
   const links: NavigationLink[] = [];
 

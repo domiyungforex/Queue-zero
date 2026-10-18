@@ -28,9 +28,14 @@ type Props = {
   institutionTeaching: boolean;
   institutionStaffManagement: boolean;
   userName?: string | null;
+  userImageUrl?: string | null;
 };
 
-export function WorkspaceDashboardShell({ children, membership, memberships, institutionTeaching, institutionStaffManagement, userName }: Props) {
+function titleCase(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export function WorkspaceDashboardShell({ children, membership, memberships, institutionTeaching, institutionStaffManagement, userName, userImageUrl }: Props) {
   const navigation = {
     role: membership.role,
     mode: membership.organizationMode,
@@ -41,7 +46,7 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
     institutionTeaching,
     institutionStaffManagement,
   };
-  const roleLabel = membership.role.replaceAll("_", " ");
+  const roleLabel = titleCase(membership.role);
   const initials = (userName ?? membership.businessName).split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
   const wordmark = TURNMARK_ASSETS.branding.wordmark;
   const education = membership.organizationMode === "SCHOOL" || membership.organizationMode === "HYBRID" || membership.organizationType === "UNIVERSITY_SCHOOL" || membership.professionalCategory === "LECTURER_TEACHER";
@@ -62,9 +67,9 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
       </header>
       <header className={styles.mobileHeader}>
         <a className={styles.mobileBrand} href="/dashboard" aria-label="TuRnMaRk dashboard"><Image src={wordmark.src} width={wordmark.width} height={wordmark.height} alt={wordmark.alt} priority /></a>
-        <MobileWorkspaceSwitcher businessId={membership.businessId} memberships={memberships} />
+        <MobileWorkspaceSwitcher businessId={membership.businessId} memberships={memberships} contextLabel={education ? `${roleLabel} · School` : undefined} education={education} />
         <span className={styles.mobileNotifications} aria-label="Workspace notifications"><Bell size={20} aria-hidden="true" /></span>
-        <details className={styles.mobileAccount}><summary aria-label="Open account menu">{initials || "TM"}</summary><div className={styles.mobileAccountMenu}>
+        <details className={styles.mobileAccount}><summary aria-label="Open account menu">{userImageUrl ? <Image src={userImageUrl} width={36} height={36} alt="" unoptimized /> : initials || "TM"}</summary><div className={styles.mobileAccountMenu}>
           {membership.role === "owner" && <><a href="/dashboard/settings"><Settings2 size={16} aria-hidden="true" />Workspace settings</a><a href="/dashboard/billing"><CreditCard size={16} aria-hidden="true" />Billing</a></>}
           <a href="/onboarding?new=workspace">Add workspace</a>
           <AuthNavigation showDashboard={false} />
