@@ -19,6 +19,7 @@ export default async function Page({ searchParams }: PageProps = {}) {
 
   return (
     <AuthShell title="Create your TuRnMaRk account" description="Use your email address to get started." visual="student">
+    <AuthShell title="Create your account" description="Just a few details to get started">
       <AuthForm mode="sign-up" />
     </AuthShell>
   );

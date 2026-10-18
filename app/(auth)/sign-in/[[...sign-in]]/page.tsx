@@ -3,6 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
 import { WelcomeBackShell } from "@/components/auth/welcome-back-shell";
+import { AuthEntry } from "@/components/auth/auth-entry";
+
 import { publicEnv } from "@/lib/env";
 import { safeAuthReturn } from "@/lib/school-student/return-url";
 
@@ -22,4 +24,5 @@ export default async function Page({ searchParams }: PageProps = {}) {
       <AuthForm mode="sign-in" />
     </WelcomeBackShell>
   );
+  return <AuthEntry />;
 }
