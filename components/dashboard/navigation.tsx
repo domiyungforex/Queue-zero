@@ -116,13 +116,15 @@ export function DashboardNavigation({
     {links.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={18} />{link.label}</Link>)}
   </nav>;
 
-  const preferred = education
+  const preferred = individualService
+    ? ["Home", "Services", "Queues", "Customers", "Analytics"]
+    : education
     ? ["Home", "Classes", "Attendance", "Students"]
     : ["Home", "Queues", "Services", "Customers"];
   const primary = preferred.map((label) => links.find((link) => link.label === label)).filter((link): link is NavigationLink => Boolean(link));
   const secondary = links.filter((link) => !primary.includes(link));
   return <nav aria-label="Mobile workspace navigation" className={styles.mobileNav}>
-    {primary.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={19} />{link.label}</Link>)}
-    <details className={styles.more}><summary className={styles.moreSummary}><MoreHorizontal size={20} />More</summary><div className={styles.moreMenu}>{secondary.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={17} />{link.label}</Link>)}</div></details>
+    {primary.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={19} />{link.label === "Home" && individualService ? "Overview" : link.label}</Link>)}
+    {!individualService && <details className={styles.more}><summary className={styles.moreSummary}><MoreHorizontal size={20} />More</summary><div className={styles.moreMenu}>{secondary.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={17} />{link.label}</Link>)}</div></details>}
   </nav>;
 }

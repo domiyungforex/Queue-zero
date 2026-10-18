@@ -14,6 +14,16 @@ export const getDashboardQueues = cache(async () => {
   return data ?? [];
 });
 
+export const getBusinessCustomerCount = cache(async () => {
+  const membership = await requireBusinessMembership();
+  const db = await createUserSupabaseClient();
+  const { count, error } = await db.from("tickets")
+    .select("id,queues!inner(business_id)", { count: "exact", head: true })
+    .eq("queues.business_id", membership.businessId);
+  if (error) throw new Error("We couldn’t load your customer total. Please try again.");
+  return count ?? 0;
+});
+
 export const getDashboardLocations = cache(async () => {
   const current = await requireBusinessMembership();
   const membership = current.institutionType ? current : await requireBusinessManager();

@@ -6,7 +6,7 @@ const { protect, redirect } = vi.hoisted(() => ({ protect: vi.fn(), redirect: vi
 vi.mock("server-only", () => ({}));
 const selectedBusiness = vi.hoisted(() => ({ value: "" }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => selectedBusiness.value ? selectedBusiness : undefined }) }));
-vi.mock("@clerk/nextjs/server", () => ({ auth: { protect } }));
+vi.mock("@clerk/nextjs/server", () => ({ auth: { protect }, currentUser: vi.fn().mockResolvedValue(null) }));
 vi.mock("next/navigation", () => ({ redirect, unstable_rethrow: vi.fn() }));
 vi.mock("@/components/ui/page-shell", () => ({ PageShell: () => null }));
 

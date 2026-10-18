@@ -1,7 +1,8 @@
 import Image from "next/image";
-import { Building2, GraduationCap } from "lucide-react";
+import { Bell, Building2, CreditCard, GraduationCap, Settings2 } from "lucide-react";
 import { AuthNavigation } from "@/components/auth/auth-navigation";
 import { BusinessSelector } from "@/components/dashboard/business-selector";
+import { MobileWorkspaceSwitcher } from "@/components/dashboard/mobile-workspace-switcher";
 import { DashboardNavigation } from "@/components/dashboard/navigation";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { TURNMARK_ASSETS } from "@/lib/brand/assets";
@@ -26,9 +27,10 @@ type Props = {
   memberships: Membership[];
   institutionTeaching: boolean;
   institutionStaffManagement: boolean;
+  userName?: string | null;
 };
 
-export function WorkspaceDashboardShell({ children, membership, memberships, institutionTeaching, institutionStaffManagement }: Props) {
+export function WorkspaceDashboardShell({ children, membership, memberships, institutionTeaching, institutionStaffManagement, userName }: Props) {
   const navigation = {
     role: membership.role,
     mode: membership.organizationMode,
@@ -40,7 +42,7 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
     institutionStaffManagement,
   };
   const roleLabel = membership.role.replaceAll("_", " ");
-  const initials = membership.businessName.split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+  const initials = (userName ?? membership.businessName).split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
   const wordmark = TURNMARK_ASSETS.branding.wordmark;
   const education = membership.organizationMode === "SCHOOL" || membership.organizationMode === "HYBRID" || membership.organizationType === "UNIVERSITY_SCHOOL" || membership.professionalCategory === "LECTURER_TEACHER";
   const WorkspaceIcon = education ? GraduationCap : Building2;
@@ -60,8 +62,13 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
       </header>
       <header className={styles.mobileHeader}>
         <a className={styles.mobileBrand} href="/dashboard" aria-label="TuRnMaRk dashboard"><Image src={wordmark.src} width={wordmark.width} height={wordmark.height} alt={wordmark.alt} priority /></a>
-        <div className={styles.mobileIdentity}><strong>{membership.businessName}</strong><span>{roleLabel}</span></div>
-        <details className={styles.mobileAccount}><summary aria-label="Open account menu">{initials || "TM"}</summary><div className={styles.mobileAccountMenu}><AuthNavigation /></div></details>
+        <MobileWorkspaceSwitcher businessId={membership.businessId} memberships={memberships} />
+        <span className={styles.mobileNotifications} aria-label="Workspace notifications"><Bell size={20} aria-hidden="true" /></span>
+        <details className={styles.mobileAccount}><summary aria-label="Open account menu">{initials || "TM"}</summary><div className={styles.mobileAccountMenu}>
+          {membership.role === "owner" && <><a href="/dashboard/settings"><Settings2 size={16} aria-hidden="true" />Workspace settings</a><a href="/dashboard/billing"><CreditCard size={16} aria-hidden="true" />Billing</a></>}
+          <a href="/onboarding?new=workspace">Add workspace</a>
+          <AuthNavigation showDashboard={false} />
+        </div></details>
       </header>
       <main id="main" className={styles.main}>{children}</main>
       <footer className={styles.footer}><span>TuRnMaRk · People flow better.</span><span>{membership.businessName}</span></footer>

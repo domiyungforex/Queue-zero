@@ -7,15 +7,15 @@ import { publicEnv } from "@/lib/env";
 
 const linkClass = "inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium";
 
-export function AuthNavigation() {
+export function AuthNavigation({ showDashboard = true }: { showDashboard?: boolean } = {}) {
   return (
     <ClerkProvider publishableKey={publicEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/">
-      <AuthNavigationContent />
+      <AuthNavigationContent showDashboard={showDashboard} />
     </ClerkProvider>
   );
 }
 
-function AuthNavigationContent() {
+function AuthNavigationContent({ showDashboard }: { showDashboard: boolean }) {
   const { signOut } = useClerk();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -46,7 +46,7 @@ function AuthNavigationContent() {
           <Link href="/sign-up" className={`${linkClass} bg-primary text-white`}>Get started</Link>
         </Show>
         <Show when="signed-in">
-          <Link href="/dashboard" prefetch={false} className={linkClass}>Dashboard</Link>
+          {showDashboard && <Link href="/dashboard" prefetch={false} className={linkClass}>Dashboard</Link>}
           <button
             onClick={handleSignOut}
             disabled={signingOut}

@@ -21,6 +21,7 @@ export const TURNMARK_ASSETS = {
     student: { src: "/assets/turnmark/characters/student_character.png", width: 195, height: 215, alt: "Student holding a tablet" },
     healthcareProfessional: { src: "/assets/turnmark/characters/healthcare_professional.jpg", width: 1066, height: 1280, alt: "Healthcare professional" },
     businessProfessional: { src: "/assets/turnmark/characters/business_professional.jpg", width: 1066, height: 1280, alt: "Business professional holding a tablet" },
+    businessProfessionalCutout: { src: "/assets/turnmark/characters/business_professional_cutout.png", width: 1066, height: 1280, alt: "Business professional holding a tablet" },
   },
   hero: {
     reception: { src: "/assets/turnmark/hero/reception-hero.jpg", width: 1280, height: 960, alt: "Customer using TuRnMaRk at a reception desk" },

@@ -13,6 +13,12 @@ it("shows service-professional navigation and marks the active route", () => {
   expect(screen.queryByRole("link", { name: "Appointments" })).toBeNull();
   expect(screen.getByRole("link", { name: "Queues" }).getAttribute("aria-current")).toBe("page");
 });
+it("uses exactly five route-aware primary destinations for a personal mobile workspace", () => {
+  render(<DashboardNavigation variant="mobile" role="owner" workspaceOwnership="INDIVIDUAL" professionalCategory="CONSULTANT" />);
+  for (const name of ["Overview", "Services", "Queues", "Customers", "Analytics"]) expect(screen.getByRole("link", { name })).toBeTruthy();
+  expect(screen.queryByText("More")).toBeNull();
+  expect(screen.getByRole("link", { name: "Queues" }).getAttribute("aria-current")).toBe("page");
+});
 it("limits staff navigation and explains an empty assignment list", () => {
   render(<><DashboardNavigation role="staff" workspaceOwnership="ORGANIZATION" /><QueueSummary queues={[]} staff /></>);
   expect(screen.getAllByRole("link")).toHaveLength(2);

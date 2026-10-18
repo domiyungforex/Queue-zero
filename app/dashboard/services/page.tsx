@@ -6,6 +6,8 @@ import { requireBusinessMembership } from "@/lib/business/membership";
 import { getInstitutionSnapshot } from "@/lib/institution/data";
 import { getProfessionalWorkspaceProfile } from "@/lib/professional/data";
 import { PROFESSIONAL_LABELS } from "@/lib/professional/contracts";
+import { PersonalServicesMobile } from "@/components/professional/personal-workspace-mobile";
+import personalStyles from "@/components/professional/personal-workspace-mobile.module.css";
 
 export const metadata: Metadata = { title: "Workspace services" };
 
@@ -15,14 +17,18 @@ export default async function ServicesPage() {
     && membership.professionalCategory
     && membership.professionalCategory !== "LECTURER_TEACHER") {
     const category = membership.professionalCategory;
-    const profile = await getProfessionalWorkspaceProfile();
+    const profileResult = await getProfessionalWorkspaceProfile().then((value) => ({ value, error: false })).catch(() => ({ value: null, error: true }));
+    const profile = profileResult.value;
     return <>
-      <PageHeading eyebrow="SERVICES" title="The work customers come to you for." description="Your onboarding service is saved here. Create queues only when you are ready to receive customers." action={(membership.role === "owner" || membership.role === "admin") ? <Link className="button-primary" href="/dashboard/queues/new">Create queue</Link> : undefined} />
-      {profile ? <section className="panel max-w-2xl p-6">
-        <p className="eyebrow">PRIMARY SERVICE</p>
-        <h2 className="mt-2 text-2xl font-semibold">{profile.service_name ?? PROFESSIONAL_LABELS[category]}</h2>
-        {profile.locations ? <p className="mt-3 text-muted">{profile.locations.name} · {profile.locations.address}</p> : <p className="mt-3 text-muted">No practice location is currently available.</p>}
-      </section> : <EmptyState title="No service details available" description="Your workspace exists, but its professional service profile could not be found." />}
+      <PersonalServicesMobile profile={profile} fallbackLabel={PROFESSIONAL_LABELS[category]} canManage={membership.role === "owner" || membership.role === "admin"} loadError={profileResult.error} />
+      <div className={personalStyles.desktopOnly}>
+        <PageHeading eyebrow="SERVICES" title="The work customers come to you for." description="Your onboarding service is saved here. Create queues only when you are ready to receive customers." action={(membership.role === "owner" || membership.role === "admin") ? <Link className="button-primary" href="/dashboard/queues/new">Create queue</Link> : undefined} />
+        {profileResult.error ? <div className="notice warning" role="alert">Your saved service could not be loaded.</div> : profile ? <section className="panel max-w-2xl p-6">
+          <p className="eyebrow">PRIMARY SERVICE</p>
+          <h2 className="mt-2 text-2xl font-semibold">{profile.service_name ?? PROFESSIONAL_LABELS[category]}</h2>
+          {profile.locations ? <p className="mt-3 text-muted">{profile.locations.name} · {profile.locations.address}</p> : <p className="mt-3 text-muted">No practice location is currently available.</p>}
+        </section> : <EmptyState title="No service details available" description="Your workspace exists, but its professional service profile could not be found." />}
+      </div>
     </>;
   }
 
