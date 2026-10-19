@@ -1,11 +1,13 @@
 import Image from "next/image";
-import { Bell, Building2, CreditCard, GraduationCap, Settings2 } from "lucide-react";
+import { Building2, CreditCard, GraduationCap, Settings2 } from "lucide-react";
 import { AuthNavigation } from "@/components/auth/auth-navigation";
 import { BusinessSelector } from "@/components/dashboard/business-selector";
 import { MobileWorkspaceSwitcher } from "@/components/dashboard/mobile-workspace-switcher";
 import { DashboardNavigation } from "@/components/dashboard/navigation";
 import { LiveRefresh } from "@/components/realtime/refresh";
+import { NotificationCenter } from "@/components/dashboard/notification-center";
 import { TURNMARK_ASSETS } from "@/lib/brand/assets";
+import type { WorkspaceNotificationSnapshot } from "@/lib/notifications/workspace";
 import type { Database } from "@/lib/db/database.types";
 import styles from "./workspace-shell.module.css";
 
@@ -29,13 +31,15 @@ type Props = {
   institutionStaffManagement: boolean;
   userName?: string | null;
   userImageUrl?: string | null;
+  userId: string;
+  notifications: WorkspaceNotificationSnapshot;
 };
 
 function titleCase(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-export function WorkspaceDashboardShell({ children, membership, memberships, institutionTeaching, institutionStaffManagement, userName, userImageUrl }: Props) {
+export function WorkspaceDashboardShell({ children, membership, memberships, institutionTeaching, institutionStaffManagement, userName, userImageUrl, userId, notifications }: Props) {
   const navigation = {
     role: membership.role,
     mode: membership.organizationMode,
@@ -63,12 +67,12 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
       <header className={styles.header}>
         <div className={styles.identity}><span className={styles.workspaceIcon}><WorkspaceIcon size={18} /></span><div className={styles.identityCopy}><strong>{membership.businessName}</strong><span>{roleLabel} · {membership.workspaceOwnership === "INDIVIDUAL" ? "personal" : "organization"} workspace</span></div><LiveRefresh key={membership.businessId} topic={`business:${membership.businessId}`} authenticated /></div>
         <div className={styles.headerSwitcher}><BusinessSelector key={membership.businessId} businessId={membership.businessId} memberships={memberships} /></div>
-        <div className={styles.account}><AuthNavigation /></div>
+        <div className={styles.account}><NotificationCenter key={`desktop:${membership.businessId}`} variant="desktop" businessId={membership.businessId} userId={userId} initial={notifications} /><AuthNavigation /></div>
       </header>
       <header className={styles.mobileHeader}>
         <a className={styles.mobileBrand} href="/dashboard" aria-label="TuRnMaRk dashboard"><Image src={wordmark.src} width={wordmark.width} height={wordmark.height} alt={wordmark.alt} priority /></a>
         <MobileWorkspaceSwitcher businessId={membership.businessId} memberships={memberships} contextLabel={education ? `${roleLabel} · School` : undefined} education={education} />
-        <span className={styles.mobileNotifications} aria-label="Workspace notifications"><Bell size={20} aria-hidden="true" /></span>
+        <NotificationCenter key={`mobile:${membership.businessId}`} variant="mobile" businessId={membership.businessId} userId={userId} initial={notifications} />
         <details className={styles.mobileAccount}><summary aria-label="Open account menu">{userImageUrl ? <Image src={userImageUrl} width={36} height={36} alt="" unoptimized /> : initials || "TM"}</summary><div className={styles.mobileAccountMenu}>
           {membership.role === "owner" && <><a href="/dashboard/settings"><Settings2 size={16} aria-hidden="true" />Workspace settings</a><a href="/dashboard/billing"><CreditCard size={16} aria-hidden="true" />Billing</a></>}
           <a href="/onboarding?new=workspace">Add workspace</a>

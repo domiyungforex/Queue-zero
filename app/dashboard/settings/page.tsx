@@ -1,3 +1,4 @@
+import { Bell, Building2, ChevronDown, Clock3, GraduationCap, ShieldCheck } from "lucide-react";
 import { OrganizationModeForm } from "@/components/dashboard/organization-mode";
 import { requireBusinessOwner } from "@/lib/business/membership";
 import { getBusinessDetails } from "@/lib/dashboard/data";
@@ -11,15 +12,18 @@ export default async function SettingsPage() {
     <EducationHeading eyebrow="SETTINGS" title="Settings" description="Manage your workspace and preferences." />
     <div className={styles.settingsGrid}>
       <div className={styles.menuSections}>
-        <section className={`${styles.panel} ${styles.formWrap}`}><BusinessSettingsForm business={business} /></section>
-        <section className={`${styles.panel} ${styles.formWrap}`}><OrganizationModeForm mode={membership.organizationMode ?? "BUSINESS"} /></section>
+        <section><h2>Workspace</h2><div className={styles.menuCard}><div className={styles.workspaceCard}><span className={styles.icon}><GraduationCap size={20} aria-hidden="true" /></span><span><strong>{business.name}</strong><span>{business.industry} · {business.country_code}</span></span></div></div></section>
+        <section><h2>Workspace details</h2><div className={styles.settingsDisclosure}>
+          <details><summary><span className={styles.icon}><Building2 size={18} aria-hidden="true" /></span><span><strong>Profile information</strong><small>Name, workspace type and reporting timezone</small></span><ChevronDown size={17} aria-hidden="true" /></summary><div className={styles.disclosureBody}><BusinessSettingsForm business={business} /></div></details>
+          <details><summary><span className={styles.icon}><GraduationCap size={18} aria-hidden="true" /></span><span><strong>Academic settings</strong><small>Classes, attendance and workspace modules</small></span><ChevronDown size={17} aria-hidden="true" /></summary><div className={styles.disclosureBody}><OrganizationModeForm mode={membership.organizationMode ?? "BUSINESS"} /></div></details>
+          <div className={styles.settingsRow}><span className={styles.icon}><Clock3 size={18} aria-hidden="true" /></span><span><strong>Timezone</strong><small>{business.timezone}</small></span></div>
+          <div className={styles.settingsRow}><span className={styles.icon}><Bell size={18} aria-hidden="true" /></span><span><strong>Notifications</strong><small>Realtime workspace updates are available from the header bell.</small></span></div>
+        </div></section>
       </div>
       <aside className={`${styles.panel} ${styles.note}`}>
-        <h2>Data & Privacy</h2>
-        <p>Student and attendance records are available only inside authorized workspaces. Public attendance access is limited to the class flow and identity checks already configured by TuRnMaRk.</p>
-        <h3>Workspace</h3><p>{business.name} · {business.industry}</p>
-        <h3>Timezone</h3><p>{business.timezone}</p>
-        <h3>Country</h3><p>{business.country_code}</p>
+        <ShieldCheck size={22} aria-hidden="true" />
+        <h2>Data &amp; Privacy</h2>
+        <p>Student and attendance records are available only inside authorized workspaces. Public attendance access is limited to the class flow and identity checks configured by TuRnMaRk.</p>
         <h3>Existing records</h3><p>Changing workspace modules preserves existing queues, classes and attendance records.</p>
       </aside>
     </div>

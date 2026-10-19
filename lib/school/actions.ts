@@ -8,6 +8,7 @@ import { schoolInputSchema, parseStudentCsv, parseStudentCsvPreview } from "./va
 import type { SchoolActionState } from "./contracts";
 import { z } from "zod";
 import type { Json } from "@/lib/db/database.types";
+import { schoolActionErrorMessage } from "./action-errors";
 
 export async function manageSchool(_previous: SchoolActionState, form: FormData): Promise<SchoolActionState> {
   const membership = await requireBusinessMembership();
@@ -43,7 +44,11 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
         : action === "enroll"
           ? await db.rpc("school_import_roster", { p_organization_id: membership.businessId, p_course_id: parsed.data.course_id, p_students: parsed.data.students })
           : await db.rpc("school_manage", { p_action: action, p_payload: payload });
-    if (result.error) return { ok: false, message: result.error.code === "42501" ? "This record is unavailable or your access has changed." : result.error.code === "23505" ? "This record already exists. Check the course, email or matric number." : "We couldn’t save this change. Check the class state and details, then try again." };
+    if (result.error) {
+      if (process.env.NODE_ENV !== "production") console.warn("School action failed", { action, code: result.error.code });
+      const attendanceAction = ["class", "open", "close_arrival", "finish", "revoke_qr", "resolve_flag"].includes(action);
+      return { ok: false, message: attendanceAction ? schoolActionErrorMessage(result.error) : result.error.code === "42501" ? "This record is unavailable or your access has changed." : result.error.code === "23505" ? "This record already exists. Check the course, email or matric number." : "We couldn’t save this change. Try again." };
+    }
     const response = z.object({ id: z.uuid().optional(), message: z.string() }).safeParse(result.data);
     if (!response.success) return { ok: false, message: "The response was unavailable. Reload to check before retrying." };
     revalidatePath("/dashboard", "layout");
@@ -52,7 +57,7 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     unstable_rethrow(error);
     // Validation messages contain row positions, never student PII or provider errors.
     if (error instanceof Error && /^(Import at most|Use the header|Include between|Check the CSV|Check the name|Row \d|Duplicate student)/.test(error.message)) return { ok: false, message: error.message };
-    return { ok: false, message: "We couldn’t save this change. Check your connection and try again." };
+    return { ok: false, message: "We couldn’t connect. Try again." };
   }
 }
 

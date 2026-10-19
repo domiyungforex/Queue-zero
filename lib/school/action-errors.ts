@@ -1,0 +1,21 @@
+type SchoolActionError = { code?: string; message?: string };
+
+const stateMessages: Record<string, string> = {
+  "Attendance is closed": "This attendance session has ended.",
+  "Class cannot be reopened": "This attendance session has ended.",
+  "Class is not open": "This attendance session is not open.",
+  "Class cannot finish before its scheduled start": "This class cannot be finished before its scheduled start.",
+  "Assign a lecturer before opening attendance": "Assign a lecturer to this class before opening attendance.",
+  "Course unavailable": "You don’t have permission to update this class.",
+  "Class unavailable": "You don’t have permission to update this class.",
+  "Flag unavailable": "You don’t have permission to update this attendance record.",
+};
+
+export function schoolActionErrorMessage(error: SchoolActionError) {
+  if (error.code === "42501") return "You don’t have permission to update this class.";
+  if (error.code === "23505") return "Attendance has already been recorded.";
+  if (error.message && stateMessages[error.message]) return stateMessages[error.message];
+  if (error.code === "PGRST301" || error.code === "PGRST302") return "Your session has expired. Sign in and try again.";
+  if (error.code?.startsWith("PGRST")) return "We couldn’t connect. Try again.";
+  return "We couldn’t save attendance. Try again.";
+}

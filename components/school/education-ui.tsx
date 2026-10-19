@@ -18,7 +18,7 @@ export function EducationMetric({ icon: Icon, value, label, color, soft }: { ico
   return <article className={styles.metric}><span className={styles.metricIcon} style={{ "--color": color, "--soft": soft } as React.CSSProperties}><Icon size={18} aria-hidden="true" /></span><strong>{value}</strong><span>{label}</span></article>;
 }
 
-export function EducationStatus({ children, tone = "info" }: { children: React.ReactNode; tone?: "success" | "warning" | "muted" | "info" }) {
+export function EducationStatus({ children, tone = "info" }: { children: React.ReactNode; tone?: "success" | "warning" | "danger" | "muted" | "info" }) {
   return <span className={styles.status} data-tone={tone}>{children}</span>;
 }
 

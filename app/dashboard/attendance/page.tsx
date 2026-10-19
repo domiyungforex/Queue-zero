@@ -1,4 +1,4 @@
-import { CalendarCheck, CheckCircle2, ChevronRight, Clock3, LogOut, UserX } from "lucide-react";
+import { CalendarCheck, CheckCircle2, ChevronRight, ClipboardCheck, Clock3, LogOut, UserX } from "lucide-react";
 import Link from "next/link";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { EducationEmpty, EducationHeading, EducationMetric, EducationStatus, formatTime, initials } from "@/components/school/education-ui";
@@ -7,7 +7,7 @@ import { getSchoolSnapshot } from "@/lib/school/data";
 
 const attended = new Set(["PRESENT", "LATE", "EARLY_LEAVE", "INCOMPLETE", "FLAGGED"]);
 const percent = (count: number, total: number) => total ? `${Math.round((count / total) * 100)}%` : "—";
-const statusTone = (status: string) => status === "PRESENT" ? "success" as const : status === "ABSENT" ? "warning" as const : status === "LATE" ? "warning" as const : "info" as const;
+const statusTone = (status: string) => status === "PRESENT" ? "success" as const : status === "ABSENT" ? "danger" as const : status === "LATE" ? "warning" as const : "info" as const;
 function reportingCutoff(days: number) { return Date.now() - days * 86_400_000; }
 
 export default async function AttendancePage({ searchParams = Promise.resolve({}) }: { searchParams?: Promise<{ course?: string; period?: string }> } = {}) {
@@ -34,9 +34,10 @@ export default async function AttendancePage({ searchParams = Promise.resolve({}
     const records = data.attendance.filter((record) => ids.has(record.class_session_id));
     return { course, rate: records.length ? Math.round(records.filter((record) => attended.has(record.status)).length / records.length * 100) : null };
   }).filter((item) => item.rate !== null);
+  const actionable = sessions.find((session) => session.status === "OPEN") ?? sessions.find((session) => session.status === "DRAFT");
 
   return <main className={styles.page}>
-    <EducationHeading eyebrow="ATTENDANCE" title="Attendance" description="Track attendance and view analytics across your classes." />
+    <EducationHeading eyebrow="ATTENDANCE" title="Attendance" description="Track and manage student attendance in real time." action={actionable ? <Link className={styles.primary} href={`/dashboard/attendance/${actionable.id}`}><ClipboardCheck size={18} aria-hidden="true" />Take attendance</Link> : undefined} />
     <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
     <form className={styles.toolbar}>
       <label className={styles.search}><span className="sr-only">Class</span><select name="course" defaultValue={query.course ?? ""}><option value="">All classes</option>{data.courses.map((course) => <option key={course.id} value={course.id}>{course.code} · {course.title}</option>)}</select></label>

@@ -6,7 +6,7 @@ type RealtimeClient = Pick<ReturnType<typeof createClient>, "channel" | "removeC
 let publicClient: RealtimeClient | null | undefined;
 let authenticatedClient: RealtimeClient | null | undefined;
 
-function getRealtimeClient(authenticated: boolean) {
+export function getRealtimeClient(authenticated: boolean) {
   const existing = authenticated ? authenticatedClient : publicClient;
   if (existing !== undefined) return existing;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

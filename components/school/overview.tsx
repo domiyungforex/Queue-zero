@@ -3,6 +3,7 @@ import {
   BookOpen,
   CalendarDays,
   ChevronRight,
+  ClipboardCheck,
   Clock3,
   GraduationCap,
   Plus,
@@ -11,6 +12,7 @@ import {
   UserPlus,
   UserX,
 } from "lucide-react";
+import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { DashboardEmptyState, DashboardKpiCard, DashboardStatusBadge, WorkspaceCharacter } from "@/components/dashboard/dashboard-primitives";
 import { LiveRefresh } from "@/components/realtime/refresh";
@@ -108,16 +110,17 @@ function RecentAttendance({ data, records }: { data: SchoolSnapshot; records: Ed
   </section>;
 }
 
-export function EducationHome({ data, dashboard, individual = false }: { data: SchoolSnapshot; dashboard: EducationDashboard; individual?: boolean }) {
+export function EducationHome({ data, dashboard, individual = false, userName = "Lecturer" }: { data: SchoolSnapshot; dashboard: EducationDashboard; individual?: boolean; userName?: string }) {
+  const activeClass = dashboard.classes.find((session) => session.status === "OPEN");
   return <div className={styles.dashboard}>
     <section className={styles.hero} aria-labelledby="education-welcome">
       <div className={styles.heroShapeOne} aria-hidden="true" />
       <div className={styles.heroShapeTwo} aria-hidden="true" />
       <div className={styles.heroCopy}>
         <p className={styles.eyebrow}>WELCOME BACK</p>
-        <h1 id="education-welcome"><span className={styles.heroLead}>Your teaching,</span><span className={styles.heroAccent}>organized.</span></h1>
-        <p className={styles.heroDescription}>{individual ? "Create classes, take attendance and keep your students informed — all in one focused workspace." : "Create classes, take attendance and keep your students informed — all in one place."}</p>
-        <Link className={styles.heroAction} href="/dashboard/courses"><Plus size={20} aria-hidden="true" />Create class</Link>
+        <h1 id="education-welcome"><span className={styles.heroLead}>Good morning,</span><span className={styles.heroAccent}>{userName}</span></h1>
+        <p className={styles.heroDescription}>{individual ? "Manage your classes, track attendance and keep your students informed from one focused workspace." : "Manage your classes, track attendance and keep your students informed."}</p>
+        {activeClass ? <Link className={styles.heroAction} href={`/dashboard/attendance/${activeClass.id}`}><ClipboardCheck size={20} aria-hidden="true" />Take attendance</Link> : <Link className={styles.heroAction} href="/dashboard/courses"><Plus size={20} aria-hidden="true" />Create class</Link>}
       </div>
       <WorkspaceCharacter asset={TURNMARK_ASSETS.characters.student} className={styles.heroCharacter} priority />
     </section>
@@ -147,11 +150,12 @@ export function EducationHome({ data, dashboard, individual = false }: { data: S
 }
 
 export async function SchoolOverview({ individual = false }: { individual?: boolean }) {
-  const { snapshot: data } = await getSchoolSnapshot();
+  const [{ snapshot: data }, identity] = await Promise.all([getSchoolSnapshot(), currentUser().catch(() => null)]);
   const dashboard = buildEducationDashboard(data, new Date().toISOString().slice(0, 10));
+  const userName = identity?.firstName ?? identity?.fullName ?? "Lecturer";
   return <>
     <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
-    <EducationHome data={data} dashboard={dashboard} individual={individual} />
+    <EducationHome data={data} dashboard={dashboard} individual={individual} userName={userName} />
   </>;
 }
 

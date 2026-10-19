@@ -7,7 +7,7 @@ import { EnrollmentForm } from "@/components/school/forms";
 import { getSchoolSnapshot } from "@/lib/school/data";
 
 type StudentFilter = "all" | "present" | "absent" | "late";
-const tone = (status?: string) => status === "PRESENT" ? "success" as const : status === "ABSENT" ? "warning" as const : status === "LATE" ? "warning" as const : "muted" as const;
+const tone = (status?: string) => status === "PRESENT" ? "success" as const : status === "ABSENT" ? "danger" as const : status === "LATE" ? "warning" as const : "muted" as const;
 
 export default async function StudentsPage({ searchParams = Promise.resolve({}) }: { searchParams?: Promise<{ q?: string; filter?: string }> } = {}) {
   const [{ snapshot: data }, query] = await Promise.all([getSchoolSnapshot(), searchParams]);

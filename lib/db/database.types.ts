@@ -1904,8 +1904,8 @@ export type Database = {
                     "name": string;
                     "opens_at": string | null;
                     "require_phone": boolean;
-                    "service_name": string;
                     "revision": number;
+                    "service_name": string;
                     "session_id": string | null;
                     "slug": string;
                     "status": Database["public"]['Enums']["queue_status"];
@@ -1926,8 +1926,8 @@ export type Database = {
                     "name": string;
                     "opens_at"?: string | null;
                     "require_phone"?: boolean;
-                    "service_name": string;
                     "revision"?: number;
+                    "service_name": string;
                     "session_id"?: string | null;
                     "slug": string;
                     "status"?: Database["public"]['Enums']["queue_status"];
@@ -1948,8 +1948,8 @@ export type Database = {
                     "name"?: string;
                     "opens_at"?: string | null;
                     "require_phone"?: boolean;
-                    "service_name"?: string;
                     "revision"?: number;
+                    "service_name"?: string;
                     "session_id"?: string | null;
                     "slug"?: string;
                     "status"?: Database["public"]['Enums']["queue_status"];
@@ -2476,6 +2476,92 @@ export type Database = {
                 Relationships: [
                 ];
             };
+            "workspace_notification_reads": {
+                Row: {
+                    "clerk_user_id": string;
+                    "notification_id": string;
+                    "read_at": string;
+                };
+                Insert: {
+                    "clerk_user_id": string;
+                    "notification_id": string;
+                    "read_at"?: string;
+                };
+                Update: {
+                    "clerk_user_id"?: string;
+                    "notification_id"?: string;
+                    "read_at"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "workspace_notification_reads_notification_id_fkey";
+                        columns: [
+                            "notification_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "workspace_notifications";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    }
+                ];
+            };
+            "workspace_notifications": {
+                Row: {
+                    "business_id": string;
+                    "created_at": string;
+                    "href": string | null;
+                    "id": string;
+                    "message": string;
+                    "source_event_id": string;
+                    "title": string;
+                    "type": string;
+                };
+                Insert: {
+                    "business_id": string;
+                    "created_at"?: string;
+                    "href"?: string | null;
+                    "id"?: string;
+                    "message": string;
+                    "source_event_id": string;
+                    "title": string;
+                    "type": string;
+                };
+                Update: {
+                    "business_id"?: string;
+                    "created_at"?: string;
+                    "href"?: string | null;
+                    "id"?: string;
+                    "message"?: string;
+                    "source_event_id"?: string;
+                    "title"?: string;
+                    "type"?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "workspace_notifications_business_id_fkey";
+                        columns: [
+                            "business_id"
+                        ];
+                        isOneToOne: false;
+                        referencedRelation: "businesses";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    },
+                    {
+                        foreignKeyName: "workspace_notifications_source_event_id_fkey";
+                        columns: [
+                            "source_event_id"
+                        ];
+                        isOneToOne: true;
+                        referencedRelation: "business_events";
+                        referencedColumns: [
+                            "id"
+                        ];
+                    }
+                ];
+            };
         };
         Views: {
             [_ in never]: never;
@@ -2656,8 +2742,8 @@ export type Database = {
                 Returns: {
                     "business_logo_url": string;
                     "business_name": string;
-                    "description": string;
-                    "estimated_wait_seconds": number;
+                    "description": string | null;
+                    "estimated_wait_seconds": number | null;
                     "has_serving_customer": boolean;
                     "location_name": string;
                     "queue_name": string;
@@ -2673,8 +2759,8 @@ export type Database = {
                 Returns: {
                     "business_logo_url": string;
                     "business_name": string;
-                    "description": string | null;
-                    "estimated_wait_seconds": number | null;
+                    "description": string;
+                    "estimated_wait_seconds": number;
                     "has_serving_customer": boolean;
                     "is_full": boolean;
                     "location_name": string;
@@ -2824,6 +2910,13 @@ export type Database = {
                     "p_slug": string;
                 };
                 Returns: string;
+            };
+            "mark_workspace_notifications_read": {
+                Args: {
+                    "p_business_id": string;
+                    "p_notification_id"?: string;
+                };
+                Returns: number;
             };
             "onboard_business": {
                 Args: {
@@ -3079,6 +3172,18 @@ export type Database = {
                 };
                 Returns: Json;
             };
+            "school_scan_open": {
+                Args: {
+                    "p_class_id": string;
+                    "p_device_hash": string;
+                    "p_full_name": string;
+                    "p_matric_number": string;
+                    "p_nonce": string;
+                    "p_organization_id": string;
+                    "p_request_id": string;
+                };
+                Returns: Json;
+            };
             "school_snapshot": {
                 Args: {
                     "p_class_id"?: string;
@@ -3160,6 +3265,13 @@ export type Database = {
                     "p_warning_threshold": number;
                 };
                 Returns: string;
+            };
+            "workspace_notification_snapshot": {
+                Args: {
+                    "p_business_id": string;
+                    "p_limit"?: number;
+                };
+                Returns: Json;
             };
         };
         Enums: {

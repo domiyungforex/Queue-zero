@@ -29,10 +29,10 @@ export default async function ClassesPage({ searchParams = Promise.resolve({}) }
     const latest = sessions.find((session) => session.status === "OPEN") ?? sessions[0];
     return (!search || `${course.code} ${course.title}`.toLocaleLowerCase().includes(search)) && (filter === "all" || (latest && sessionGroup(latest.status) === filter));
   });
-  const tabs: { value: ClassFilter; label: string }[] = [{ value: "all", label: "All" }, { value: "upcoming", label: "Upcoming" }, { value: "ongoing", label: "Ongoing" }, { value: "past", label: "Past" }];
+  const tabs: { value: ClassFilter; label: string }[] = [{ value: "all", label: "All Classes" }, { value: "ongoing", label: "Ongoing" }, { value: "upcoming", label: "Upcoming" }, { value: "past", label: "Past" }];
 
   return <main className={styles.page}>
-    <EducationHeading eyebrow="CLASSES" title="Classes" description="Manage your classes, schedules and students." action={<Link className={styles.primary} href="/dashboard/courses?create=1#course-setup"><Plus size={18} aria-hidden="true" />Create class</Link>} />
+    <EducationHeading eyebrow="CLASSES" title="Classes" description="Manage your classes, schedules and class details." action={<Link className={styles.primary} href="/dashboard/courses?create=1#course-setup"><Plus size={18} aria-hidden="true" />Create class</Link>} />
     <LiveRefresh topic={`school:${snapshot.organization.id}`} authenticated />
     <form className={styles.toolbar} role="search">
       <label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">Search classes</span><input name="q" type="search" defaultValue={query.q} placeholder="Search classes…" /><input type="hidden" name="filter" value={filter} /></label>
