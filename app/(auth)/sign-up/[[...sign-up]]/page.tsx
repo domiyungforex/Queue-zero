@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
-import { AuthShell } from "@/components/auth/auth-shell";
+import { WelcomeBackShell } from "@/components/auth/welcome-back-shell";
 import { publicEnv } from "@/lib/env";
 import { safeAuthReturn } from "@/lib/school-student/return-url";
 
@@ -17,9 +17,5 @@ export default async function Page({ searchParams }: PageProps = {}) {
     redirect(safeAuthReturn(typeof redirectUrl === "string" ? redirectUrl : null, "/dashboard", publicEnv.NEXT_PUBLIC_APP_URL));
   }
 
-  return (
-    <AuthShell title="Create your TuRnMaRk account" description="Use your email address to get started." visual="student">
-      <AuthForm mode="sign-up" />
-    </AuthShell>
-  );
+  return <WelcomeBackShell mode="sign-up"><AuthForm mode="sign-up" /></WelcomeBackShell>;
 }

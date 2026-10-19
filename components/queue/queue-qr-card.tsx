@@ -4,10 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Copy, Download, ExternalLink, Printer, QrCode, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
 import type { QueueQrArtifact } from "@/lib/queue/qr";
 import styles from "@/components/queue/queue-qr.module.css";
-
-const buttonClass = "inline-flex min-h-12 items-center justify-center rounded-xl border border-black/20 px-5 py-3 text-sm font-semibold disabled:opacity-50";
 
 export function QueueQrCard({ artifact, queueId, businessName, queueName, sheet = false }: {
   artifact: QueueQrArtifact;
@@ -68,43 +67,44 @@ export function QueueQrCard({ artifact, queueId, businessName, queueName, sheet 
     onError={() => { setReady(false); setImageFailed(true); }} />;
 
   return <section aria-label={sheet ? "Queue print sheet" : "Share this queue"} data-queue-print-sheet={sheet ? "true" : undefined}
-    className={sheet ? "" : "mt-8 rounded-2xl border border-black/10 bg-white p-6 sm:p-8"}>
+    className={sheet ? styles.sheetPage : styles.card}>
     {sheet ? <>
       <style media="print">{"@page { size: auto; margin: 12mm; }"}</style>
       <div className={styles.sheet}>
-        <p className="text-2xl font-bold tracking-tight">TuRn<span className="text-primary">MaRk</span></p>
-        <p className={`mt-6 break-words text-xl font-medium ${styles.businessName}`}>{businessName}</p>
-        <h1 className={`mt-3 break-words text-3xl font-semibold ${styles.queueName}`}>{queueName}</h1>
-        <div className="my-5">{qrImage}</div>
-        <h2 className="text-2xl font-semibold">Scan to join the queue</h2>
-        <p className="mt-3 text-muted">No app. No account.</p>
-        <p className="mt-1 text-muted">Scan. Join. Leave the line.</p>
-        <p className={`mt-6 break-all text-sm text-muted ${styles.publicUrl}`}>{artifact.publicUrl}</p>
+        <header className={styles.sheetBrand}><span className={styles.brandMark}><QrCode size={24} aria-hidden="true" /></span><p>TuRn<strong>MaRk</strong></p></header>
+        <p className={styles.sheetEyebrow}>JOIN THIS QUEUE</p>
+        <p className={styles.businessName}>{businessName}</p>
+        <h1 className={styles.queueName}>{queueName}</h1>
+        <div className={styles.qrFrame}>{qrImage}<span className={styles.scanBadge}><ScanLine size={17} aria-hidden="true" /> Point your camera here</span></div>
+        <h2>Scan to join the queue</h2>
+        <p className={styles.sheetLead}>No app. No account. Your private place in line opens in the browser.</p>
+        <div className={styles.sheetSteps}><span><b>1</b>Scan</span><span><b>2</b>Join</span><span><b>3</b>Track your turn</span></div>
+        <p className={styles.publicUrl}>{artifact.publicUrl}</p>
+        <p className={styles.sheetPrivacy}><ShieldCheck size={15} aria-hidden="true" /> Powered securely by TuRnMaRk</p>
       </div>
     </> : <>
-      <h2 className="text-xl font-semibold">Share this queue</h2>
-      <p className="mt-2 text-sm text-muted">Download the QR or print a sheet for your counter.</p>
-      <div className="my-5 max-w-64">{qrImage}</div>
+      <header className={styles.cardHeader}><span className={styles.cardIcon}><QrCode size={22} aria-hidden="true" /></span><div><p>QUEUE QR CODE</p><h2>Share this queue</h2><span>Customers scan once to join from their phone.</span></div></header>
+      <div className={styles.previewGrid}><div className={styles.qrFrame}>{qrImage}<span className={styles.scanBadge}><ScanLine size={17} aria-hidden="true" /> Scan to join</span></div><div className={styles.previewCopy}><p className={styles.previewBusiness}>{businessName}</p><h3>{queueName}</h3><ol><li><span>1</span>Open the phone camera</li><li><span>2</span>Scan this code</li><li><span>3</span>Join and track the queue</li></ol><p><ShieldCheck size={15} aria-hidden="true" /> No app or customer account required</p></div></div>
     </>}
-    <div className={`${styles.screenOnly} ${sheet ? "mx-auto mt-6 max-w-3xl" : ""}`}>
-      {!ready && !imageFailed && <p role="status" className="mb-4 text-sm text-muted">Preparing QR preview…</p>}
-      {imageFailed && <div role="alert" className="mb-4 text-red-800"><p>We couldn’t display the QR code.</p><button type="button" disabled={retrying} onClick={() => { setImageFailed(false); setReady(false); setImageAttempt((attempt) => attempt + 1); startRetry(() => router.refresh()); }} className={`${buttonClass} mt-2`}>{retrying ? "Retrying…" : "Reload QR code"}</button></div>}
-      <div className="flex flex-wrap gap-3">
+    <div className={`${styles.screenOnly} ${sheet ? styles.sheetControls : ""}`}>
+      {!ready && !imageFailed && <p role="status" className={styles.preparing}>Preparing QR preview…</p>}
+      {imageFailed && <div role="alert" className={styles.error}><p>We couldn’t display the QR code.</p><button type="button" disabled={retrying} onClick={() => { setImageFailed(false); setReady(false); setImageAttempt((attempt) => attempt + 1); startRetry(() => router.refresh()); }} className={styles.secondaryButton}><RefreshCw size={17} aria-hidden="true" />{retrying ? "Retrying…" : "Reload QR code"}</button></div>}
+      <div className={styles.actions}>
         {ready && !imageFailed
-          ? <a href={artifact.pngDataUrl} download={artifact.filename} className={`${buttonClass} bg-primary text-white`}
-              onClick={() => { setError(""); setMessage("PNG download requested."); }}>Download PNG</a>
-          : <button disabled className={`${buttonClass} bg-primary text-white`}>Download PNG</button>}
+          ? <a href={artifact.pngDataUrl} download={artifact.filename} className={styles.primaryButton}
+              onClick={() => { setError(""); setMessage("PNG download requested."); }}><Download size={17} aria-hidden="true" />Download PNG</a>
+          : <button disabled className={styles.primaryButton}><Download size={17} aria-hidden="true" />Download PNG</button>}
         {sheet
-          ? <button type="button" disabled={!ready || imageFailed || printing} onClick={printSheet} className={buttonClass}>{printing ? "Preparing print…" : "Print"}</button>
-          : <Link href={`/dashboard/queues/${queueId}/qr`} className={buttonClass}>Print sheet</Link>}
-        <button type="button" disabled={copying} onClick={copyLink} className={buttonClass}>{copying ? "Copying…" : "Copy link"}</button>
-        <a href={artifact.publicUrl} target="_blank" rel="noopener noreferrer" className={buttonClass}>Preview customer experience<span className="sr-only"> (new tab)</span></a>
+          ? <button type="button" disabled={!ready || imageFailed || printing} onClick={printSheet} className={styles.secondaryButton}><Printer size={17} aria-hidden="true" />{printing ? "Preparing print…" : "Print"}</button>
+          : <Link href={`/dashboard/queues/${queueId}/qr`} className={styles.secondaryButton}><Printer size={17} aria-hidden="true" />Print sheet</Link>}
+        <button type="button" disabled={copying} onClick={copyLink} className={styles.secondaryButton}><Copy size={17} aria-hidden="true" />{copying ? "Copying…" : "Copy link"}</button>
+        <a href={artifact.publicUrl} target="_blank" rel="noopener noreferrer" className={styles.secondaryButton}><ExternalLink size={17} aria-hidden="true" />Preview customer experience<span className="sr-only"> (new tab)</span></a>
       </div>
-      <label htmlFor="public-queue-link" className="mt-5 block text-sm font-medium">Public queue link</label>
+      <label htmlFor="public-queue-link" className={styles.linkLabel}>Public queue link</label>
       <input ref={linkInput} id="public-queue-link" readOnly value={artifact.publicUrl}
-        onFocus={(event) => event.currentTarget.select()} className="mt-2 min-h-12 w-full min-w-0 rounded-lg border border-black/20 bg-white px-3 text-sm" />
-      <p role="status" aria-live="polite" className="mt-3 text-sm text-primary">{message}</p>
-      {error && <p role="alert" className="mt-3 text-sm text-red-800">{error}</p>}
+        onFocus={(event) => event.currentTarget.select()} className={styles.linkInput} />
+      <p role="status" aria-live="polite" className={styles.message}>{message}</p>
+      {error && <p role="alert" className={styles.errorText}>{error}</p>}
     </div>
   </section>;
 }
@@ -112,9 +112,9 @@ export function QueueQrCard({ artifact, queueId, businessName, queueName, sheet 
 export function QueueQrUnavailable() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  return <div role="alert" className="mt-8 rounded-2xl border border-black/10 bg-white p-6">
-    <h2 className="text-xl font-semibold">QR code unavailable</h2>
-    <p className="mt-3 text-muted">We couldn’t prepare this queue’s QR code. Please try again in a moment.</p>
-    <button type="button" disabled={pending} onClick={() => startTransition(() => router.refresh())} className={`${buttonClass} mt-4`}>{pending ? "Retrying…" : "Retry QR generation"}</button>
+  return <div role="alert" className={styles.unavailable}>
+    <span><QrCode size={24} aria-hidden="true" /></span><h2>QR code unavailable</h2>
+    <p>We couldn’t prepare this queue’s QR code. Please try again in a moment.</p>
+    <button type="button" disabled={pending} onClick={() => startTransition(() => router.refresh())} className={styles.secondaryButton}><RefreshCw size={17} aria-hidden="true" />{pending ? "Retrying…" : "Retry QR generation"}</button>
   </div>;
 }

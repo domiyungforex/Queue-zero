@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { ArrowRight, Check, Clock3, QrCode, Radio, ScanLine } from "lucide-react";
 import { FrequentlyAskedQuestions } from "@/components/marketing/faq";
 import { Arrow, MarketingFrame } from "@/components/marketing/site";
@@ -27,9 +28,10 @@ export const metadata = pageMetadata(
   "/",
 );
 
-export default function Home() {
+export default async function Home() {
+  const signedIn = Boolean((await auth()).userId);
   return (
-    <MarketingFrame stickyCta={false}>
+    <MarketingFrame stickyCta={false} authenticated={signedIn}>
       <main id="main">
         <section className={styles.tmHero} aria-labelledby="hero-title">
           <div className={styles.tmHeroCopy}>
@@ -37,8 +39,8 @@ export default function Home() {
             <h1 id="hero-title">People flow better with <em>TuRnMaRk.</em></h1>
             <p>Simple, modern queue management that lets people scan, join, leave the line and return when they’re almost next.</p>
             <div className={styles.tmHeroActions}>
-              <Link href="/sign-up" className={`${styles.tmPrimaryAction} ${styles.tmMobileHiddenPrimary}`}>Create a queue <ArrowRight size={18} aria-hidden="true" /></Link>
-              <Link href="#how-it-works" className={styles.tmSecondaryAction}><span aria-hidden="true">▶</span> See how it works</Link>
+              <Link href={signedIn ? "/dashboard" : "/sign-up"} className={`${styles.tmPrimaryAction} ${styles.tmMobileHiddenPrimary}`}>{signedIn ? "Go to dashboard" : "Get started"} <ArrowRight size={18} aria-hidden="true" /></Link>
+              <Link href={signedIn ? "/dashboard/queues/new" : "#how-it-works"} className={styles.tmSecondaryAction}>{signedIn ? <ArrowRight size={18} aria-hidden="true" /> : <span aria-hidden="true">▶</span>} {signedIn ? "Create queue" : "See how it works"}</Link>
             </div>
             <p className={styles.tmAssurance}><Check size={15} aria-hidden="true" /> No download or customer account required.</p>
           </div>
@@ -97,7 +99,7 @@ export default function Home() {
 
         <section className={styles.tmCaseStudy} id="case-studies"><div><p>REAL OPERATIONS. VERIFIED STORIES.</p><h2>Running a TuRnMaRk pilot?</h2><span>We only publish customer results and reviews with permission. Tell us about your workflow, waiting times and lessons.</span></div><Link href="/contact" className={styles.tmPrimaryAction}>Discuss a case study <ArrowRight size={18} aria-hidden="true" /></Link></section>
 
-        <section className={styles.tmClosing}><p>READY TO CHANGE THE WAIT?</p><h2>Give people their place in line—and their time back.</h2><Link href="/sign-up" className={styles.tmPrimaryAction}>Get started free <ArrowRight size={18} aria-hidden="true" /></Link></section>
+        <section className={styles.tmClosing}><p>READY TO CHANGE THE WAIT?</p><h2>Give people their place in line—and their time back.</h2><div className={styles.tmHeroActions}><Link href={signedIn ? "/dashboard" : "/sign-up"} className={styles.tmPrimaryAction}>{signedIn ? "Go to dashboard" : "Get started free"} <ArrowRight size={18} aria-hidden="true" /></Link>{signedIn && <Link href="/dashboard/queues/new" className={styles.tmSecondaryAction}>Create queue <ArrowRight size={18} aria-hidden="true" /></Link>}</div></section>
       </main>
     </MarketingFrame>
   );

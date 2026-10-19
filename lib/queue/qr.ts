@@ -11,7 +11,7 @@ export async function generateQueueQr(appOrigin: string, slug: string): Promise<
     errorCorrectionLevel: "M",
     margin: 4,
     scale: 16,
-    color: { dark: "#000000ff", light: "#ffffffff" },
+    color: { dark: "#111318ff", light: "#ffffffff" },
   });
   return { publicUrl, pngDataUrl, filename: `turnmark-${slug}.png` };
 }

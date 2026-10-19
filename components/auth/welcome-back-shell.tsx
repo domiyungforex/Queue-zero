@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { Clock3, Sparkles, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Clock3, Sparkles, TrendingUp } from "lucide-react";
 import { Brand } from "@/components/ui/brand";
 import { TURNMARK_ASSETS } from "@/lib/brand/assets";
 import styles from "./welcome-back.module.css";
@@ -10,7 +11,7 @@ const benefits = [
   { title: "More Productivity", description: "Serve more people, every day", icon: TrendingUp },
 ] as const;
 
-export function WelcomeBackShell({ children }: { children: React.ReactNode }) {
+export function WelcomeBackShell({ children, mode = "sign-in" }: { children: React.ReactNode; mode?: "sign-in" | "sign-up" }) {
   const receptionist = TURNMARK_ASSETS.auth.receptionist;
   const student = TURNMARK_ASSETS.auth.welcomeStudent;
   const avatars = TURNMARK_ASSETS.auth.trustedAvatars;
@@ -68,7 +69,8 @@ export function WelcomeBackShell({ children }: { children: React.ReactNode }) {
         <section className={styles.authPanel} aria-labelledby="welcome-back-title">
           <div className={styles.mobileHero}>
             <Brand className={styles.mobileHeroBrand} priority />
-            <p>Queues. Attendance.<br />and Appointments.<br />Made Simple.</p>
+            <Link className={styles.mobileHome} href="/" aria-label="Back to home"><ArrowLeft size={18} aria-hidden="true" /></Link>
+            <p>Queues. Attendance.<br />Appointments.<br />Made simple.</p>
             <span className={styles.mobileHeroLoop} aria-hidden="true" />
             <span className={styles.mobileHeroAccent} aria-hidden="true" />
             <Image
@@ -85,8 +87,8 @@ export function WelcomeBackShell({ children }: { children: React.ReactNode }) {
           <div className={styles.responsiveLayout}>
             <div className={styles.authContent}>
               <p className={styles.authEyebrow}>Secure access</p>
-              <h1 id="welcome-back-title">Welcome back</h1>
-              <p className={styles.authDescription}>Sign in to your TuRnMaRk account</p>
+              <h1 id="welcome-back-title">{mode === "sign-in" ? "Welcome back" : "Create your account"}</h1>
+              <p className={styles.authDescription}>{mode === "sign-in" ? "Sign in to your TuRnMaRk account" : "Start your TuRnMaRk workspace"}</p>
               {children}
             </div>
 

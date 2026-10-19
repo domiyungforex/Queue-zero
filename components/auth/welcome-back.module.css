@@ -84,6 +84,7 @@
 .authDescription { margin: 16px 0 34px; color: #6b6b74; font-size: 15px; }
 .mobileBrand { display: none; }
 .mobileHero { display: none; }
+.mobileHome { display: none; }
 .responsiveStory { display: none; }
 
 .decoration { position: fixed; z-index: 0; pointer-events: none; opacity: .22; }
@@ -163,11 +164,11 @@
     min-height: 100dvh;
     overflow-x: hidden;
     padding: 0;
-    color: #063f32;
-    background: #edf9ef;
+    color: #111318;
+    background: #fff3ec;
   }
-  .frame { min-height: 100dvh; overflow: visible; border: 0; border-radius: 0; background: #edf9ef; box-shadow: none; }
-  .authPanel { display: block; min-height: 100dvh; padding: 0; background: #edf9ef; }
+  .frame { min-height: 100dvh; overflow: visible; border: 0; border-radius: 0; background: #fff3ec; box-shadow: none; }
+  .authPanel { display: block; min-height: 100dvh; padding: 0; background: #fff3ec; }
   .mobileBrand { display: none; }
   .mobileHero {
     position: relative;
@@ -177,10 +178,11 @@
     overflow: hidden;
     padding: max(28px, env(safe-area-inset-top)) 28px 0;
     background:
-      radial-gradient(120% 72% at 76% 114%, #d9f5dd 0 50%, transparent 50.4%),
-      linear-gradient(180deg, #fbfffc 0%, #effaf1 100%);
+      radial-gradient(120% 72% at 76% 114%, #ffe0d0 0 50%, transparent 50.4%),
+      linear-gradient(180deg, #fffdfb 0%, #fff1e9 100%);
   }
   .mobileHeroBrand { position: relative; z-index: 4; transform: scale(.82); transform-origin: top left; }
+  .mobileHome { position: absolute; z-index: 5; top: max(27px, env(safe-area-inset-top)); right: 24px; display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid rgba(255,107,43,.18); border-radius: 50%; color: #d94d1b; background: rgba(255,255,255,.82); }
   .mobileHero p {
     position: relative;
     z-index: 4;
@@ -199,7 +201,7 @@
     bottom: -115px;
     width: 330px;
     height: 300px;
-    border: 7px solid #43b865;
+    border: 7px solid #ff8a58;
     border-radius: 49% 51% 42% 58% / 54% 47% 53% 46%;
     transform: rotate(-8deg);
     opacity: .98;
@@ -212,9 +214,9 @@
     width: 29px;
     height: 9px;
     border-radius: 999px;
-    background: #36b85b;
+    background: #ff6b2b;
     transform: rotate(-48deg);
-    box-shadow: 13px 14px 0 -1px #36b85b, 20px 28px 0 -2px #36b85b;
+    box-shadow: 13px 14px 0 -1px #ff6b2b, 20px 28px 0 -2px #ff4765;
   }
   .mobileStudent {
     position: absolute;
@@ -238,7 +240,7 @@
     border: 0;
     border-radius: 32px 32px 0 0;
     background: #fff;
-    box-shadow: 0 -10px 30px rgba(6, 78, 59, .05);
+    box-shadow: 0 -10px 30px rgba(89, 45, 22, .07);
   }
   .authContent::before {
     content: "";
@@ -251,7 +253,7 @@
     background: #d9dcdb;
     transform: translateX(-50%);
   }
-  .authContent h1 { color: #064e3b; font-size: clamp(33px, 8.8vw, 36px); line-height: 1; letter-spacing: -.04em; }
+  .authContent h1 { color: #111318; font-size: clamp(33px, 8.8vw, 36px); line-height: 1; letter-spacing: -.04em; }
   .authEyebrow { display: none; }
   .authDescription { margin: 9px 0 28px; color: #8a9390; font-size: 15px; }
   .responsiveStory { display: none; }

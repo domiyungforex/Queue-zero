@@ -1,7 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { ArrowRight, Check, GraduationCap, ShieldCheck } from "lucide-react";
 import { recordAttendance, type ScanResult } from "@/lib/school-student/actions";
+import styles from "./attendance-scan.module.css";
 
 type PublicClass = { organization_name: string; course_code: string; course_title: string; starts_at: string | null; planned_ends_at: string | null; attendance_closes_at: string | null; open: boolean };
 export function StudentScan({ token, classInfo }: { token: string; classInfo: PublicClass }) {
@@ -23,16 +25,16 @@ export function StudentScan({ token, classInfo }: { token: string; classInfo: Pu
     } catch { setResult({ ok: false, status: "UNAVAILABLE", message: "Connection interrupted. Retry this same submission safely." }); }
     finally { busy.current = false; setPending(false); }
   }
-  if (result?.ok) return <section className="space-y-5" aria-live="polite"><div className="rounded-2xl border border-line bg-canvas p-5"><strong className="text-xl text-primary">Attendance marked ✓</strong><dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm"><dt>Name</dt><dd>{result.full_name}</dd><dt>Matric</dt><dd>{result.matric_number}</dd><dt>Course</dt><dd>{result.course_code}</dd><dt>Time</dt><dd>{result.recorded_at ? new Intl.DateTimeFormat(undefined,{hour:"2-digit",minute:"2-digit"}).format(new Date(result.recorded_at)) : "Recorded"}</dd><dt>Status</dt><dd>{result.status === "LATE" ? "Late" : "Present"}{result.needs_review ? " · Needs review" : ""}</dd></dl></div><p className="text-sm text-muted">You can close this page. No account was created.</p><Link className="button-secondary w-full" href="/sign-up">Optional: create an account for future campus services</Link></section>;
-  return <section className="space-y-5">
-    <div><p className="eyebrow">{classInfo.organization_name}</p><h2 className="text-xl font-semibold">{classInfo.course_code}</h2><p>{classInfo.course_title}</p></div>
-    <form action={scan} className="school-form !p-0 !border-0 !shadow-none">
-      <label>Full name<input name="fullName" autoComplete="name" maxLength={160} required /></label>
-      <label>Matric number<input name="matricNumber" autoCapitalize="characters" autoComplete="off" maxLength={80} required /></label>
-      <button className="button-primary w-full" disabled={pending || !classInfo.open} type="submit">{pending ? "Marking attendance…" : "Mark Attendance"}</button>
+  if (result?.ok) return <section className={styles.success} aria-live="polite"><span className={styles.successIcon}><Check size={30} aria-hidden="true" /></span><p>CHECK-IN COMPLETE</p><h2>Attendance marked ✓</h2><span>You’re recorded for {result.course_code}.</span><dl><div><dt>Name</dt><dd>{result.full_name}</dd></div><div><dt>Matric number</dt><dd>{result.matric_number}</dd></div><div><dt>Time</dt><dd>{result.recorded_at ? new Intl.DateTimeFormat(undefined,{hour:"2-digit",minute:"2-digit"}).format(new Date(result.recorded_at)) : "Recorded"}</dd></div><div><dt>Status</dt><dd data-status={result.status}>{result.status === "LATE" ? "Late" : "Present"}{result.needs_review ? " · Needs review" : ""}</dd></div></dl><p className={styles.noAccount}><ShieldCheck size={15} aria-hidden="true" />You can close this page. No account was created.</p><Link className={styles.optionalAccount} href="/sign-up">Create an optional account <ArrowRight size={16} aria-hidden="true" /></Link></section>;
+  return <section className={styles.scanForm}>
+    <div className={styles.classCard}><span><GraduationCap size={20} aria-hidden="true" /></span><div><p>{classInfo.organization_name}</p><h2>{classInfo.course_code}</h2><small>{classInfo.course_title}</small></div></div>
+    <form action={scan}>
+      <label>Full name<input name="fullName" autoComplete="name" maxLength={160} placeholder="Enter your full name" required /></label>
+      <label>Matric number<input name="matricNumber" autoCapitalize="characters" autoComplete="off" maxLength={80} placeholder="Enter your matric number" required /></label>
+      <button disabled={pending || !classInfo.open} type="submit">{pending ? "Marking attendance…" : "Mark Attendance"}{!pending && <ArrowRight size={18} aria-hidden="true" />}</button>
     </form>
-    {result && <div role="alert" className="rounded-2xl border border-line bg-canvas p-4"><strong>{result.message}</strong></div>}
-    {!classInfo.open && <p role="alert">Attendance for this class is closed.</p>}
-    <p className="text-sm text-muted">Your details are checked against the official class roster. A privacy-conscious browser signal may be used for lecturer review; it does not prove identity or location.</p>
+    {result && <div role="alert" className={styles.formError}><strong>{result.message}</strong></div>}
+    {!classInfo.open && <p role="alert" className={styles.formError}>Attendance for this class is closed.</p>}
+    <p className={styles.privacy}><ShieldCheck size={16} aria-hidden="true" />Your details are checked against the official roster. Browser signals may support lecturer review; they do not prove identity or location.</p>
   </section>;
 }

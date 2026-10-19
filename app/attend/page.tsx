@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ScanLine, ShieldCheck } from "lucide-react";
 import { z } from "zod";
 import { StudentScan } from "@/components/school/student-scan";
+import { Brand } from "@/components/ui/brand";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { attendanceSecret } from "@/lib/qr/secret";
 import { validateAttendanceToken } from "@/lib/qr/validation";
+import styles from "@/components/school/attendance-scan.module.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Class attendance", robots: { index: false, follow: false }, referrer: "no-referrer" };
 export default async function AttendancePage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
@@ -18,7 +20,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
     if (error || !parsed.success) message = "This attendance QR is invalid or unavailable. Ask your lecturer to check the class QR.";
     else classInfo = parsed.data;
   } catch { message = "Attendance for this class is closed."; }
-  return <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 px-5 py-10"><Link href="/" className="text-xl font-bold text-primary">TuRnMaRk</Link><article className="space-y-6 rounded-3xl border border-line bg-white p-6 shadow-sm"><h1 className="text-3xl font-semibold">Mark Attendance</h1>{message || !classInfo ? <p role="alert">{message ?? "This attendance QR is unavailable."}</p> : <StudentScan token={token!} classInfo={classInfo} />}</article></main>;
+  return <main className={styles.page} id="main"><div className={styles.shell}><header className={styles.siteHeader}><Brand priority /><span><ShieldCheck size={15} aria-hidden="true" />Secure attendance</span></header><article className={styles.card}><div className={styles.cardIntro}><span className={styles.scanIcon}><ScanLine size={24} aria-hidden="true" /></span><p>CLASS ATTENDANCE</p><h1>Mark your attendance</h1><span>Your lecturer’s QR opened this secure class check-in.</span></div>{message || !classInfo ? <div className={styles.unavailable} role="alert"><strong>Attendance unavailable</strong><p>{message ?? "This attendance QR is unavailable."}</p></div> : <StudentScan token={token!} classInfo={classInfo} />}</article><footer>No account needed. Your details are checked only against this class roster.</footer></div></main>;
 }
 
 const publicClassSchema = z.object({ organization_name: z.string(), course_code: z.string(), course_title: z.string(), starts_at: z.string().nullable(), planned_ends_at: z.string().nullable(), attendance_closes_at: z.string().nullable(), open: z.boolean() });

@@ -58,8 +58,8 @@
     color: #7d8784;
     background: #f4f6f5;
   }
-  .welcomeBack .inputShell:focus-within { box-shadow: 0 0 0 3px rgba(99, 230, 0, .28); }
-  .welcomeBack .inputShell input { height: 58px; color: #063f32; font-size: 15px; }
+  .welcomeBack .inputShell:focus-within { box-shadow: 0 0 0 3px rgba(255, 107, 43, .2); }
+  .welcomeBack .inputShell input { height: 58px; color: #111318; font-size: 15px; }
   .welcomeBack .inputShell input::placeholder { color: transparent; }
   .welcomeBack .mobilePlaceholder { position: absolute; left: 49px; display: block; color: #8d9693; font-size: 15px; pointer-events: none; }
   .welcomeBack .inputShell:focus-within .mobilePlaceholder,
@@ -72,16 +72,16 @@
     justify-content: center;
     border-radius: 17px;
     color: #fff;
-    background: #075f46;
-    box-shadow: none;
+    background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
+    box-shadow: 0 12px 26px rgba(255, 71, 101, .2);
     font-size: 16px;
     font-weight: 750;
   }
   .welcomeBack .primaryButton svg { position: absolute; right: 20px; }
-  .welcomeBack .primaryButton:hover:not(:disabled) { transform: none; background: #064e3b; box-shadow: none; filter: none; }
+  .welcomeBack .primaryButton:hover:not(:disabled) { transform: translateY(-1px); background: linear-gradient(135deg, #f45b20 0%, #ed3557 100%); box-shadow: 0 15px 30px rgba(255, 71, 101, .25); filter: none; }
   .welcomeBack .primaryButton:focus-visible,
   .welcomeBack .providerButton:focus-visible,
-  .welcomeBack .accountPrompt a:focus-visible { outline-color: rgba(99, 230, 0, .65); }
+  .welcomeBack .accountPrompt a:focus-visible { outline-color: rgba(255, 107, 43, .48); }
   .welcomeBack .socialMethods { gap: 14px; margin-top: 19px; }
   .welcomeBack .divider { color: #969c9a; font-size: 12px; font-weight: 500; }
   .welcomeBack .divider::before,
@@ -90,19 +90,19 @@
     min-height: 56px;
     border-color: #e2e7e4;
     border-radius: 17px;
-    color: #063f32;
+    color: #111318;
     font-size: 14px;
     font-weight: 650;
   }
-  .welcomeBack .providerButton:hover:not(:disabled) { border-color: #bbd6ca; background: #f9fdf9; transform: none; }
+  .welcomeBack .providerButton:hover:not(:disabled) { border-color: #ffc5ae; background: #fffaf7; transform: none; }
   .welcomeBack .googleMark {
     color: transparent;
     background: conic-gradient(from -45deg, #4285f4 0 25%, #34a853 0 40%, #fbbc05 0 65%, #ea4335 0 82%, #4285f4 0);
     background-clip: text;
     -webkit-background-clip: text;
   }
-  .welcomeBack .differentMethod,
-  .welcomeBack .accountPrompt { display: none; }
+  .welcomeBack .differentMethod { margin-top: 14px; color: #655c58; }
+  .welcomeBack .accountPrompt { display: block; margin-top: 16px; }
   .welcomeBack .legal {
     display: block;
     margin-top: 30px;
@@ -112,7 +112,7 @@
     line-height: 1.45;
   }
   .welcomeBack .legal span,
-  .welcomeBack .legal a { color: #35b65b; font-weight: 650; text-decoration: none; }
+  .welcomeBack .legal a { color: #e65220; font-weight: 650; text-decoration: none; }
   .loading, .failed { min-height: 150px; }
   .loading :global(.qr-loader) { min-height: 132px; transform: scale(.72); }
 }

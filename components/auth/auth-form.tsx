@@ -145,40 +145,11 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   }
 
   const submitLabel = sent ? "Verify and continue" : "Continue";
+  const submitAriaLabel = sent ? submitLabel : mode === "sign-up" ? channel === "phone" ? "Text me a code" : "Email me a code" : submitLabel;
   const fieldId = mode === "sign-in" ? "sign-in-identifier" : "sign-up-identifier";
 
-  if (!isWelcomeBack) {
-    const legacySubmitLabel = sent ? "Verify and continue" : channel === "phone" ? "Text me a code" : "Email me a code";
-    return (
-      <div className="w-full max-w-sm space-y-5">
-        <form onSubmit={submit} noValidate className="space-y-4">
-          {process.env.NEXT_PUBLIC_CLERK_PHONE_AUTH_ENABLED === "true" && !sent ? (
-            <label className="block text-sm">
-              Sign in using
-              <select aria-label="Sign in using" value={channel} disabled={busy} onChange={(event) => { setChannel(event.target.value === "phone" ? "phone" : "email"); setIdentifier(""); setError(""); }} className="min-h-12 w-full rounded-xl border border-line px-3">
-                <option value="email">Email code</option>
-                <option value="phone">Phone code</option>
-              </select>
-            </label>
-          ) : null}
-          <label className="block text-sm font-medium" htmlFor={fieldId}>{channel === "phone" ? "Phone number (with country code)" : "Email address"}</label>
-          <input id={fieldId} aria-describedby={error ? "auth-error" : undefined} aria-invalid={Boolean(error) && !sent} className="min-h-12 w-full rounded-xl border border-line px-3" type={channel === "phone" ? "tel" : "email"} autoComplete={channel === "phone" ? "tel" : "email"} required disabled={sent || busy} value={identifier} onChange={(event) => { setIdentifier(event.target.value); if (error) setError(""); }} placeholder={channel === "phone" ? "+234…" : "you@example.com"} />
-          {sent ? <><p className="text-sm text-muted">Enter the code sent to {identifier}.</p><label className="block text-sm font-medium" htmlFor="auth-code">Verification code</label><input id="auth-code" aria-describedby={error ? "auth-error" : undefined} aria-invalid={Boolean(error)} className="min-h-12 w-full rounded-xl border border-line px-3 text-center tracking-[.35em]" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => { setCode(event.target.value.replace(/\D/g, "").slice(0, 6)); if (error) setError(""); }} /></> : null}
-          {error ? <p id="auth-error" role="alert" aria-live="polite" className="text-sm text-red-700">{error}</p> : null}
-          <button aria-label={legacySubmitLabel} disabled={busy} className="button-primary w-full" type="submit">{busy ? sent ? "Checking code…" : "Sending code…" : "Continue"}</button>
-          <div id="clerk-captcha" />
-        </form>
-        <div className="auth-form-links">
-          {sent ? <><button type="button" disabled={busy} className="button-quiet" onClick={resend}>Resend code</button><button type="button" disabled={busy} className="button-quiet" onClick={restart}>Use another {channel}</button></> : null}
-          <Link className="text-primary underline" href={`/${other}?redirect_url=${encodeURIComponent(returnTo)}`}>Sign in instead</Link>
-          <button type="button" className="button-quiet" onClick={() => setAdvanced(true)}>More options</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`${styles.formWrap} ${isWelcomeBack ? styles.welcomeBack : ""}`}>
+    <div className={`${styles.formWrap} ${styles.welcomeBack}`}>
       <form onSubmit={submit} noValidate className={styles.form}>
         {process.env.NEXT_PUBLIC_CLERK_PHONE_AUTH_ENABLED === "true" && !sent ? (
           <label className={styles.methodLabel}>
@@ -202,7 +173,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         <label className={styles.label} htmlFor={fieldId}>{channel === "phone" ? "Phone number" : isWelcomeBack ? "Email" : "Email address"}</label>
         <div className={styles.inputShell} data-invalid={Boolean(error) && !sent ? "true" : undefined}>
           {channel === "email" ? <Mail size={19} aria-hidden="true" /> : null}
-          {channel === "email" && isWelcomeBack ? <span className={styles.mobilePlaceholder} aria-hidden="true">Email</span> : null}
+          {channel === "email" ? <span className={styles.mobilePlaceholder} aria-hidden="true">Email</span> : null}
           <input
             id={fieldId}
             aria-label={channel === "phone" ? "Phone number (with country code)" : "Email address"}
@@ -219,7 +190,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
               setIdentifier(event.target.value);
               if (error) setError("");
             }}
-            placeholder={channel === "phone" ? "+234…" : isWelcomeBack ? "you@youremail.com" : "you@example.com"}
+            placeholder={channel === "phone" ? "+234…" : "you@youremail.com"}
           />
         </div>
 
@@ -249,10 +220,11 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
 
         <div id="auth-error" className={styles.error} role={error ? "alert" : undefined} aria-live="polite">{error}</div>
 
-        <button aria-label={submitLabel} disabled={busy} className={styles.primaryButton} type="submit">
+        <button aria-label={submitAriaLabel} disabled={busy} className={styles.primaryButton} type="submit">
           {busy ? sent ? "Checking code…" : "Sending code…" : submitLabel}
           {!busy ? <ArrowRight size={18} aria-hidden="true" /> : null}
         </button>
+        <div id="clerk-captcha" />
       </form>
 
       {!sent && (supportsGoogle || supportsApple) ? (
