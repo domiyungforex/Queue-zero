@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
 import { ArrowRight, Check, Clock3, QrCode, Radio, ScanLine } from "lucide-react";
 import { FrequentlyAskedQuestions } from "@/components/marketing/faq";
 import { Arrow, MarketingFrame } from "@/components/marketing/site";
+import { MarketingClosingActions, MarketingHeroActions } from "@/components/marketing/session-actions";
 import { FeatureIllustrationCard, IndustryIllustration, ProfessionalCharacter } from "@/components/ui/turnmark-system";
 import { TURNMARK_ASSETS } from "@/lib/brand/assets";
 import { pageMetadata } from "@/lib/site/metadata";
@@ -28,20 +28,16 @@ export const metadata = pageMetadata(
   "/",
 );
 
-export default async function Home() {
-  const signedIn = Boolean((await auth()).userId);
+export default function Home() {
   return (
-    <MarketingFrame stickyCta={false} authenticated={signedIn}>
+    <MarketingFrame stickyCta={false}>
       <main id="main">
         <section className={styles.tmHero} aria-labelledby="hero-title">
           <div className={styles.tmHeroCopy}>
             <p className={styles.tmPill}><span>NEW</span> Queues, attendance and supported appointments</p>
             <h1 id="hero-title">People flow better with <em>TuRnMaRk.</em></h1>
             <p>Simple, modern queue management that lets people scan, join, leave the line and return when they’re almost next.</p>
-            <div className={styles.tmHeroActions}>
-              <Link href={signedIn ? "/dashboard" : "/sign-up"} className={`${styles.tmPrimaryAction} ${styles.tmMobileHiddenPrimary}`}>{signedIn ? "Go to dashboard" : "Get started"} <ArrowRight size={18} aria-hidden="true" /></Link>
-              <Link href={signedIn ? "/dashboard/queues/new" : "#how-it-works"} className={styles.tmSecondaryAction}>{signedIn ? <ArrowRight size={18} aria-hidden="true" /> : <span aria-hidden="true">▶</span>} {signedIn ? "Create queue" : "See how it works"}</Link>
-            </div>
+            <MarketingHeroActions />
             <p className={styles.tmAssurance}><Check size={15} aria-hidden="true" /> No download or customer account required.</p>
           </div>
           <div className={styles.tmHeroVisual}>
@@ -99,7 +95,7 @@ export default async function Home() {
 
         <section className={styles.tmCaseStudy} id="case-studies"><div><p>REAL OPERATIONS. VERIFIED STORIES.</p><h2>Running a TuRnMaRk pilot?</h2><span>We only publish customer results and reviews with permission. Tell us about your workflow, waiting times and lessons.</span></div><Link href="/contact" className={styles.tmPrimaryAction}>Discuss a case study <ArrowRight size={18} aria-hidden="true" /></Link></section>
 
-        <section className={styles.tmClosing}><p>READY TO CHANGE THE WAIT?</p><h2>Give people their place in line—and their time back.</h2><div className={styles.tmHeroActions}><Link href={signedIn ? "/dashboard" : "/sign-up"} className={styles.tmPrimaryAction}>{signedIn ? "Go to dashboard" : "Get started free"} <ArrowRight size={18} aria-hidden="true" /></Link>{signedIn && <Link href="/dashboard/queues/new" className={styles.tmSecondaryAction}>Create queue <ArrowRight size={18} aria-hidden="true" /></Link>}</div></section>
+        <section className={styles.tmClosing}><p>READY TO CHANGE THE WAIT?</p><h2>Give people their place in line—and their time back.</h2><MarketingClosingActions /></section>
       </main>
     </MarketingFrame>
   );

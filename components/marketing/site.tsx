@@ -1,24 +1,25 @@
 import Link from "next/link";
+import { ClerkProvider } from "@clerk/nextjs";
 import { siteDetails } from "@/lib/site/config";
 import { jsonLd, siteUrl } from "@/lib/site/metadata";
+import { publicEnv } from "@/lib/env";
 import { MarketingAnalytics } from "./analytics";
 import { Brand } from "@/components/ui/brand";
-import { ResponsiveNavigation } from "@/components/ui/turnmark-system";
+import { MarketingAccountFooterLink, MarketingSessionNavigation, MarketingStickyAction } from "./session-actions";
 import styles from "./site.module.css";
 
 export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={diagonal ? "M6 18 18 6M6 6h12v12" : "M4 12h16m-6-6 6 6-6 6"} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 export { Brand };
-export function MarketingHeader({ authenticated = false }: { authenticated?: boolean }) {
-  return <div className={styles.marketingNav}><ResponsiveNavigation items={[{href:"/#product",label:"Product"},{href:"/#solutions",label:"Solutions"},{href:"/pricing",label:"Pricing"},{href:"/how-it-works",label:"Resources"},{href:"/contact",label:"Contact"}]} secondaryAction={authenticated ? {href:"/dashboard",label:"Go to dashboard"} : {href:"/sign-in",label:"Sign in"}} primaryAction={authenticated ? {href:"/dashboard/queues/new",label:"Create queue"} : {href:"/sign-up",label:"Get started"}} /></div>;
+export function MarketingHeader() {
+  return <div className={styles.marketingNav}><MarketingSessionNavigation /></div>;
 }
-export function MarketingFooter({ authenticated = false }: { authenticated?: boolean }) {
-  return <footer className={styles.footer}><div><Brand /><p>People flow better<br />with TuRnMaRk.</p></div><nav aria-label="Footer"><Link href="/#product">Product</Link><Link href="/#solutions">Solutions</Link><Link href="/how-it-works">How it works</Link><Link href="/pricing">Pricing</Link><Link href="/solutions/education">Education</Link><Link href="/contact">Contact</Link><Link href={authenticated ? "/dashboard" : "/sign-in"}>{authenticated ? "Dashboard" : "Sign in"}</Link><Link href="/privacy">Privacy</Link></nav><p className={styles.footerNote}>Scan. Join.<br />Leave the line.</p><div className={styles.footerBottom}><span>© {new Date().getFullYear()} TuRnMaRk</span><span>Queues first. Better arrivals everywhere.</span></div></footer>;
+export function MarketingFooter() {
+  return <footer className={styles.footer}><div><Brand /><p>People flow better<br />with TuRnMaRk.</p></div><nav aria-label="Footer"><Link href="/#product">Product</Link><Link href="/#solutions">Solutions</Link><Link href="/how-it-works">How it works</Link><Link href="/pricing">Pricing</Link><Link href="/solutions/education">Education</Link><Link href="/contact">Contact</Link><MarketingAccountFooterLink /><Link href="/privacy">Privacy</Link></nav><p className={styles.footerNote}>Scan. Join.<br />Leave the line.</p><div className={styles.footerBottom}><span>© {new Date().getFullYear()} TuRnMaRk</span><span>Queues first. Better arrivals everywhere.</span></div></footer>;
 }
-export function MarketingFrame({ children, stickyCta = true, authenticated = false }: { children: React.ReactNode; stickyCta?: boolean; authenticated?: boolean }) {
+export function MarketingFrame({ children, stickyCta = true }: { children: React.ReactNode; stickyCta?: boolean }) {
   const details = siteDetails();
-  const isAuthenticated = authenticated;
   const organization = { "@context": "https://schema.org", "@type": details.address ? "LocalBusiness" : "Organization", name: "TuRnMaRk", url: siteUrl().href, logo: new URL("/icons/icon-512.png", siteUrl()).href, ...(details.email ? { email: details.email } : {}), ...(details.phone ? { telephone: details.phone } : {}), ...(details.address ? { address: details.address } : {}) };
-  return <div className={styles.site}><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} /><MarketingHeader authenticated={isAuthenticated} />{children}<MarketingFooter authenticated={isAuthenticated} />{stickyCta?<div className={styles.stickyCta}><Link href={isAuthenticated ? "/dashboard/queues/new" : "/sign-up"}>{isAuthenticated ? "Create queue" : "Get started"} <Arrow /></Link></div>:null}{details.gaId && <MarketingAnalytics id={details.gaId} />}</div>;
+  return <ClerkProvider publishableKey={publicEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/"><div className={styles.site}><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} /><MarketingHeader />{children}<MarketingFooter />{stickyCta?<div className={styles.stickyCta}><MarketingStickyAction arrow={<Arrow />} /></div>:null}{details.gaId && <MarketingAnalytics id={details.gaId} />}</div></ClerkProvider>;
 }
