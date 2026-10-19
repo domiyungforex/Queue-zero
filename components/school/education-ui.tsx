@@ -15,7 +15,7 @@ export function EducationEmpty({ title, description, href, label = "Get started"
 }
 
 export function EducationMetric({ icon: Icon, value, label, color, soft }: { icon: LucideIcon; value: string | number; label: string; color: string; soft: string }) {
-  return <article className={styles.metric}><span className={styles.metricIcon} style={{ "--color": color, "--soft": soft } as React.CSSProperties}><Icon size={18} aria-hidden="true" /></span><strong>{value}</strong><span>{label}</span></article>;
+  return <article className={styles.metric}><span className={styles.metricIcon} style={{ "--color": color, "--soft": soft } as React.CSSProperties}><Icon size={18} aria-hidden="true" /></span><strong>{value}</strong><span className={styles.metricLabel}>{label}</span></article>;
 }
 
 export function EducationStatus({ children, tone = "info" }: { children: React.ReactNode; tone?: "success" | "warning" | "danger" | "muted" | "info" }) {
