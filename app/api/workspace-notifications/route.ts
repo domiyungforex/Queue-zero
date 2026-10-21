@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getWorkspaceNotificationSnapshot, markWorkspaceNotificationsRead } from "@/lib/notifications/workspace";
@@ -7,7 +8,20 @@ const markReadSchema = z.object({ notificationId: z.uuid().optional() }).strict(
 
 const noStore = { "Cache-Control": "private, no-store" };
 
+async function hasAuthenticatedSession() {
+  try {
+    return Boolean((await auth()).userId);
+  } catch {
+    return false;
+  }
+}
+
+function signInRequired() {
+  return NextResponse.json({ error: "Sign in required" }, { status: 401, headers: noStore });
+}
+
 export async function GET() {
+  if (!(await hasAuthenticatedSession())) return signInRequired();
   try {
     return NextResponse.json(await getWorkspaceNotificationSnapshot(), { headers: noStore });
   } catch {
@@ -16,6 +30,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!(await hasAuthenticatedSession())) return signInRequired();
   try {
     const raw = await readLimitedBody(request, 1024);
     const input = markReadSchema.parse(JSON.parse(raw));
