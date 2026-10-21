@@ -7,7 +7,7 @@ for (const width of [320, 768]) {
   await page.setViewportSize({ width, height: 900 });
   const response = await page.goto("/attend?token=invalid-attendance-token");
   expect(response?.status()).toBe(200);
-  await expect(page.getByRole("heading", { name: "Mark Attendance" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mark your attendance" })).toBeVisible();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(/closed|invalid|unavailable/i);
   await expect(page.getByRole("button", { name: "Mark Attendance" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: /sign in|create account/i })).toHaveCount(0);
