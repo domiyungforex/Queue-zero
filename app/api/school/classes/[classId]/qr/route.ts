@@ -19,9 +19,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
     const draft = newAttendanceToken(classId, classId);
     const db = await createUserSupabaseClient();
     const { data, error } = await db.rpc("school_issue_qr", { p_class_id: classId, p_nonce: draft.nonce, p_expires_at: new Date(draft.expires_at * 1000).toISOString() });
-    const issued = z.object({ organization_id: z.uuid(), session_id: z.uuid(), nonce: z.uuid(), issued_at: z.iso.datetime({ offset: true }), expires_at: z.iso.datetime({ offset: true }) }).safeParse(data);
+    const issued = z.object({
+      organization_id: z.uuid(),
+      session_id: z.uuid(),
+      nonce: z.uuid().optional(),
+      issued_at: z.iso.datetime({ offset: true }).optional(),
+      expires_at: z.iso.datetime({ offset: true }),
+    }).refine((value) => Boolean(value.nonce) === Boolean(value.issued_at)).safeParse(data);
     if (error || !issued.success || issued.data.session_id !== classId) return NextResponse.json({ error: "This class is unavailable or you do not have permission." }, { status: 403, headers });
-    const payload = attendanceTokenSchema.parse({ version: 1, purpose: "CLASS_ATTENDANCE", organization_id: issued.data.organization_id, session_id: classId, nonce: issued.data.nonce, issued_at: Math.floor(Date.parse(issued.data.issued_at) / 1000), expires_at: Math.floor(Date.parse(issued.data.expires_at) / 1000) });
+    // Older hosted school_issue_qr versions return the submitted expiry but not
+    // the submitted nonce/issue time. The function stores p_nonce atomically, so
+    // the signed fallback remains bound to the exact database row it just wrote.
+    const payload = attendanceTokenSchema.parse({ version: 1, purpose: "CLASS_ATTENDANCE", organization_id: issued.data.organization_id, session_id: classId, nonce: issued.data.nonce ?? draft.nonce, issued_at: issued.data.issued_at ? Math.floor(Date.parse(issued.data.issued_at) / 1000) : draft.issued_at, expires_at: Math.floor(Date.parse(issued.data.expires_at) / 1000) });
     const token = signAttendanceToken(payload, secret);
     const url = new URL("/attend", publicEnv.NEXT_PUBLIC_APP_URL);
     url.searchParams.set("token", token);
