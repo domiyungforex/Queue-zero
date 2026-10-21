@@ -5,7 +5,9 @@ const stateMessages: Record<string, string> = {
   "Class cannot be reopened": "This attendance session has ended.",
   "Class is not open": "This attendance session is not open.",
   "Class cannot finish before its scheduled start": "This class cannot be finished before its scheduled start.",
-  "Assign a lecturer before opening attendance": "Assign a lecturer to this class before opening attendance.",
+  // Compatibility message for a database that has not received the migration.
+  // Lecturer assignment is optional and must not block attendance.
+  "Assign a lecturer before opening attendance": "Attendance could not open because this workspace needs a database update.",
   "Course unavailable": "You don’t have permission to update this class.",
   "Class unavailable": "You don’t have permission to update this class.",
   "Flag unavailable": "You don’t have permission to update this attendance record.",

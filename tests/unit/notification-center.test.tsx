@@ -52,4 +52,11 @@ describe("workspace notification center", () => {
     expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
     await waitFor(() => expect(fetch).toHaveBeenCalledWith("/api/workspace-notifications", expect.objectContaining({ method: "POST" })));
   });
+
+  it("opens the dedicated notification inbox on mobile", () => {
+    vi.stubGlobal("matchMedia", vi.fn().mockImplementation(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    render(<NotificationCenter variant="mobile" businessId="20000000-0000-4000-8000-000000000001" userId="user_owner" initial={initial} />);
+    expect(screen.getByRole("link", { name: "Notifications, 1 unread" }).getAttribute("href")).toBe("/dashboard/notifications");
+    expect(screen.queryByRole("dialog", { name: "Notifications" })).toBeNull();
+  });
 });

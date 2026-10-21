@@ -18,6 +18,12 @@ select school_create_accountless_class(:'org',:'course',clock_timestamp()-interv
 select school_manage('open',jsonb_build_object('organization_id',:'org','class_id',:'class'));
 select is((select count(*) from class_roster where class_session_id=:'class'),3::bigint,'opening freezes the official roster');
 
+-- Lecturer assignment is delegated access, not an attendance prerequisite.
+select school_manage('course',jsonb_build_object('organization_id',:'org','department_id',:'department','code','PHY102','title','Waves'))->>'id' as owner_course \gset
+select school_create_accountless_class(:'org',:'owner_course',clock_timestamp()-interval '5 minutes',clock_timestamp()+interval '30 minutes',10,clock_timestamp()+interval '15 minutes')->>'id' as owner_class \gset
+select school_manage('open',jsonb_build_object('organization_id',:'org','class_id',:'owner_class'));
+select is((select status::text from sessions where id=:'owner_class'),'OPEN','workspace owner opens attendance without assigning a lecturer');
+
 select gen_random_uuid() as nonce1,gen_random_uuid() as nonce2,gen_random_uuid() as request1 \gset
 select school_issue_qr(:'class',:'nonce1',clock_timestamp()+interval '30 seconds') as issued \gset
 select is((school_issue_qr(:'class',:'nonce2',clock_timestamp()+interval '30 seconds')->>'nonce'),(:'issued')::jsonb->>'nonce','class QR remains stable throughout its attendance window');

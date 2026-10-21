@@ -5,6 +5,7 @@ import { Bell, BellRing, CheckCheck, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { getRealtimeClient } from "@/lib/realtime/use-live";
 import type { WorkspaceNotificationSnapshot } from "@/lib/notifications/workspace";
+import { publishWorkspaceNotifications, WORKSPACE_NOTIFICATIONS_EVENT } from "@/lib/notifications/client";
 import styles from "./notification-center.module.css";
 
 function notificationTime(value: string) {
@@ -37,13 +38,22 @@ export function NotificationCenter({ businessId, userId, initial, variant }: { b
       const response = await fetch("/api/workspace-notifications", { cache: "no-store", signal: AbortSignal.timeout(10_000) });
       if (!response.ok) throw new Error();
       const next = await response.json() as WorkspaceNotificationSnapshot;
-      if (mounted.current) { setSnapshot(next); setError(""); }
+      if (mounted.current) { setSnapshot(next); setError(""); publishWorkspaceNotifications(next); }
     } catch {
       if (mounted.current) setError("Notifications couldn’t be refreshed.");
     }
   }, []);
 
-  useEffect(() => () => { mounted.current = false; }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  useEffect(() => {
+    const sync = (event: Event) => setSnapshot((event as CustomEvent<WorkspaceNotificationSnapshot>).detail);
+    window.addEventListener(WORKSPACE_NOTIFICATIONS_EVENT, sync);
+    return () => window.removeEventListener(WORKSPACE_NOTIFICATIONS_EVENT, sync);
+  }, []);
 
   useEffect(() => {
     let stopped = false;
@@ -108,11 +118,14 @@ export function NotificationCenter({ businessId, userId, initial, variant }: { b
 
   const badge = snapshot.unread > 99 ? "99+" : String(snapshot.unread);
   return <div className={styles.root} data-open={open || undefined}>
-    <button className={styles.trigger} type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-haspopup="dialog" aria-label={`Notifications${snapshot.unread ? `, ${snapshot.unread} unread` : ""}`}>
+    {variant === "mobile" ? <Link className={styles.trigger} href="/dashboard/notifications" aria-label={`Notifications${snapshot.unread ? `, ${snapshot.unread} unread` : ""}`}>
       {snapshot.unread ? <BellRing size={20} aria-hidden="true" /> : <Bell size={20} aria-hidden="true" />}
       {snapshot.unread ? <span className={styles.badge} aria-hidden="true">{badge}</span> : null}
-    </button>
-    {open ? <section className={styles.panel} role="dialog" aria-modal="false" aria-label="Notifications">
+    </Link> : <button className={styles.trigger} type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-haspopup="dialog" aria-label={`Notifications${snapshot.unread ? `, ${snapshot.unread} unread` : ""}`}>
+      {snapshot.unread ? <BellRing size={20} aria-hidden="true" /> : <Bell size={20} aria-hidden="true" />}
+      {snapshot.unread ? <span className={styles.badge} aria-hidden="true">{badge}</span> : null}
+    </button>}
+    {variant === "desktop" && open ? <section className={styles.panel} role="dialog" aria-modal="false" aria-label="Notifications">
       <header><div><h2>Notifications</h2><p><span data-live={live || undefined} />{live ? "Live updates" : "Reconnecting…"}</p></div><button type="button" onClick={() => setOpen(false)} aria-label="Close notifications"><X size={19} /></button></header>
       {snapshot.unread ? <button className={styles.markAll} type="button" disabled={pending} onClick={() => markRead()}><CheckCheck size={16} />Mark all read</button> : null}
       {error ? <p className={styles.error} role="alert">{error}<button type="button" onClick={() => void refresh()}>Try again</button></p> : null}

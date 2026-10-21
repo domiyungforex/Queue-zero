@@ -2,6 +2,7 @@
 
 /* Narrow phones: keep school controls within the viewport; scroll dense registers independently. */
 .school-grid,.school-card,.school-form,.school-table-wrap{min-width:0;max-width:100%}
+.school-optional{margin:22px 0;border:1px solid #eee4df;border-radius:16px;background:#fff}.school-optional>summary{display:flex;min-height:52px;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;list-style:none;color:#595963;font-size:13px;font-weight:750;cursor:pointer}.school-optional>summary::-webkit-details-marker{display:none}.school-optional>summary span{border-radius:999px;background:#f4f0ee;padding:5px 8px;color:#858087;font-size:8px;letter-spacing:.08em;text-transform:uppercase}.school-optional-content{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:14px;border-top:1px solid #f1e9e5;padding:16px}.school-optional-content>p{grid-column:1/-1;margin:0;color:#77727a;font-size:11px;line-height:1.6}.school-optional-content .school-form{box-shadow:none}
 .school-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 .school-table{min-width:620px}
 .school-form input,.school-form select,.school-form textarea{width:100%;box-sizing:border-box;font-size:16px}
