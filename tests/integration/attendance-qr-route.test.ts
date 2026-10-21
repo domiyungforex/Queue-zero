@@ -21,6 +21,16 @@ describe("authorized stable class QR route", () => {
     expect(payload).toMatchObject({ organization_id: org, session_id: classId, issued_at: Math.floor(Date.now() / 1000) });
     expect(mocks.rpc).toHaveBeenCalledWith("school_issue_qr", expect.objectContaining({ p_class_id: classId, p_nonce: payload.nonce }));
   });
-  it("does not issue for anonymous, unauthorized or cross-site callers", async () => { mocks.auth.mockResolvedValueOnce({ userId: null }); expect((await request()).status).toBe(401); expect(mocks.rpc).not.toHaveBeenCalled(); mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: "denied" } }); expect((await request()).status).toBe(403); const cross = await GET(new Request("http://localhost:3000/api/qr", { headers: { origin: "https://other.test", "sec-fetch-site": "cross-site" } }), { params: Promise.resolve({ classId }) }); expect(cross.status).toBe(403); });
+  it("does not issue for anonymous, unauthorized or cross-site callers", async () => { mocks.auth.mockResolvedValueOnce({ userId: null }); expect((await request()).status).toBe(401); expect(mocks.rpc).not.toHaveBeenCalled(); mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: "42501", message: "denied" } }); expect((await request()).status).toBe(403); const cross = await GET(new Request("http://localhost:3000/api/qr", { headers: { origin: "https://other.test", "sec-fetch-site": "cross-site" } }), { params: Promise.resolve({ classId }) }); expect(cross.status).toBe(403); });
+  it("accepts the same origin serving the request instead of a stale configured canonical origin", async () => {
+    const response = await GET(new Request("https://turnmark.custom.test/api/qr", { headers: { origin: "https://turnmark.custom.test", "sec-fetch-site": "same-origin" } }), { params: Promise.resolve({ classId }) });
+    expect(response.status).toBe(200);
+  });
+  it("maps closed and operational database failures without exposing raw errors", async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: "22023", message: "Attendance is closed" } });
+    expect(await (await request()).json()).toEqual({ error: "Attendance is closed or this QR was revoked.", code: "ATTENDANCE_CLOSED" });
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: "57014", message: "secret database detail" } });
+    expect(await (await request()).json()).toEqual({ error: "Attendance QR is temporarily unavailable.", code: "DATABASE_UNAVAILABLE" });
+  });
   it("rejects mismatched database class and malformed identifiers", async () => { mocks.rpc.mockResolvedValueOnce({ error: null, data: { organization_id: org, session_id: org, nonce, issued_at: issuedAt, expires_at: expiresAt } }); expect((await request()).status).toBe(403); expect((await GET(new Request("http://localhost"), { params: Promise.resolve({ classId: "bad" }) })).status).toBe(400); });
 });
