@@ -45,7 +45,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
     const token = signAttendanceToken(payload, secret);
     const url = new URL("/attend", publicEnv.NEXT_PUBLIC_APP_URL);
     url.searchParams.set("token", token);
-    return NextResponse.json({ url: url.href, expiresAt: issued.data.expires_at }, { headers });
+    // PostgreSQL emits offsets such as +00:00. Keep the browser contract in UTC
+    // so clients that only accept a trailing Z can display the issued QR too.
+    return NextResponse.json({ url: url.href, expiresAt: new Date(issued.data.expires_at).toISOString() }, { headers });
   } catch (cause) {
     console.error("Attendance QR generation failed", { reason: cause instanceof Error ? cause.message : "unknown" });
     return NextResponse.json({ error: "Attendance QR is temporarily unavailable.", code: "QR_UNAVAILABLE" }, { status: 503, headers });

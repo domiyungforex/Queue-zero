@@ -6,12 +6,23 @@ vi.mock("@/lib/db/server", () => ({ createUserSupabaseClient: async () => ({ rpc
 import { GET } from "@/app/api/school/classes/[classId]/qr/route";
 import { validateAttendanceToken } from "@/lib/qr/validation";
 import { attendanceSecret } from "@/lib/qr/secret";
+import { z } from "zod";
 const classId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", nonce = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const issuedAt = "2026-10-04T10:00:00.000+00:00", expiresAt = "2026-10-04T12:00:00.000+00:00";
 const request = () => GET(new Request("http://localhost:3000/api/qr"), { params: Promise.resolve({ classId }) });
 beforeEach(() => { vi.stubEnv("ATTENDANCE_QR_SECRET", "s".repeat(64)); vi.setSystemTime(new Date("2026-10-04T10:01:00Z")); mocks.auth.mockResolvedValue({ userId: "lecturer" }); mocks.rpc.mockResolvedValue({ error: null, data: { organization_id: org, session_id: classId, nonce, issued_at: issuedAt, expires_at: expiresAt } }); });
 describe("authorized stable class QR route", () => {
-  it("signs the database-issued stable class token after staff authorization", async () => { const response = await request(); expect(response.status).toBe(200); expect(response.headers.get("cache-control")).toContain("no-store"); const body = await response.json(); const payload = validateAttendanceToken(new URL(body.url).searchParams.get("token")!, attendanceSecret()); expect(payload).toMatchObject({ organization_id: org, session_id: classId, nonce }); expect(payload.expires_at - payload.issued_at).toBe(7200); expect(body.expiresAt).toBe(expiresAt); });
+  it("signs the database-issued stable class token after staff authorization", async () => { const response = await request(); expect(response.status).toBe(200); expect(response.headers.get("cache-control")).toContain("no-store"); const body = await response.json(); const payload = validateAttendanceToken(new URL(body.url).searchParams.get("token")!, attendanceSecret()); expect(payload).toMatchObject({ organization_id: org, session_id: classId, nonce }); expect(payload.expires_at - payload.issued_at).toBe(7200); expect(body.expiresAt).toBe("2026-10-04T12:00:00.000Z"); });
+  it("normalizes offset timestamps for existing browsers without changing token expiry", async () => {
+    mocks.rpc.mockResolvedValueOnce({ error: null, data: { organization_id: org, session_id: classId, nonce, issued_at: issuedAt, expires_at: "2026-10-04T13:00:00.123456+01:00" } });
+    const response = await request();
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.expiresAt).toBe("2026-10-04T12:00:00.123Z");
+    expect(z.iso.datetime().safeParse(body.expiresAt).success).toBe(true);
+    const payload = validateAttendanceToken(new URL(body.url).searchParams.get("token")!, attendanceSecret());
+    expect(payload.expires_at).toBe(Date.parse("2026-10-04T12:00:00Z") / 1000);
+  });
   it("supports the older authorized RPC response using the nonce submitted atomically", async () => {
     mocks.rpc.mockResolvedValueOnce({ error: null, data: { organization_id: org, session_id: classId, expires_at: "2026-10-04T10:01:30.000+00:00" } });
     const response = await request();

@@ -5,14 +5,41 @@ import Image from "next/image";
 import { z } from "zod";
 import { Clock3, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
 import styles from "./attendance-qr.module.css";
-const qrResponse = z.object({ url: z.url(), expiresAt: z.iso.datetime() });
+const qrResponse = z.object({ url: z.url(), expiresAt: z.iso.datetime({ offset: true }) });
 const qrErrorResponse = z.object({ error: z.string().min(1).max(160), code: z.string().max(60).optional() });
+const unavailableMessage = "We couldn’t create this attendance QR. Try again.";
 export function AttendanceQr({ classId }: { classId: string }) {
   const [qr, setQr] = useState<{ image: string; expires: number } | null>(null);
   const [error, setError] = useState(""); const [retry, setRetry] = useState(0);
   useEffect(() => {
     let stopped = false; let busy = false; const controller = new AbortController();
-    async function load() { if (busy) return; busy = true; try { const response = await fetch(`/api/school/classes/${classId}/qr`, { cache: "no-store", signal: controller.signal }); const body: unknown = await response.json(); if (!response.ok) { const failure = qrErrorResponse.safeParse(body); throw new Error(failure.success ? failure.data.error : "We couldn’t create this attendance QR."); } const value = qrResponse.parse(body); const expires = Date.parse(value.expiresAt); if (expires <= Date.now()) throw new Error("This attendance QR expired before it could be displayed. Try again."); const image = await QRCode.toDataURL(value.url, { width: 512, margin: 3, errorCorrectionLevel: "M", color: { dark: "#111318", light: "#ffffff" } }); if (!stopped) { setQr({ image, expires }); setError(""); } } catch (cause) { if (!stopped && !controller.signal.aborted) { setError(cause instanceof Error ? cause.message : "We couldn’t create this attendance QR."); setQr(null); } } finally { busy = false; } }
+    function fail(message: string) {
+      if (!stopped && !controller.signal.aborted) { setError(message); setQr(null); }
+    }
+    async function load() {
+      if (busy) return;
+      busy = true;
+      try {
+        const response = await fetch(`/api/school/classes/${classId}/qr`, { cache: "no-store", signal: controller.signal });
+        const body: unknown = await response.json();
+        if (!response.ok) {
+          const failure = qrErrorResponse.safeParse(body);
+          fail(failure.success ? failure.data.error : unavailableMessage);
+          return;
+        }
+        const parsed = qrResponse.safeParse(body);
+        if (!parsed.success) { fail(unavailableMessage); return; }
+        const expires = Date.parse(parsed.data.expiresAt);
+        if (!Number.isFinite(expires)) { fail(unavailableMessage); return; }
+        if (expires <= Date.now()) { fail("This attendance QR expired before it could be displayed. Try again."); return; }
+        const image = await QRCode.toDataURL(parsed.data.url, { width: 512, margin: 3, errorCorrectionLevel: "M", color: { dark: "#111318", light: "#ffffff" } });
+        if (!stopped) { setQr({ image, expires }); setError(""); }
+      } catch {
+        fail(unavailableMessage);
+      } finally {
+        busy = false;
+      }
+    }
     void load(); const recover = () => { void load(); }; window.addEventListener("online", recover);
     return () => { stopped = true; controller.abort(); window.removeEventListener("online", recover); };
   }, [classId, retry]);
