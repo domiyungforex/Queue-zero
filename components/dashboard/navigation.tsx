@@ -64,7 +64,7 @@ export function DashboardNavigation({
 
   if (role !== "student") links.push({ href: "/dashboard", label: variant === "mobile" ? "Home" : "Dashboard", icon: LayoutDashboard });
 
-  if (individualLecturer) {
+  if (individualLecturer && teaching) {
     links.push(
       { href: "/dashboard/courses", label: "Courses", icon: BookOpen },
       { href: "/dashboard/classes", label: "Classes", icon: CalendarDays },
@@ -111,13 +111,14 @@ export function DashboardNavigation({
     );
   }
 
-  const moreRoutes = ["/dashboard/more", "/dashboard/team", "/dashboard/settings", "/dashboard/exports", "/dashboard/billing"];
-  const active = (href: string) => href === "/dashboard" ? pathname === href : href === "/dashboard/more" ? moreRoutes.some((route) => pathname.startsWith(route)) : pathname.startsWith(href);
+  const matches = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const active = (href: string) => href === "/dashboard" ? pathname === href : matches(href);
+  if (role === "student") return null;
   if (variant === "desktop") return <nav aria-label="Workspace navigation" className={styles.desktopNav}>
     {links.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={18} />{link.label}</Link>)}
   </nav>;
 
-  if (education) {
+  if (teaching) {
     const educationLinks: NavigationLink[] = [
       { href: "/dashboard", label: "Home", icon: LayoutDashboard },
       { href: "/dashboard/classes", label: "Classes", icon: CalendarDays },
@@ -126,7 +127,12 @@ export function DashboardNavigation({
       { href: "/dashboard/more", label: "More", icon: MoreHorizontal },
     ];
     return <nav aria-label="Mobile workspace navigation" className={styles.mobileNav}>
-      {educationLinks.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={19} />{link.label}</Link>)}
+      {educationLinks.map((link) => {
+        const selected = link.label === "Classes" ? matches("/dashboard/classes") || matches("/dashboard/courses")
+          : link.label === "More" ? pathname !== "/dashboard" && !["/dashboard/classes", "/dashboard/courses", "/dashboard/attendance", "/dashboard/students"].some(matches)
+          : active(link.href);
+        return <Link href={link.href} key={link.href} aria-current={selected ? "page" : undefined}><link.icon size={19} aria-hidden="true" />{link.label}</Link>;
+      })}
     </nav>;
   }
 
@@ -137,6 +143,6 @@ export function DashboardNavigation({
   const secondary = links.filter((link) => !primary.includes(link));
   return <nav aria-label="Mobile workspace navigation" className={styles.mobileNav}>
     {primary.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={19} />{link.label === "Home" && individualService ? "Overview" : link.label}</Link>)}
-    {!individualService && <details className={styles.more}><summary className={styles.moreSummary}><MoreHorizontal size={20} />More</summary><div className={styles.moreMenu}>{secondary.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={17} />{link.label}</Link>)}</div></details>}
+    {!individualService && secondary.length > 0 && <details className={styles.more} onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}><summary className={styles.moreSummary} aria-current={secondary.some(link => active(link.href)) ? "page" : undefined}><MoreHorizontal size={20} aria-hidden="true" />More</summary><div className={styles.moreMenu}>{secondary.map((link) => <Link href={link.href} key={link.href} onClick={event => { const menu = event.currentTarget.closest("details"); if (menu) menu.open = false; }} aria-current={active(link.href) ? "page" : undefined}><link.icon size={17} aria-hidden="true" />{link.label}</Link>)}</div></details>}
   </nav>;
 }

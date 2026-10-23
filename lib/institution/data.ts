@@ -1,10 +1,13 @@
 import "server-only";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { createUserSupabaseClient } from "@/lib/db/server";
 import { institutionSnapshotSchema } from "./contracts";
-export async function getInstitutionSnapshot(unitId?: string) {
+// Request-local deduplication: the shell and page share the same authorized
+// result without caching one user's data across sessions or requests.
+export const getInstitutionSnapshot = cache(async (unitId?: string) => {
  const membership = await requireBusinessMembership();
  if (unitId && !z.uuid().safeParse(unitId).success) notFound();
  const db = await createUserSupabaseClient();
@@ -15,4 +18,4 @@ export async function getInstitutionSnapshot(unitId?: string) {
  if (!result.success) throw new Error("Institution services are temporarily unavailable.");
  if (result.data.organization.id !== membership.businessId || (unitId && !result.data.units.some(unit => unit.id === unitId))) notFound();
  return { snapshot: result.data, manager: membership.role === "owner" || membership.role === "admin" };
-}
+});

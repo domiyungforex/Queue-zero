@@ -21,7 +21,14 @@ export function StudentScan({ token, classInfo }: { token: string; classInfo: Pu
       try { requestId.current ??= sessionStorage.getItem(storageKey); } catch {}
       requestId.current ??= crypto.randomUUID();
       try { sessionStorage.setItem(storageKey, requestId.current); } catch {}
-      setResult(await recordAttendance({ token, requestId: requestId.current, fullName: form.get("fullName"), matricNumber: form.get("matricNumber") }));
+      const response = await recordAttendance({ token, requestId: requestId.current, fullName: form.get("fullName"), matricNumber: form.get("matricNumber") });
+      setResult(response);
+      // A confirmed rejection can be corrected; an uncertain network result must
+      // keep its request ID so retrying cannot record attendance twice.
+      if (!response.ok && response.status !== "UNAVAILABLE") {
+        requestId.current = null;
+        try { sessionStorage.removeItem(storageKey); } catch {}
+      }
     } catch { setResult({ ok: false, status: "UNAVAILABLE", message: "Connection interrupted. Retry this same submission safely." }); }
     finally { busy.current = false; setPending(false); }
   }
@@ -35,6 +42,6 @@ export function StudentScan({ token, classInfo }: { token: string; classInfo: Pu
     </form>
     {result && <div role="alert" className={styles.formError}><strong>{result.message}</strong></div>}
     {!classInfo.open && <p role="alert" className={styles.formError}>Attendance for this class is closed.</p>}
-    <p className={styles.privacy}><ShieldCheck size={16} aria-hidden="true" />Your details are checked against the official roster. Browser signals may support lecturer review; they do not prove identity or location.</p>
+    <p className={styles.privacy}><ShieldCheck size={16} aria-hidden="true" />No account or advance registration needed. Enter your full name and matric number; an existing student record will be matched when available.</p>
   </section>;
 }

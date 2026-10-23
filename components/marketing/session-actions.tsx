@@ -33,7 +33,7 @@ export function MarketingHeroActions() {
 
   return (
     <div className={styles.tmHeroActions}>
-      <Link href={signedIn ? "/dashboard" : "/sign-up"} className={`${styles.tmPrimaryAction} ${styles.tmMobileHiddenPrimary}`}>
+      <Link href={signedIn ? "/dashboard" : "/sign-up"} className={styles.tmPrimaryAction}>
         {signedIn ? "Go to dashboard" : "Get started"} <ArrowRight size={18} aria-hidden="true" />
       </Link>
       <Link href={signedIn ? "/dashboard/queues/new" : "#how-it-works"} className={styles.tmSecondaryAction}>

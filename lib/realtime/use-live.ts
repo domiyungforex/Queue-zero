@@ -42,17 +42,39 @@ export function useLive(topic: string, onChange: () => void, authenticated = fal
   useEffect(() => {
     if (!enabled) return;
     let stopped = false;
+    let subscribed = false;
+    let connecting = false;
     let debounce: ReturnType<typeof setTimeout> | undefined;
+    let fallback: ReturnType<typeof setTimeout> | undefined;
+    let fallbackDelay = 15_000;
     let channel: RealtimeChannel | undefined;
     const refresh = () => {
-      if (stopped) return;
-      clearTimeout(debounce);
-      debounce = setTimeout(() => callback.current(), 180);
+      if (stopped || document.visibilityState === "hidden" || debounce) return;
+      // Coalesce bursts without postponing every refresh while events keep arriving.
+      debounce = setTimeout(() => {
+        debounce = undefined;
+        if (!stopped && document.visibilityState !== "hidden") callback.current();
+      }, 180);
     };
     const client = getRealtimeClient(authenticated);
 
+    function scheduleFallback() {
+      if (stopped || subscribed || fallback) return;
+      fallback = setTimeout(() => {
+        fallback = undefined;
+        if (stopped || subscribed) return;
+        if (document.visibilityState !== "hidden" && navigator.onLine !== false) {
+          refresh();
+          void connect();
+          fallbackDelay = Math.min(fallbackDelay * 2, 60_000);
+        }
+        scheduleFallback();
+      }, fallbackDelay + Math.floor(Math.random() * 3_000));
+    }
+
     async function connect() {
-      if (!client || stopped || channel) return;
+      if (!client || stopped || channel || connecting) return;
+      connecting = true;
       try {
         // Obtain the verified identity before requesting access to a private staff topic.
         if (authenticated) await client.realtime.setAuth();
@@ -61,31 +83,58 @@ export function useLive(topic: string, onChange: () => void, authenticated = fal
           .on("broadcast", { event: "changed" }, refresh)
           .subscribe(status => {
             if (stopped) return;
-            setConnected(status === "SUBSCRIBED");
-            if (status === "SUBSCRIBED") refresh();
+            subscribed = status === "SUBSCRIBED";
+            setConnected(subscribed);
+            if (subscribed) {
+              clearTimeout(fallback);
+              fallback = undefined;
+              fallbackDelay = 15_000;
+              refresh();
+            } else {
+              if (status === "CLOSED" && channel) {
+                const closedChannel = channel;
+                channel = undefined;
+                void client.removeChannel(closedChannel);
+              }
+              scheduleFallback();
+            }
           });
       } catch {
-        if (!stopped) setConnected(false);
+        if (!stopped) { subscribed = false; setConnected(false); scheduleFallback(); }
+      } finally {
+        connecting = false;
       }
     }
     void connect();
-    // Reconnect, tab focus and bounded polling recover lost events or initial auth failure.
-    const interval = setInterval(() => { refresh(); void connect(); }, 15_000);
-    const visibility = () => { if (document.visibilityState === "visible") refresh(); };
-    window.addEventListener("online", refresh);
+    // Poll only as an outage fallback. Healthy realtime and hidden tabs make no
+    // periodic data requests; jitter/backoff avoids synchronized recovery bursts.
+    scheduleFallback();
+    const recover = () => { refresh(); void connect(); };
+    const visibility = () => { if (document.visibilityState === "visible") recover(); };
+    window.addEventListener("online", recover);
     document.addEventListener("visibilitychange", visibility);
     const renew = authenticated ? setInterval(() => {
-      void client?.realtime.setAuth().catch(() => { if (!stopped) setConnected(false); });
+      if (document.visibilityState === "hidden" || navigator.onLine === false) return;
+      void client?.realtime.setAuth().catch(() => {
+        if (!stopped) {
+          subscribed = false;
+          setConnected(false);
+          const staleChannel = channel;
+          channel = undefined;
+          if (client && staleChannel) void client.removeChannel(staleChannel);
+          scheduleFallback();
+        }
+      });
     }, 45_000) : null;
     return () => {
       stopped = true;
-      clearInterval(interval);
+      clearTimeout(fallback);
       if (renew) clearInterval(renew);
       clearTimeout(debounce);
-      window.removeEventListener("online", refresh);
+      window.removeEventListener("online", recover);
       document.removeEventListener("visibilitychange", visibility);
       if (client && channel) void client.removeChannel(channel);
     };
   }, [topic, authenticated, enabled]);
-  return connected;
+  return enabled && connected;
 }

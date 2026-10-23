@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, MoveRight } from "lucide-react";
+import { MoveRight } from "lucide-react";
 import { Brand } from "@/components/ui/brand";
+import { MobileNavigationMenu } from "@/components/ui/mobile-navigation-menu";
 import { TURNMARK_ASSETS, type TurnmarkAsset } from "@/lib/brand/assets";
 import styles from "@/components/ui/turnmark-system.module.css";
 
@@ -118,14 +119,11 @@ export function ResponsiveNavigation({ items, primaryAction, secondaryAction }: 
         {secondaryAction && <Link className={styles.secondaryAction} href={secondaryAction.href}>{secondaryAction.label}</Link>}
         {primaryAction && <Link className={styles.primaryAction} href={primaryAction.href}>{primaryAction.label}<MoveRight size={16} aria-hidden="true" /></Link>}
       </div>
-      <details className={styles.mobileMenu}>
-        <summary role="button" aria-label="Open navigation"><Menu size={22} aria-hidden="true" /></summary>
-        <nav aria-label="Mobile navigation">
+      <MobileNavigationMenu>
           {items.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
           {secondaryAction && <Link href={secondaryAction.href}>{secondaryAction.label}</Link>}
           {primaryAction && <Link className={styles.primaryAction} href={primaryAction.href}>{primaryAction.label}</Link>}
-        </nav>
-      </details>
+      </MobileNavigationMenu>
     </header>
   );
 }

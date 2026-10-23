@@ -30,24 +30,54 @@ export function NotificationCenter({ businessId, userId, initial, variant }: { b
   const [reconnect, setReconnect] = useState(0);
   const [pending, startTransition] = useTransition();
   const mounted = useRef(true);
+  const requests = useRef<{ inFlight: Promise<void> | null; dirty: boolean; controller: AbortController | null; epoch: number; readVersion: number; pendingReads: number }>({ inFlight: null, dirty: false, controller: null, epoch: 0, readVersion: 0, pendingReads: 0 });
+  const reconnectAttempt = useRef(0);
   const mobileViewport = useMobileViewport();
   const enabled = variant === "mobile" ? mobileViewport : !mobileViewport;
 
   const refresh = useCallback(async () => {
-    try {
-      const response = await fetch("/api/workspace-notifications", { cache: "no-store", signal: AbortSignal.timeout(10_000) });
-      if (!response.ok) throw new Error();
-      const next = await response.json() as WorkspaceNotificationSnapshot;
-      if (mounted.current) { setSnapshot(next); setError(""); publishWorkspaceNotifications(next); }
-    } catch {
-      if (mounted.current) setError("Notifications couldn’t be refreshed.");
-    }
+    if (!mounted.current) return;
+    const state = requests.current;
+    state.dirty = true;
+    if (state.inFlight) return state.inFlight;
+    if (state.pendingReads) return;
+    const epoch = state.epoch;
+    const current = () => mounted.current && state.epoch === epoch;
+    state.inFlight = (async () => {
+      do {
+        state.dirty = false;
+        const readVersion = state.readVersion;
+        const controller = new AbortController();
+        state.controller = controller;
+        try {
+          const response = await fetch("/api/workspace-notifications", { cache: "no-store", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]) });
+          if (!response.ok) throw new Error();
+          const next = await response.json() as WorkspaceNotificationSnapshot;
+          if (current() && readVersion === state.readVersion) { setSnapshot(next); setError(""); publishWorkspaceNotifications(next); }
+        } catch {
+          if (current()) setError("Notifications couldn’t be refreshed.");
+        }
+        // Events received during a request need one subsequent authoritative read.
+        // An older response must not overwrite an optimistic mark-read change.
+      } while (current() && state.dirty && !state.pendingReads);
+    })().finally(() => {
+      if (state.epoch === epoch) { state.inFlight = null; state.controller = null; }
+    });
+    return state.inFlight;
   }, []);
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
-  }, []);
+    const state = requests.current;
+    return () => {
+      mounted.current = false;
+      state.epoch++;
+      state.controller?.abort();
+      state.inFlight = null;
+      state.dirty = false;
+      state.pendingReads = 0;
+    };
+  }, [businessId, userId]);
 
   useEffect(() => {
     const sync = (event: Event) => setSnapshot((event as CustomEvent<WorkspaceNotificationSnapshot>).detail);
@@ -56,12 +86,33 @@ export function NotificationCenter({ businessId, userId, initial, variant }: { b
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     let stopped = false;
+    let subscribed = false;
     let channel: ReturnType<NonNullable<ReturnType<typeof getRealtimeClient>>["channel"]> | undefined;
     let retry: ReturnType<typeof setTimeout> | undefined;
-    const client = enabled ? getRealtimeClient(true) : null;
-    const resync = () => { if (!stopped) void refresh(); };
-    const visible = () => { if (document.visibilityState === "visible") resync(); };
+    const client = getRealtimeClient(true);
+    const resync = () => { if (!stopped && document.visibilityState !== "hidden" && navigator.onLine !== false) void refresh(); };
+    const recover = () => {
+      resync();
+      if (!stopped && !subscribed) {
+        clearTimeout(retry);
+        setReconnect((value) => value + 1);
+      }
+    };
+    const visible = () => { if (document.visibilityState === "visible") recover(); };
+    const scheduleRetry = () => {
+      if (stopped || retry) return;
+      const ceiling = Math.min(2_000 * 2 ** Math.min(reconnectAttempt.current, 5), 60_000);
+      // Equal jitter avoids every affected browser reconnecting simultaneously.
+      retry = setTimeout(() => {
+        retry = undefined;
+        if (stopped) return;
+        if (document.visibilityState === "hidden" || navigator.onLine === false) { scheduleRetry(); return; }
+        reconnectAttempt.current++;
+        setReconnect((value) => value + 1);
+      }, ceiling / 2 + Math.random() * ceiling / 2);
+    };
 
     async function connect() {
       if (!client || stopped) return;
@@ -72,47 +123,61 @@ export function NotificationCenter({ businessId, userId, initial, variant }: { b
           .on("postgres_changes", { event: "INSERT", schema: "public", table: "workspace_notifications", filter: `business_id=eq.${businessId}` }, resync)
           .subscribe((status) => {
             if (stopped) return;
-            const subscribed = status === "SUBSCRIBED";
+            subscribed = status === "SUBSCRIBED";
             setLive(subscribed);
-            if (subscribed) resync();
-            if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            if (subscribed) {
               clearTimeout(retry);
-              retry = setTimeout(() => setReconnect((value) => value + 1), 2_000);
+              retry = undefined;
+              reconnectAttempt.current = 0;
+              resync();
+            }
+            if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+              scheduleRetry();
             }
           });
       } catch {
         if (!stopped) {
           setLive(false);
-          retry = setTimeout(() => setReconnect((value) => value + 1), 2_000);
+          scheduleRetry();
         }
       }
     }
 
     void connect();
-    window.addEventListener("online", resync);
+    window.addEventListener("online", recover);
     document.addEventListener("visibilitychange", visible);
     return () => {
       stopped = true;
       clearTimeout(retry);
-      window.removeEventListener("online", resync);
+      window.removeEventListener("online", recover);
       document.removeEventListener("visibilitychange", visible);
       if (client && channel) void client.removeChannel(channel);
     };
   }, [businessId, userId, enabled, refresh, reconnect]);
 
   const markRead = (notificationId?: string) => {
+    const state = requests.current;
+    const epoch = state.epoch;
+    state.readVersion++;
+    state.pendingReads++;
     setSnapshot((current) => ({
       unread: notificationId ? Math.max(0, current.unread - (current.items.find((item) => item.id === notificationId)?.read ? 0 : 1)) : 0,
       items: current.items.map((item) => !notificationId || item.id === notificationId ? { ...item, read: true } : item),
     }));
     startTransition(async () => {
-      const response = await fetch("/api/workspace-notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(notificationId ? { notificationId } : {}),
-      });
-      if (!response.ok) setError("We couldn’t update notification status.");
-      await refresh();
+      try {
+        const response = await fetch("/api/workspace-notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(notificationId ? { notificationId } : {}),
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!response.ok) throw new Error();
+      } catch {
+        if (mounted.current && state.epoch === epoch) setError("We couldn’t update notification status.");
+      } finally {
+        if (mounted.current && state.epoch === epoch) { state.pendingReads--; await refresh(); }
+      }
     });
   };
 

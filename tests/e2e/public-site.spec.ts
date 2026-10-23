@@ -25,8 +25,18 @@ for (const width of [360, 768]) {
 test("mobile navigation, FAQs and custom missing-page recovery", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/");
-  await page.getByText("Menu", { exact: false }).first().click();
-  await expect(page.getByRole("navigation", { name: "Mobile", exact: true }).getByRole("link", { name: "Contact" })).toBeVisible();
+  const toggle = page.getByRole("button", { name: "Open navigation" });
+  const navigation = page.getByRole("navigation", { name: "Mobile navigation", exact: true });
+  await toggle.click();
+  await expect(navigation.getByRole("link", { name: "Contact" })).toBeVisible();
+  await navigation.getByRole("link", { name: "Product", exact: true }).click();
+  await expect(navigation).not.toBeVisible();
+  await expect(page).toHaveURL(/#product$/);
+  await toggle.click();
+  await navigation.getByRole("link", { name: "Contact" }).focus();
+  await page.keyboard.press("Escape");
+  await expect(navigation).not.toBeVisible();
+  await expect(toggle).toBeFocused();
   await expect(page.locator("#questions details")).toHaveCount(5);
   await page.goto("/not-a-real-turnmark-page");
   await expect(page.getByRole("heading", { name: "This page stepped out." })).toBeVisible();

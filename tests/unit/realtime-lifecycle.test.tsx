@@ -9,6 +9,7 @@ let changed: () => void;
 const channel = { on: vi.fn(), subscribe: vi.fn() };
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.spyOn(Math, "random").mockReturnValue(0);
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "fixture");
   mocks.setAuth.mockReset().mockResolvedValue(undefined);
@@ -29,7 +30,7 @@ describe("authoritative realtime lifecycle", () => {
     await act(async () => { resolve(); });
     expect(mocks.channel).not.toHaveBeenCalled();
   });
-  it("refetches on connection, events and fallback polling, and cleans up", async () => {
+  it("refetches on connection and events without polling a healthy subscription", async () => {
     const refresh = vi.fn();
     const { result, unmount } = renderHook(() => useLive("ticket:fixture", refresh));
     await act(async () => { subscribed("SUBSCRIBED"); await vi.advanceTimersByTimeAsync(200); });
@@ -38,11 +39,50 @@ describe("authoritative realtime lifecycle", () => {
     await act(async () => { changed(); changed(); await vi.advanceTimersByTimeAsync(200); });
     expect(refresh).toHaveBeenCalledTimes(2);
     await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
-    expect(refresh).toHaveBeenCalledTimes(3);
+    expect(refresh).toHaveBeenCalledTimes(2);
     unmount();
     expect(mocks.removeChannel).toHaveBeenCalledWith(channel);
     await vi.advanceTimersByTimeAsync(30_000);
-    expect(refresh).toHaveBeenCalledTimes(3);
+    expect(refresh).toHaveBeenCalledTimes(2);
+  });
+  it("uses bounded fallback while disconnected and stops it after reconnect", async () => {
+    const refresh = vi.fn();
+    renderHook(() => useLive("ticket:fallback", refresh));
+    await act(async () => { subscribed("CHANNEL_ERROR"); await vi.advanceTimersByTimeAsync(15_200); });
+    expect(refresh).toHaveBeenCalledTimes(1);
+    await act(async () => { subscribed("SUBSCRIBED"); await vi.advanceTimersByTimeAsync(200); });
+    expect(refresh).toHaveBeenCalledTimes(2);
+    await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
+    expect(refresh).toHaveBeenCalledTimes(2);
+  });
+  it("pauses refreshes in hidden tabs and resyncs when visible", async () => {
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    const refresh = vi.fn();
+    renderHook(() => useLive("ticket:hidden", refresh));
+    await act(async () => { changed(); await vi.advanceTimersByTimeAsync(60_000); });
+    expect(refresh).not.toHaveBeenCalled();
+    visibility.mockReturnValue("visible");
+    await act(async () => { document.dispatchEvent(new Event("visibilitychange")); await vi.advanceTimersByTimeAsync(200); });
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+  it("does not postpone refresh indefinitely during a continuous event stream", async () => {
+    const refresh = vi.fn();
+    renderHook(() => useLive("ticket:busy", refresh));
+    await act(async () => {
+      for (let i = 0; i < 10; i++) { changed(); await vi.advanceTimersByTimeAsync(100); }
+    });
+    expect(refresh).toHaveBeenCalled();
+    expect(refresh.mock.calls.length).toBeLessThan(10);
+  });
+  it("removes the channel and stops refreshes when disabled", async () => {
+    const refresh = vi.fn();
+    const { result, rerender } = renderHook(({enabled}) => useLive("ticket:done", refresh, false, enabled), {initialProps:{enabled:true}});
+    await act(async () => { subscribed("SUBSCRIBED"); await vi.advanceTimersByTimeAsync(200); });
+    rerender({enabled:false});
+    expect(result.current).toBe(false);
+    await act(async () => { changed(); await vi.advanceTimersByTimeAsync(60_000); });
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(mocks.removeChannel).toHaveBeenCalledWith(channel);
   });
   it("recovers from an initial token failure while continuing HTTP polling", async () => {
     mocks.setAuth.mockRejectedValueOnce(new Error("temporary"));
@@ -53,6 +93,16 @@ describe("authoritative realtime lifecycle", () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(15_200); });
     expect(refresh).toHaveBeenCalled();
     expect(mocks.channel).toHaveBeenCalledOnce();
+  });
+  it("replaces an expired staff subscription after token renewal recovers", async () => {
+    renderHook(() => useLive("queue:renewal", vi.fn(), true));
+    await act(async () => {});
+    await act(async () => { subscribed("SUBSCRIBED"); await vi.advanceTimersByTimeAsync(200); });
+    mocks.setAuth.mockRejectedValueOnce(new Error("expired"));
+    await act(async () => { await vi.advanceTimersByTimeAsync(45_000); });
+    expect(mocks.removeChannel).toHaveBeenCalledWith(channel);
+    await act(async () => { await vi.advanceTimersByTimeAsync(15_200); });
+    expect(mocks.channel).toHaveBeenCalledTimes(2);
   });
   it("reuses one Supabase client for multiple subscriptions with the same access mode", () => {
     const before = mocks.createClient.mock.calls.length;

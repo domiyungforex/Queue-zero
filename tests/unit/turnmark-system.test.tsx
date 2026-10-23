@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { Brand } from "@/components/ui/brand";
 import {
@@ -63,6 +63,21 @@ describe("TuRnMaRk shared design system", () => {
   it("announces status labels without relying on color alone", () => {
     render(<StatusIndicator label="Awaiting review" tone="pending" />);
     expect(screen.getByText("Awaiting review")).toBeTruthy();
+  });
+
+  it("closes mobile navigation after choosing a destination or pressing Escape", () => {
+    render(<ResponsiveNavigation items={[{ href: "/#product", label: "Product" }]} />);
+    const summary = screen.getByRole("button", { name: "Open navigation" });
+    const menu = summary.closest("details")!;
+    menu.open = true;
+    const destination = within(screen.getByRole("navigation", { name: "Mobile navigation" })).getByRole("link", { name: "Product" });
+    fireEvent.click(destination);
+    expect(menu.open).toBe(false);
+    menu.open = true;
+    destination.focus();
+    fireEvent.keyDown(destination, { key: "Escape" });
+    expect(menu.open).toBe(false);
+    expect(document.activeElement).toBe(summary);
   });
 
   it("uses the requested workspace artwork without replacing live content", () => {

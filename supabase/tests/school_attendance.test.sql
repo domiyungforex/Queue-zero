@@ -35,33 +35,47 @@ select is((:'first_result')::jsonb->>'full_name','Akinyele Dominion','success re
 select is(school_attend_accountless(:'org',:'class',:'nonce1','Akinyele Dominion','PHY/2026/0142',repeat('a',64),repeat('1',64),:'request1'),(:'first_result')::jsonb,'same request safely returns its committed result');
 select is(school_attend_accountless(:'org',:'class',:'nonce1','Akinyele Dominion','PHY/2026/0142',repeat('a',64),repeat('1',64),gen_random_uuid())->>'status','DUPLICATE','new duplicate submission is rejected');
 select is(school_attend_accountless(:'org',:'class',:'nonce1','Wrong Person','PHY/2026/0188',repeat('b',64),repeat('1',64),gen_random_uuid())->>'message','The name entered does not match the class record.','wrong name is rejected without disclosing the roster name');
-select is(school_attend_accountless(:'org',:'class',:'nonce1','Unknown Student','NO/ROSTER/1',repeat('c',64),repeat('1',64),gen_random_uuid())->>'status','NOT_REGISTERED','unknown matric is rejected without creating a student');
+select is(school_attend_accountless(:'org',:'class',:'nonce1','Unknown Student','NO/ROSTER/1',repeat('c',64),repeat('1',64),gen_random_uuid())->>'status','LATE','a student can attend without advance registration');
 select is(school_attend_accountless(:'org',:'class',:'nonce1','Mary Adewale','PHY/2026/0188',repeat('a',64),repeat('1',64),gen_random_uuid())->>'status','LATE','a second roster student can attend from a shared device');
-select school_attend_accountless(:'org',:'class',:'nonce1','Unknown Student','NO/RATE/1',repeat('e',64),repeat('2',64),gen_random_uuid()) from generate_series(1,10);
+select school_attend_accountless(:'org',:'class',:'nonce2','Unknown Student','NO/RATE/1',repeat('e',64),repeat('2',64),gen_random_uuid()) from generate_series(1,10);
 select is(school_attend_accountless(:'org',:'class',:'nonce1','Unknown Student','NO/RATE/1',repeat('e',64),repeat('2',64),gen_random_uuid())->>'status','RATE_LIMITED','matric and device attempts are rate limited without blocking a whole lecture hall IP');
 reset role;
-select is((select count(*) from attendance_records where class_session_id=:'class'),2::bigint,'one authoritative record exists per attending roster student');
+select is((select count(*) from attendance_records where class_session_id=:'class'),3::bigint,'one authoritative record exists per attending student');
 select is((select count(*) from attendance_flags where class_session_id=:'class' and reason='POSSIBLE_PROXY_ATTENDANCE'),2::bigint,'shared device creates review flags without rejecting attendance');
 select ok((select bool_and(check_in_at<=clock_timestamp() and check_in_at>clock_timestamp()-interval '1 minute') from attendance_records where class_session_id=:'class'),'attendance uses authoritative server timestamps');
 select ok((select bool_and(metadata='{}'::jsonb) from presence_events where session_id=:'class'),'presence events do not expose names, matric numbers or device identifiers');
+
+-- No enrollment may be created through an invalid or cross-workspace QR.
+select count(*) as profiles_before from school_profiles where organization_id=:'org' \gset
+set local role service_role;
+select is(school_attend_accountless(:'org',:'class',gen_random_uuid(),'Invalid QR Student','INVALID/QR',repeat('f',64),repeat('3',64),gen_random_uuid())->>'status','CLOSED','invalid QR cannot register a student');
+select throws_ok(format('select school_attend_accountless(%L,%L,%L,NULL,''NULL/NAME'',repeat(''f'',64),repeat(''3'',64),gen_random_uuid())',:'org',:'class',:'nonce1'),'22023','Invalid attendance request','null names rejected at database boundary');
+select throws_ok(format('select school_attend_accountless(%L,%L,%L,''Cross tenant'',''CROSS'',repeat(''f'',64),repeat(''3'',64),gen_random_uuid())',gen_random_uuid(),:'class',:'nonce1'),'42501','Class unavailable','signed tenant context must match the class');
+select is(school_attend_accountless(:'org',:'class',:'nonce1','Wrong Name','PHY/2026/0142',repeat('f',64),repeat('3',64),:'request1')->>'status','NAME_MISMATCH','replaying request with a different name does not disclose stored success');
+reset role;
+select is((select count(*) from school_profiles where organization_id=:'org'),:'profiles_before'::bigint,'rejected submissions do not create student identities');
+select is((select count(*) from course_students cs join school_profiles sp on sp.id=cs.student_id where cs.course_id=:'course' and sp.matric_number='NO/ROSTER/1'),1::bigint,'new attendee belongs to the existing course');
+select is((select count(*) from class_roster r join school_profiles sp on sp.id=r.student_id where r.class_session_id=:'class' and sp.matric_number='NO/ROSTER/1'),1::bigint,'new attendee appears in the existing class register');
 
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"user_teacher"}',true);
 set local role authenticated;
 select ok(queuezero_receive_topic('class:'||:'class'),'assigned lecturer can receive class realtime invalidations');
 select throws_ok(format('select school_attend_accountless(%L,%L,%L,''Akinyele Dominion'',''PHY/2026/0142'',repeat(''a'',64),repeat(''1'',64),gen_random_uuid())',:'org',:'class',:'nonce1'),'42501','permission denied for function school_attend_accountless','browser database clients cannot invoke the privileged attendance mutation');
-select is((select count(*) from attendance_records),2::bigint,'lecturer sees the authorized class register');
+select is((select count(*) from attendance_records),3::bigint,'lecturer sees the authorized class register');
 reset role;
 
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"user_schoolowner"}',true);
 select school_manage('close_arrival',jsonb_build_object('organization_id',:'org','class_id',:'class'));
 set local role service_role;
 select is(school_attend_accountless(:'org',:'class',:'nonce1','Student Absent','PHY/2026/0199',repeat('d',64),repeat('1',64),gen_random_uuid())->>'status','CLOSED','closed attendance rejects the class QR');
+select is(school_attend_accountless(:'org',:'class',:'nonce1','New Closed Student','CLOSED/NEW',repeat('d',64),repeat('1',64),gen_random_uuid())->>'status','CLOSED','closed attendance cannot self-register a student');
 reset role;
+select is((select count(*) from school_profiles where organization_id=:'org' and matric_number='CLOSED/NEW'),0::bigint,'closed submission leaves no student record');
 select school_revoke_qr(:'org',:'class');
 select throws_ok(format('select school_issue_qr(%L,gen_random_uuid(),clock_timestamp()+interval ''30 seconds'')',:'class'),'22023','Attendance is closed','revoked QR cannot be reissued');
 select school_manage('finish',jsonb_build_object('organization_id',:'org','class_id',:'class'));
 select is((select count(*) from attendance_records where class_session_id=:'class' and status='ABSENT'),1::bigint,'ending class records roster absences');
-select is(jsonb_array_length(school_snapshot(:'org',null,:'class')->'attendance'),3,'official register includes every frozen roster student');
+select is(jsonb_array_length(school_snapshot(:'org',null,:'class')->'attendance'),4,'official register includes imported students and students who joined');
 
 select * from finish();
 rollback;

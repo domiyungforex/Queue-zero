@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireBusinessMembership } from "@/lib/business/membership";
@@ -6,7 +7,7 @@ import { createUserSupabaseClient } from "@/lib/db/server";
 import { schoolSnapshotSchema } from "./contracts";
 
 /** Every read, including exports, uses a fresh authorized RPC under the Clerk identity. */
-export async function getSchoolSnapshot(courseId?: string, classId?: string) {
+export const getSchoolSnapshot = cache(async (courseId?: string, classId?: string) => {
   if ((courseId && !z.uuid().safeParse(courseId).success) || (classId && !z.uuid().safeParse(classId).success)) notFound();
   const membership = await requireBusinessMembership();
   if (!membership.institutionType && !["owner", "admin", "lecturer"].includes(membership.role)) notFound();
@@ -20,4 +21,4 @@ export async function getSchoolSnapshot(courseId?: string, classId?: string) {
   if (courseId && !parsed.data.courses.some(course => course.id === courseId)) notFound();
   if (classId && !parsed.data.classes.some(session => session.id === classId)) notFound();
   return { snapshot: parsed.data, canManage: membership.role === "owner" || membership.role === "admin" };
-}
+});

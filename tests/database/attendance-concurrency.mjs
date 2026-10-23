@@ -36,5 +36,25 @@ export async function testAttendanceConcurrency(container) {
  const duplicate=JSON.parse((await checked(`begin;set local role service_role;${scan(1,newRequest)}commit;`)).match(/RESULT:([^\n]+)/)[1]);
  assert.equal(duplicate.status,"DUPLICATE");
  assert.equal((await checked(`select count(*) from attendance_records where class_session_id='${cls}' and student_id in(select student_id from class_roster where class_session_id='${cls}');`)).trim(),"3");
- console.log("Concurrent accountless attendance: exact retries commit once; simultaneous roster students remain unique; shared-device submissions record review flags without blocking.");
+ const newStudentRequest=randomUUID();
+ const newStudent=await overlap(`begin;set local role service_role;${scan(4,newStudentRequest,"f")} select 'LOCKED';select pg_sleep(1);commit;`,`begin;set local role service_role;${scan(4,newStudentRequest,"f")}commit;`);
+ for(const result of newStudent){assert.equal(result.code,0,result.errors);assert.equal(JSON.parse(result.output.match(/RESULT:([^\n]+)/)[1]).status,"PRESENT");}
+ assert.equal((await checked(`select count(*) from school_profiles where organization_id='${org}' and matric_number='RACE4';`)).trim(),"1");
+ assert.equal((await checked(`select count(*) from attendance_records a join school_profiles sp on sp.id=a.student_id where a.class_session_id='${cls}' and sp.matric_number='RACE4';`)).trim(),"1");
+
+ const course2=(await manage("course",{department_id:department,code:"RACE102",title:"Optional roster"})).id;
+ // A concurrent import in another course can win the unique matric index. The
+ // scan must reuse it without leaving behind an orphan people row.
+ const imported=await overlap(`begin;${actor(owner)}select school_import_roster('${org}','${course2}','[{"full_name":"Student 5","matric_number":"RACE5"}]'::jsonb); select 'LOCKED';select pg_sleep(1);commit;`,`begin;set local role service_role;${scan(5,randomUUID(),"a")}commit;`);
+ for(const result of imported)assert.equal(result.code,0,result.errors);
+ assert.equal(JSON.parse(imported[1].output.match(/RESULT:([^\n]+)/)[1]).status,"PRESENT");
+ assert.equal((await checked(`select count(*) from people where organization_id='${org}' and full_name='Student 5';`)).trim(),"1");
+ assert.equal((await checked(`select count(*) from course_students cs join school_profiles sp on sp.id=cs.student_id where sp.organization_id='${org}' and sp.matric_number='RACE5';`)).trim(),"2");
+
+ // Closing first wins; the blocked scan must re-read the committed closed state.
+ const closed=await overlap(`begin;${actor(owner)}select school_manage('close_arrival','${JSON.stringify({organization_id:org,class_id:cls})}'::jsonb); select 'LOCKED';select pg_sleep(1);commit;`,`begin;set local role service_role;${scan(6,randomUUID(),"b")}commit;`);
+ for(const result of closed)assert.equal(result.code,0,result.errors);
+ assert.equal(JSON.parse(closed[1].output.match(/RESULT:([^\n]+)/)[1]).status,"CLOSED");
+ assert.equal((await checked(`select count(*) from school_profiles where organization_id='${org}' and matric_number='RACE6';`)).trim(),"0");
+ console.log("Concurrent attendance: registered and new students commit once; concurrent roster import reuses identity; session closure prevents new enrollment; shared devices are flagged.");
 }

@@ -29,9 +29,56 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => initial }));
 });
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("workspace notification center", () => {
+  it("coalesces notification bursts and reconciles once after an in-flight request", async () => {
+    let complete!: (value: Response) => void;
+    vi.mocked(fetch).mockReturnValueOnce(new Promise(resolve => { complete = resolve; }));
+    render(<NotificationCenter variant="desktop" businessId="workspace-a" userId="user_owner" initial={initial} />);
+    await act(async () => {});
+    await act(async () => { subscribed("SUBSCRIBED"); for (let i = 0; i < 20; i++) changed(); });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    await act(async () => { complete(new Response(JSON.stringify(initial))); });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("aborts old workspace reads and removes its subscription on unmount", async () => {
+    vi.mocked(fetch).mockReturnValueOnce(new Promise(() => {}));
+    const view = render(<NotificationCenter variant="desktop" businessId="workspace-a" userId="user_owner" initial={initial} />);
+    await act(async () => {});
+    await act(async () => { subscribed("SUBSCRIBED"); });
+    const signal = vi.mocked(fetch).mock.calls[0][1]?.signal;
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
+    expect(mocks.removeChannel).toHaveBeenCalledWith(channel);
+  });
+
+  it("defers hidden-tab events and reloads authoritative state on return", async () => {
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    render(<NotificationCenter variant="desktop" businessId="workspace-a" userId="user_owner" initial={initial} />);
+    await act(async () => {});
+    await act(async () => { subscribed("SUBSCRIBED"); changed(); });
+    expect(fetch).not.toHaveBeenCalled();
+    visibility.mockReturnValue("visible");
+    await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it("backs off reconnect attempts and cancels retries after recovery", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    render(<NotificationCenter variant="desktop" businessId="workspace-a" userId="user_owner" initial={initial} />);
+    await act(async () => {});
+    await act(async () => { subscribed("CHANNEL_ERROR"); await vi.advanceTimersByTimeAsync(1_000); });
+    expect(mocks.channel).toHaveBeenCalledTimes(2);
+    await act(async () => { subscribed("CHANNEL_ERROR"); await vi.advanceTimersByTimeAsync(1_000); });
+    expect(mocks.channel).toHaveBeenCalledTimes(2);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
+    expect(mocks.channel).toHaveBeenCalledTimes(3);
+    await act(async () => { subscribed("SUBSCRIBED"); await vi.advanceTimersByTimeAsync(60_000); });
+    expect(mocks.channel).toHaveBeenCalledTimes(3);
+  });
   it("subscribes to the active workspace, resyncs on events, and cleans up", async () => {
     const view = render(<NotificationCenter variant="desktop" businessId="20000000-0000-4000-8000-000000000001" userId="user_owner" initial={initial} />);
     await waitFor(() => expect(channel.subscribe).toHaveBeenCalled());
