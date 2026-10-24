@@ -1,9 +1,11 @@
 "use client";
 
-import { ClerkFailed, ClerkLoaded, ClerkLoading, ClerkProvider, Show, useClerk } from "@clerk/nextjs";
+import { ClerkFailed, ClerkLoaded, ClerkLoading, ClerkProvider, Show, useAuth, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { publicEnv } from "@/lib/env";
+
+import { resetAuthenticatedRealtime, syncRealtimeSession } from "@/lib/realtime/client";
 
 const linkClass = "inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium";
 
@@ -17,6 +19,10 @@ export function AuthNavigation({ showDashboard = true }: { showDashboard?: boole
 
 function AuthNavigationContent({ showDashboard }: { showDashboard: boolean }) {
   const { signOut } = useClerk();
+  const { isLoaded, sessionId } = useAuth();
+  useEffect(() => {
+    if (isLoaded) syncRealtimeSession(sessionId ?? null);
+  }, [isLoaded, sessionId]);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
 
@@ -24,6 +30,7 @@ function AuthNavigationContent({ showDashboard }: { showDashboard: boolean }) {
     setSigningOut(true);
     setSignOutError(null);
     try {
+      resetAuthenticatedRealtime();
       await signOut({ redirectUrl: "/" });
     } catch {
       setSignOutError("Couldn’t sign out. Please try again.");

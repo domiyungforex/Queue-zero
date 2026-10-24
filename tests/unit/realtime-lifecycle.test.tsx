@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ createClient: vi.fn(), setAuth: vi.fn(), channel: vi.fn(), removeChannel: vi.fn() }));
-vi.mock("@supabase/supabase-js", () => ({ createClient: mocks.createClient }));
+const mocks = vi.hoisted(() => ({ setAuth: vi.fn(), channel: vi.fn(), removeChannel: vi.fn() }));
+let authFailed: () => void;
+vi.mock("@/lib/realtime/client", () => ({ acquireRealtimeClient: (_authenticated: boolean, onError: () => void) => {
+  authFailed = onError;
+  return { client: { channel: mocks.channel, removeChannel: mocks.removeChannel }, authorize: mocks.setAuth, release: vi.fn() };
+} }));
 import { useLive } from "@/lib/realtime/use-live";
 let subscribed: (status: string) => void;
 let changed: () => void;
@@ -17,7 +21,6 @@ beforeEach(() => {
   mocks.removeChannel.mockReset().mockResolvedValue(undefined);
   channel.on.mockImplementation((_kind, _filter, handler) => { changed = handler; return channel; });
   channel.subscribe.mockImplementation(handler => { subscribed = handler; return channel; });
-  mocks.createClient.mockReturnValue({ realtime: { setAuth: mocks.setAuth }, channel: mocks.channel, removeChannel: mocks.removeChannel });
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllEnvs(); });
 describe("authoritative realtime lifecycle", () => {
@@ -98,18 +101,29 @@ describe("authoritative realtime lifecycle", () => {
     renderHook(() => useLive("queue:renewal", vi.fn(), true));
     await act(async () => {});
     await act(async () => { subscribed("SUBSCRIBED"); await vi.advanceTimersByTimeAsync(200); });
-    mocks.setAuth.mockRejectedValueOnce(new Error("expired"));
-    await act(async () => { await vi.advanceTimersByTimeAsync(45_000); });
+    await act(async () => { authFailed(); });
     expect(mocks.removeChannel).toHaveBeenCalledWith(channel);
     await act(async () => { await vi.advanceTimersByTimeAsync(15_200); });
     expect(mocks.channel).toHaveBeenCalledTimes(2);
   });
-  it("reuses one Supabase client for multiple subscriptions with the same access mode", () => {
-    const before = mocks.createClient.mock.calls.length;
-    const first = renderHook(() => useLive("ticket:first", vi.fn()));
-    const second = renderHook(() => useLive("ticket:second", vi.fn()));
-    expect(mocks.createClient.mock.calls.length - before).toBeLessThanOrEqual(1);
-    first.unmount();
-    second.unmount();
+  it("does not subscribe if the session changes while authorization is pending", async () => {
+    let complete!: () => void;
+    mocks.setAuth.mockReturnValueOnce(new Promise<void>(r => { complete = r; }));
+    renderHook(() => useLive("queue:account-change", vi.fn(), true));
+    await act(async () => { authFailed(); complete(); });
+    expect(mocks.channel).not.toHaveBeenCalled();
+    await act(async () => { await vi.advanceTimersByTimeAsync(15_200); });
+    expect(mocks.channel).toHaveBeenCalledOnce();
+  });
+  it("ignores a late CLOSED callback from a removed channel after recovery", async () => {
+    const { result } = renderHook(() => useLive("queue:late-close", vi.fn(), true));
+    await act(async () => {});
+    const stale = subscribed;
+    await act(async () => { authFailed(); await vi.advanceTimersByTimeAsync(15_200); });
+    await act(async () => { subscribed("SUBSCRIBED"); });
+    expect(result.current).toBe(true);
+    await act(async () => { stale("CLOSED"); });
+    expect(result.current).toBe(true);
+    expect(mocks.removeChannel).toHaveBeenCalledOnce();
   });
 });

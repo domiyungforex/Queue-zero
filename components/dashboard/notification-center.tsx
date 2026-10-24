@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Bell, BellRing, CheckCheck, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { getRealtimeClient } from "@/lib/realtime/use-live";
+import { acquireRealtimeClient } from "@/lib/realtime/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { WorkspaceNotificationSnapshot } from "@/lib/notifications/workspace";
 import { publishWorkspaceNotifications, WORKSPACE_NOTIFICATIONS_EVENT } from "@/lib/notifications/client";
 import styles from "./notification-center.module.css";
@@ -89,12 +90,25 @@ export function NotificationCenter({ businessId, userId, initial, variant }: { b
     if (!enabled) return;
     let stopped = false;
     let subscribed = false;
-    let channel: ReturnType<NonNullable<ReturnType<typeof getRealtimeClient>>["channel"]> | undefined;
+    let generation = 0;
+    let channel: RealtimeChannel | undefined;
     let retry: ReturnType<typeof setTimeout> | undefined;
-    const client = getRealtimeClient(true);
+    const lease = acquireRealtimeClient(true, () => {
+      if (stopped) return;
+      generation++;
+      subscribed = false;
+      setLive(false);
+      const staleChannel = channel;
+      channel = undefined;
+      if (client && staleChannel) void client.removeChannel(staleChannel);
+      scheduleRetry();
+    });
+    const client = lease?.client;
     const resync = () => { if (!stopped && document.visibilityState !== "hidden" && navigator.onLine !== false) void refresh(); };
     const recover = () => {
-      resync();
+      if (subscribed) {
+        void lease?.authorize().then(resync).catch(() => {});
+      } else resync();
       if (!stopped && !subscribed) {
         clearTimeout(retry);
         setReconnect((value) => value + 1);
@@ -116,13 +130,14 @@ export function NotificationCenter({ businessId, userId, initial, variant }: { b
 
     async function connect() {
       if (!client || stopped) return;
+      const current = generation;
       try {
-        await client.realtime.setAuth();
-        if (stopped) return;
+        await lease?.authorize();
+        if (stopped || current !== generation) return;
         channel = client.channel(`notifications:${businessId}:${userId}`)
           .on("postgres_changes", { event: "INSERT", schema: "public", table: "workspace_notifications", filter: `business_id=eq.${businessId}` }, resync)
           .subscribe((status) => {
-            if (stopped) return;
+            if (stopped || current !== generation) return;
             subscribed = status === "SUBSCRIBED";
             setLive(subscribed);
             if (subscribed) {
@@ -152,6 +167,7 @@ export function NotificationCenter({ businessId, userId, initial, variant }: { b
       window.removeEventListener("online", recover);
       document.removeEventListener("visibilitychange", visible);
       if (client && channel) void client.removeChannel(channel);
+      lease?.release();
     };
   }, [businessId, userId, enabled, refresh, reconnect]);
 

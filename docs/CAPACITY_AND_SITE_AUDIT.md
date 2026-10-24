@@ -58,7 +58,7 @@ deleted, and no authentication or membership system is replaced.
 | --- | --- | --- |
 | `school_snapshot` aggregates all authorized classes, attendance and flags | Snapshot cost and payload grow with workspace history | Split dashboard summaries from cursor-paginated lists and date-bounded analytics; preserve complete authorized exports separately |
 | Dashboard layout loads `institution_snapshot` for navigation permissions | Navigation can load operational data it does not need | Add a small authorized capability projection; retain permission rechecks on mutations |
-| `useLive` renews authenticated tokens every 45 seconds per hook | Shared client does not deduplicate each hook's renewal timer | Share one lifecycle per client; renew according to actual token expiry and resync after visibility changes |
+| Authenticated Realtime still needs short-lived Clerk JWT renewal | One million authenticated connections imply substantial identity traffic even after deduplication | Measure actual token lifetime, renewal rate and provider quotas; see the 24 October follow-up below |
 | School mutation broadcasts invalidate school, business and class topics | Large subscriber groups can refetch together | Narrow topics, aggregate high-rate updates, measure subscriber fanout and server render work |
 | Notifications use Postgres Changes with workspace filters and RLS | Authorization and fanout capacity depend on provider configuration | Measure subscriber quotas and per-event authorization cost before choosing private broadcast/outbox changes |
 | Queue join/Call Next deliberately serialize one queue | A single hot queue differs from many distributed queues | Measure lock waits and per-queue throughput; retain transactional FIFO correctness |
@@ -66,11 +66,36 @@ deleted, and no authentication or membership system is replaced.
 | Rate-limit and audit tables grow over time | Increasing index/storage/maintenance cost | Define retention and archival policy, bounded index-backed queries, and vacuum/partition strategy from actual volume |
 
 At one million mounted live views, the removed 15-second polling loop would imply
-approximately **66,667 refreshes/second** before events. At one million visible
-authenticated views with one hook, 45-second token renewal still implies roughly
-**22,222 renewal calls/second**. These are arithmetic demand estimates, not measured
-throughput or a claim that every user follows that workload. Anonymous attendance
-does not require a Clerk login or a long-lived subscription.
+approximately **66,667 refreshes/second** before events. The former 45-second token
+renewal timer also implied roughly **22,222 renewal calls/second** for one million
+visible authenticated views with one hook. These are historical arithmetic demand
+estimates, not measured throughput or a claim that every user follows that
+workload. Anonymous attendance does not require a Clerk login or a long-lived
+subscription.
+
+## 24 October follow-up: shared Realtime identity
+
+Inspection of the installed Supabase SDK found an additional token callback on
+every 25-second heartbeat. Removing application timers alone would therefore
+leave unnecessary requests. `lib/realtime/client.ts` now shares one in-flight
+request and an in-memory token cache across live widgets and the notification
+bell. Tokens are reused only outside a 30-second expiry window. No token is saved
+to browser storage; Clerk issuance, Supabase verification and RLS remain unchanged.
+
+The SDK catches token callback failures and reuses its prior token. An explicit
+failure signal now removes affected channels and invokes existing bounded
+reconnection. Clerk session changes, sign-out and the last subscriber leaving
+invalidate cached credentials and abort pending requests. Generation checks stop
+late authorization and channel callbacks from reviving an old session.
+
+The documented database JWT lifetime is still 60 seconds. With idealized
+25-second heartbeats and freshly issued 60-second tokens, the cache can avoid the
+first heartbeat fetch and renew at about 50 seconds. At one million authenticated
+connections that would still be approximately **20,000 requests/second** before
+reconnects and other traffic. This example is arithmetic, not a benchmark or a
+provider capacity guarantee. No provider token lifetime or production setting was
+changed. The staging workload, measurement plan and guarded local baseline are
+documented in [CAPACITY_TESTING.md](CAPACITY_TESTING.md).
 
 ## Safe capacity acceptance plan
 

@@ -7,8 +7,8 @@ const channel = { on: vi.fn(), subscribe: vi.fn() };
 let changed: () => void;
 let subscribed: (status: string) => void;
 
-vi.mock("@/lib/realtime/use-live", () => ({
-  getRealtimeClient: () => ({ realtime: { setAuth: mocks.setAuth }, channel: mocks.channel, removeChannel: mocks.removeChannel }),
+vi.mock("@/lib/realtime/client", () => ({
+  acquireRealtimeClient: () => ({ client: { channel: mocks.channel, removeChannel: mocks.removeChannel }, authorize: mocks.setAuth, release: vi.fn() }),
 }));
 
 import { NotificationCenter } from "@/components/dashboard/notification-center";
