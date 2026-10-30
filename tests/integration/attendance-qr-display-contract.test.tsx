@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { PNG } from "pngjs";
 import jsQR from "jsqr";
 
@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@clerk/nextjs/server", () => ({ auth: async () => ({ userId: "user_testlecturer" }) }));
 vi.mock("@/lib/db/server", () => ({ createUserSupabaseClient: async () => ({ rpc: mocks.rpc }) }));
-vi.mock("next/image", () => ({ default: ({ alt, src }: { alt: string; src: string }) => <span role="img" aria-label={alt} data-src={src} /> }));
+vi.mock("next/image", () => ({ default: ({ alt, src, onLoad }: { alt: string; src: string; onLoad: () => void }) =>
+  // eslint-disable-next-line @next/next/no-img-element
+  <img alt={alt} src={src} data-src={src} onLoad={onLoad} /> }));
 
 import { GET } from "@/app/api/school/classes/[classId]/qr/route";
 import { AttendanceQr } from "@/components/school/attendance-qr";
@@ -43,5 +45,7 @@ it("displays a decodable signed class QR from the route's PostgreSQL offset resp
   expect(validateAttendanceToken(url.searchParams.get("token")!, attendanceSecret())).toMatchObject({
     organization_id: organizationId, session_id: classId, nonce, expires_at: expiresAt,
   });
+  fireEvent.load(image);
+  expect(screen.getByRole("link", { name: "Download PNG" }).getAttribute("href")).toBe(source);
   expect(screen.queryByText("QR unavailable")).toBeNull();
 });

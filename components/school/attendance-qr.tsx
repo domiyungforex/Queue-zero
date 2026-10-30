@@ -1,20 +1,37 @@
 "use client";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import Image from "next/image";
 import { z } from "zod";
-import { Clock3, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
+import { RefreshCw, ScanLine } from "lucide-react";
 import styles from "./attendance-qr.module.css";
+import { AttendanceQrContent } from "./attendance-qr-content";
+import type { AttendanceQrArtifact } from "@/lib/qr/attendance-artifact";
 const qrResponse = z.object({ url: z.url(), expiresAt: z.iso.datetime({ offset: true }) });
 const qrErrorResponse = z.object({ error: z.string().min(1).max(160), code: z.string().max(60).optional() });
 const unavailableMessage = "We couldn’t create this attendance QR. Try again.";
-export function AttendanceQr({ classId }: { classId: string }) {
-  const [qr, setQr] = useState<{ image: string; expires: number } | null>(null);
-  const [error, setError] = useState(""); const [retry, setRetry] = useState(0);
+const expiredMessage = "This attendance QR has expired. Try again to check whether attendance is still open.";
+export function AttendanceQr({ classId, classLabel = "Class attendance" }: { classId: string; classLabel?: string }) {
+  const [qr, setQr] = useState<(AttendanceQrArtifact & { classId: string }) | null>(null);
+  const [failure, setFailure] = useState<{ classId: string; message: string } | null>(null);
+  const [retry, setRetry] = useState(0);
+  const currentQr = qr?.classId === classId ? qr : null;
+  const error = failure?.classId === classId ? failure.message : "";
+  useEffect(() => {
+    if (!qr || qr.classId !== classId) return;
+    const expire = () => {
+      if (qr.expires <= Date.now()) {
+        setQr(null);
+        setFailure({ classId, message: expiredMessage });
+      }
+    };
+    const timer = setTimeout(expire, Math.min(Math.max(0, qr.expires - Date.now()), 2_147_483_647));
+    document.addEventListener("visibilitychange", expire);
+    return () => { clearTimeout(timer); document.removeEventListener("visibilitychange", expire); };
+  }, [classId, qr]);
   useEffect(() => {
     let stopped = false; let busy = false; const controller = new AbortController();
     function fail(message: string) {
-      if (!stopped && !controller.signal.aborted) { setError(message); setQr(null); }
+      if (!stopped && !controller.signal.aborted) { setFailure({ classId, message }); setQr(null); }
     }
     async function load() {
       if (busy) return;
@@ -32,8 +49,9 @@ export function AttendanceQr({ classId }: { classId: string }) {
         const expires = Date.parse(parsed.data.expiresAt);
         if (!Number.isFinite(expires)) { fail(unavailableMessage); return; }
         if (expires <= Date.now()) { fail("This attendance QR expired before it could be displayed. Try again."); return; }
-        const image = await QRCode.toDataURL(parsed.data.url, { width: 512, margin: 3, errorCorrectionLevel: "M", color: { dark: "#111318", light: "#ffffff" } });
-        if (!stopped) { setQr({ image, expires }); setError(""); }
+        const image = await QRCode.toDataURL(parsed.data.url, { width: 1024, margin: 4, errorCorrectionLevel: "M", color: { dark: "#111318", light: "#ffffff" } });
+        if (expires <= Date.now()) { fail(expiredMessage); return; }
+        if (!stopped) { setQr({ classId, image, url: parsed.data.url, expires }); setFailure(null); }
       } catch {
         fail(unavailableMessage);
       } finally {
@@ -45,8 +63,10 @@ export function AttendanceQr({ classId }: { classId: string }) {
   }, [classId, retry]);
   return <section className={styles.card} aria-label="Class attendance QR">
     <header><span className={styles.icon}><ScanLine size={23} aria-hidden="true" /></span><div><p>LIVE ATTENDANCE</p><h2>Scan to mark attendance</h2><span>Students use their phone camera. No app needed.</span></div></header>
-    {qr ? <div className={styles.qrArea}><div className={styles.qrFrame}><Image unoptimized src={qr.image} width={512} height={512} alt="QR code for this class attendance form" /><span><ScanLine size={16} aria-hidden="true" /> Scan here</span></div><div className={styles.instructions}><h3>Three quick steps</h3><ol><li><b>1</b>Open the camera</li><li><b>2</b>Scan this code</li><li><b>3</b>Enter name and matric number</li></ol><p><Clock3 size={15} aria-hidden="true" />Available until {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(qr.expires))}</p><p><ShieldCheck size={15} aria-hidden="true" />No TuRnMaRk account is required.</p></div></div> : <div className={styles.state} role="status"><span className={error ? styles.errorIcon : styles.loader} aria-hidden="true" /> <strong>{error ? "QR unavailable" : "Preparing attendance QR…"}</strong><p>{error || "Creating a secure link for this open class."}</p></div>}
-    {(!qr || error) && <button className={styles.retry} onClick={() => setRetry(value => value + 1)}><RefreshCw size={17} aria-hidden="true" />Retry QR</button>}
-    {qr && <footer>This code remains stable while attendance is open. Revoke it from class controls whenever access should stop.</footer>}
+    {currentQr ? <AttendanceQrContent key={`${classId}:${retry}:${currentQr.url}`} qr={currentQr} classLabel={classLabel}
+      onExpired={() => { setQr(null); setFailure({ classId, message: expiredMessage }); }}
+      onImageError={() => { setQr(null); setFailure({ classId, message: "We couldn’t display the QR code. Try again." }); }} />
+      : <div className={styles.state} role="status"><span className={error ? styles.errorIcon : styles.loader} aria-hidden="true" /> <strong>{error ? "QR unavailable" : "Preparing attendance QR…"}</strong><p>{error || "Creating a secure link for this open class."}</p></div>}
+    {!currentQr && <button className={styles.retry} type="button" onClick={() => setRetry(value => value + 1)}><RefreshCw size={17} aria-hidden="true" />Retry QR</button>}
   </section>;
 }
