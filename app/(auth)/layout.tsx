@@ -1,5 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { publicEnv } from "@/lib/env";
+import { ClerkAnalyticsIdentity } from "@/lib/analytics/identity";
 
 export default function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -16,6 +17,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
       }}
       appearance={{ variables: { colorPrimary: "#ff5c1a", borderRadius: "0.875rem", fontFamily: "Sora Variable, Sora, Arial, sans-serif" } }}
     >
+      <ClerkAnalyticsIdentity />
       {children}
     </ClerkProvider>
   );
