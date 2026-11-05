@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, GraduationCap, ShieldCheck } from "lucide-react";
 import { recordAttendance, type ScanResult } from "@/lib/school-student/actions";
+import { captureAnalytics } from "@/lib/analytics/client";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import styles from "./attendance-scan.module.css";
 
 type PublicClass = { organization_name: string; course_code: string; course_title: string; starts_at: string | null; planned_ends_at: string | null; attendance_closes_at: string | null; open: boolean };
@@ -21,7 +23,9 @@ export function StudentScan({ token, classInfo }: { token: string; classInfo: Pu
       try { requestId.current ??= sessionStorage.getItem(storageKey); } catch {}
       requestId.current ??= crypto.randomUUID();
       try { sessionStorage.setItem(storageKey, requestId.current); } catch {}
-      setResult(await recordAttendance({ token, requestId: requestId.current, fullName: form.get("fullName"), matricNumber: form.get("matricNumber") }));
+      const response = await recordAttendance({ token, requestId: requestId.current, fullName: form.get("fullName"), matricNumber: form.get("matricNumber") });
+      setResult(response);
+      captureAnalytics(response.ok ? ANALYTICS_EVENTS.attendanceQrCheckinSucceeded : ANALYTICS_EVENTS.attendanceQrCheckinFailed);
     } catch { setResult({ ok: false, status: "UNAVAILABLE", message: "Connection interrupted. Retry this same submission safely." }); }
     finally { busy.current = false; setPending(false); }
   }
