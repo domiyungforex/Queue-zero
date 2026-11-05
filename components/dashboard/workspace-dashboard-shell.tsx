@@ -10,6 +10,8 @@ import { TURNMARK_ASSETS } from "@/lib/brand/assets";
 import type { WorkspaceNotificationSnapshot } from "@/lib/notifications/workspace";
 import type { Database } from "@/lib/db/database.types";
 import styles from "./workspace-shell.module.css";
+import { ServerResolvedAnalyticsIdentity } from "@/lib/analytics/identity";
+import { WorkspaceAnalyticsContext } from "@/components/analytics/workspace-context";
 
 type Membership = {
   businessId: string;
@@ -56,7 +58,8 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
   const education = membership.organizationMode === "SCHOOL" || membership.organizationMode === "HYBRID" || membership.organizationType === "UNIVERSITY_SCHOOL" || membership.professionalCategory === "LECTURER_TEACHER";
   const WorkspaceIcon = education ? GraduationCap : Building2;
 
-  return <div data-dashboard-shell="v2" className={styles.shell}>
+  const workspaceType = membership.organizationMode ?? membership.workspaceOwnership ?? "ORGANIZATION";
+  return <><ServerResolvedAnalyticsIdentity userId={userId} /><WorkspaceAnalyticsContext workspaceKey={membership.businessId} workspaceType={workspaceType} userRole={membership.role} /><div data-dashboard-shell="v2" className={styles.shell}>
     <aside className={styles.sidebar}>
       <a className={styles.brand} href="/dashboard" aria-label="TuRnMaRk dashboard"><Image src={wordmark.src} width={wordmark.width} height={wordmark.height} alt={wordmark.alt} priority /></a>
       <p className={styles.navCaption}>WORKSPACE</p>
@@ -83,5 +86,5 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
       <footer className={styles.footer}><span>TuRnMaRk · People flow better.</span><span>{membership.businessName}</span></footer>
       <DashboardNavigation {...navigation} variant="mobile" />
     </div>
-  </div>;
+  </div></>;
 }
