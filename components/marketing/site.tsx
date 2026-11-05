@@ -5,7 +5,8 @@ import { jsonLd, siteUrl } from "@/lib/site/metadata";
 import { publicEnv } from "@/lib/env";
 import { MarketingAnalytics } from "./analytics";
 import { Brand } from "@/components/ui/brand";
-import { MarketingAccountFooterLink, MarketingSessionNavigation, MarketingStickyAction } from "./session-actions";
+import { MarketingAccountFooterLink, MarketingSessionNavigation, MarketingStickyAction } from "@/components/marketing/session-actions";
+import { ClerkAnalyticsIdentity } from "@/lib/analytics/identity";
 import styles from "./site.module.css";
 
 export function Arrow({ diagonal = false }: { diagonal?: boolean }) {
@@ -21,5 +22,5 @@ export function MarketingFooter() {
 export function MarketingFrame({ children, stickyCta = true }: { children: React.ReactNode; stickyCta?: boolean }) {
   const details = siteDetails();
   const organization = { "@context": "https://schema.org", "@type": details.address ? "LocalBusiness" : "Organization", name: "TuRnMaRk", url: siteUrl().href, logo: new URL("/icons/icon-512.png", siteUrl()).href, ...(details.email ? { email: details.email } : {}), ...(details.phone ? { telephone: details.phone } : {}), ...(details.address ? { address: details.address } : {}) };
-  return <ClerkProvider publishableKey={publicEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/"><div className={styles.site}><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} /><MarketingHeader />{children}<MarketingFooter />{stickyCta?<div className={styles.stickyCta}><MarketingStickyAction arrow={<Arrow />} /></div>:null}{details.gaId && <MarketingAnalytics id={details.gaId} />}</div></ClerkProvider>;
+  return <ClerkProvider publishableKey={publicEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/"><ClerkAnalyticsIdentity /><div className={styles.site}><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} /><MarketingHeader />{children}<MarketingFooter />{stickyCta?<div className={styles.stickyCta}><MarketingStickyAction arrow={<Arrow />} /></div>:null}{details.gaId && <MarketingAnalytics id={details.gaId} />}</div></ClerkProvider>;
 }
