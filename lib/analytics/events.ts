@@ -59,12 +59,31 @@ const SAFE_PROPERTY_KEYS = new Set<keyof AnalyticsProperties>([
   "device_category", "feature_name", "page_path", "page_category",
 ]);
 
+const SAFE_ENUM_VALUES: Partial<Record<keyof AnalyticsProperties, ReadonlySet<string>>> = {
+  account_type: new Set(["INDIVIDUAL", "ORGANIZATION"]),
+  workspace_type: new Set(["INDIVIDUAL", "ORGANIZATION", "BUSINESS", "SCHOOL", "HYBRID"]),
+  profession_category: new Set(["LECTURER_TEACHER", "DOCTOR", "NURSE", "BANKER", "BARBER_STYLIST", "CONSULTANT", "OTHER_PROFESSIONAL"]),
+  organization_category: new Set(["UNIVERSITY_SCHOOL", "HOSPITAL_CLINIC", "BANK_FINANCIAL", "SALON_BARBERSHOP", "GOVERNMENT_OFFICE", "COMPANY_OTHER"]),
+  user_role: new Set(["owner", "admin", "manager", "staff", "viewer", "lecturer", "student"]),
+  plan_tier: new Set(["FREE", "STARTER", "BUSINESS"]),
+  capture_method: new Set(["qr", "assisted"]),
+  device_category: new Set(["mobile", "tablet", "desktop"]),
+  page_category: new Set(["marketing", "application"]),
+  feature_name: new Set(["queue_management", "school_attendance", "billing", "workspace"]),
+};
+
 export function safeAnalyticsProperties(input?: AnalyticsProperties): AnalyticsProperties {
   if (!input) return {};
   const safe: AnalyticsProperties = {};
   for (const [key, value] of Object.entries(input)) {
-    if (!SAFE_PROPERTY_KEYS.has(key as keyof AnalyticsProperties) || typeof value !== "string") continue;
-    if (value.length > 120 || !/^[A-Za-z0-9_./:-]+$/.test(value)) continue;
+    const typedKey = key as keyof AnalyticsProperties;
+    if (!SAFE_PROPERTY_KEYS.has(typedKey) || typeof value !== "string" || value.length > 200) continue;
+    if (typedKey === "page_path") {
+      if (!value.startsWith("/") || value.includes("?") || value.includes("#") || !/^[A-Za-z0-9_./:-]+$/.test(value)) continue;
+    } else {
+      const allowed = SAFE_ENUM_VALUES[typedKey];
+      if (!allowed?.has(value)) continue;
+    }
     (safe as Record<string, string>)[key] = value;
   }
   return safe;
