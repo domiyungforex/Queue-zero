@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { OnboardingShell, SuccessPanel } from "@/components/onboarding/onboarding-ui";
 import { getCurrentMembership } from "@/lib/business/membership";
 import { createUserSupabaseClient } from "@/lib/db/server";
+import { OnboardingCompletionAnalytics } from "@/components/analytics/onboarding-completion";
 
 export const metadata: Metadata = { title: "Workspace created", description: "Your TuRnMaRk workspace setup result." };
 
@@ -18,5 +19,5 @@ export default async function OnboardingCompletePage() {
     if (error || !data) throw new Error("The workspace was created, but its verification state could not be confirmed.");
     pendingVerification = data.verification_status !== "VERIFIED";
   }
-  return <OnboardingShell><SuccessPanel name={membership.businessName} organization={organization} pendingVerification={pendingVerification}/></OnboardingShell>;
+  return <OnboardingShell><OnboardingCompletionAnalytics accountType={organization ? "ORGANIZATION" : "INDIVIDUAL"} workspaceType={organization ? "ORGANIZATION" : "INDIVIDUAL"} /><SuccessPanel name={membership.businessName} organization={organization} pendingVerification={pendingVerification}/></OnboardingShell>;
 }
