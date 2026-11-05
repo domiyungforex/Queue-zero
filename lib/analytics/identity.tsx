@@ -29,6 +29,7 @@ export function ServerResolvedAnalyticsIdentity({ userId }: { userId: string }) 
   useEffect(() => {
     if (userId && previousUserId.current !== userId) identifyAnalyticsUser(userId);
     previousUserId.current = userId;
+    return () => resetAnalyticsIdentity();
   }, [userId]);
   return null;
 }
