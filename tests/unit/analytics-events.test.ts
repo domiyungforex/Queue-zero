@@ -22,7 +22,7 @@ describe("analytics property privacy allowlist", () => {
       user_role: "student PHY/2026/0142",
       feature_name: "private customer note",
       page_path: "/ticket/secret-token?phone=234",
-      page_category: "private",
+      page_category: "private" as never,
     })).toEqual({});
   });
 
