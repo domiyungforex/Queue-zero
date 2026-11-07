@@ -112,7 +112,9 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     setError("");
   }
 
-  const supportsGoogle = mode === "sign-in" && Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_google"));
+  // Clerk treats social sign-in and sign-up as one transferable flow. Keep Google available on the sign-up page too;
+  // new users are created by Clerk after Google verifies their identity.
+  const supportsGoogle = mode === "sign-up" || Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_google"));
   const supportsApple = mode === "sign-in" && Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_apple"));
 
   async function authenticateWithProvider(provider: "google" | "apple") {
@@ -126,7 +128,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         redirectCallbackUrl: "/sign-in/sso-callback",
       });
     } catch (cause) {
-      setError(authErrorMessage(cause, "sign-in"));
+      setError(authErrorMessage(cause, mode));
       setSocialBusy(null);
     }
   }
