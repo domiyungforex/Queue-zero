@@ -1,5 +1,7 @@
 "use client";
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { captureAnalytics } from "@/lib/analytics/client";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { importRoster, manageSchool } from "@/lib/school/actions";
@@ -7,6 +9,16 @@ import type { SchoolSnapshot } from "@/lib/school/contracts";
 
 export function SchoolForm({ action, title, children, submit = "Save", fields = {} }: { action: string; title?: string; children?: React.ReactNode; submit?: string; fields?: Record<string, string> }) {
   const [state, run, pending] = useActionState(manageSchool, { ok: false, message: "" });
+  const trackedResult = useRef<string | null>(null);
+  useEffect(() => {
+    if (!state.ok) return;
+    const key = `${action}:${state.id ?? state.message}`;
+    if (trackedResult.current === key) return;
+    trackedResult.current = key;
+    if (action === "course") captureAnalytics(ANALYTICS_EVENTS.courseCreated);
+    if (action === "open") captureAnalytics(ANALYTICS_EVENTS.classSessionStarted);
+    if (action === "finish") captureAnalytics(ANALYTICS_EVENTS.attendanceSessionClosed);
+  }, [action, state]);
   return <form action={run} className="school-form">{title && <h2>{title}</h2>}<input type="hidden" name="action" value={action} />{Object.entries(fields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}{children}<button disabled={pending} className="button-primary" type="submit">{pending ? "Saving…" : submit}</button>{state.message && <p role={state.ok ? "status" : "alert"}>{state.message}{state.ok && state.id && action === "class" && <> <Link href={`/dashboard/attendance/${state.id}`}>Open class attendance <ArrowRight size={16} aria-hidden="true" /></Link></>}</p>}</form>;
 }
 export function TextField({ name, label, type = "text", maxLength = 160, required = true }: { name: string; label: string; type?: string; maxLength?: number; required?: boolean }) { return <label>{label}<input name={name} type={type} maxLength={maxLength} required={required} /></label>; }

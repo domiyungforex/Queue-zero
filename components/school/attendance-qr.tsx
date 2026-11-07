@@ -1,16 +1,19 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import Image from "next/image";
 import { z } from "zod";
 import { Clock3, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
 import styles from "./attendance-qr.module.css";
+import { captureAnalytics } from "@/lib/analytics/client";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 const qrResponse = z.object({ url: z.url(), expiresAt: z.iso.datetime({ offset: true }) });
 const qrErrorResponse = z.object({ error: z.string().min(1).max(160), code: z.string().max(60).optional() });
 const unavailableMessage = "We couldn’t create this attendance QR. Try again.";
 export function AttendanceQr({ classId }: { classId: string }) {
   const [qr, setQr] = useState<{ image: string; expires: number } | null>(null);
   const [error, setError] = useState(""); const [retry, setRetry] = useState(0);
+  const displayed = useRef(false);
   useEffect(() => {
     let stopped = false; let busy = false; const controller = new AbortController();
     function fail(message: string) {
@@ -33,7 +36,7 @@ export function AttendanceQr({ classId }: { classId: string }) {
         if (!Number.isFinite(expires)) { fail(unavailableMessage); return; }
         if (expires <= Date.now()) { fail("This attendance QR expired before it could be displayed. Try again."); return; }
         const image = await QRCode.toDataURL(parsed.data.url, { width: 512, margin: 3, errorCorrectionLevel: "M", color: { dark: "#111318", light: "#ffffff" } });
-        if (!stopped) { setQr({ image, expires }); setError(""); }
+        if (!stopped) { setQr({ image, expires }); setError(""); if (!displayed.current) { displayed.current = true; captureAnalytics(ANALYTICS_EVENTS.attendanceQrDisplayed); } }
       } catch {
         fail(unavailableMessage);
       } finally {

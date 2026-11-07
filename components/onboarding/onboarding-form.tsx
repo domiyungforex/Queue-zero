@@ -13,6 +13,8 @@ import {
   type OnboardingState, type OnboardingValues,
 } from "@/lib/validation/onboarding";
 import { TURNMARK_ASSETS, type TurnmarkAsset } from "@/lib/brand/assets";
+import { captureAnalytics } from "@/lib/analytics/client";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import {
   ActionFooter, ChoiceCard, ErrorBanner, Field, OnboardingFrame, ReviewRow, ScreenHeader,
   onboardingStyles as styles,
@@ -91,6 +93,7 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
   const [clientErrors, setClientErrors] = useState<Partial<Record<OnboardingField,string>>>({});
   const formRef = useRef<HTMLFormElement>(null);
   const firstRender = useRef(true);
+  const onboardingStarted = useRef(false);
   const isIndividual = values.accountType !== "ORGANIZATION";
   const isLecturer = isIndividual && values.professionalCategory === "LECTURER_TEACHER";
   const isProfessionalService = isIndividual && Boolean(values.professionalCategory) && !isLecturer;
@@ -113,6 +116,7 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
   const errors = { ...serverErrors, ...clientErrors } as Partial<Record<OnboardingField,string>>;
 
   useEffect(() => {
+    if (!onboardingStarted.current) { onboardingStarted.current = true; captureAnalytics(ANALYTICS_EVENTS.onboardingStarted); }
     if (firstRender.current) { firstRender.current = false; return; }
     document.getElementById("onboarding-step-title")?.focus();
   }, [step]);
@@ -129,6 +133,7 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
     setClientErrors((current)=>{ const next={...current}; delete next[field]; return next; });
   }
   function selectAccount(accountType: (typeof ACCOUNT_TYPES)[number]) {
+    captureAnalytics(ANALYTICS_EVENTS.accountTypeSelected, { account_type: accountType });
     setValues((current)=>({
       ...current, accountType,
       professionalCategory: accountType === "INDIVIDUAL" ? current.professionalCategory : "",
@@ -145,6 +150,7 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
     setClientErrors({});
   }
   function selectProfession(category: string) {
+    captureAnalytics(ANALYTICS_EVENTS.professionSelected, { profession_category: category });
     const lecturer = category === "LECTURER_TEACHER";
     setValues((current)=>({ ...current, professionalCategory: category,
       teachingLevel: lecturer ? current.teachingLevel : "", institutionName: lecturer ? current.institutionName : "",
@@ -154,6 +160,7 @@ export function OnboardingForm({ action, countries, timezones, requestId }: {
     setClientErrors({});
   }
   function selectOrganization(type: string) {
+    captureAnalytics(ANALYTICS_EVENTS.organizationTypeSelected, { organization_category: type });
     setValues((current)=>({ ...current, organizationType:type, organizationSubtype:"", representativeName:"", serviceTemplates:"", authorizationDeclaration:"" }));
     setClientErrors({});
   }

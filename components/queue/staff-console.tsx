@@ -6,6 +6,8 @@ import { useLive } from "@/lib/realtime/use-live";
 import { consoleSchema,operationSchema,type QueueConsole,type OperationInput } from "@/lib/validation/operations";
 import { runQueueOperation } from "@/app/dashboard/queues/[queueId]/actions";
 import { StatCard,StatusPill,duration } from "@/components/ui/workspace";
+import { captureAnalytics } from "@/lib/analytics/client";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 export function StaffConsole({initial,manager}:{initial:QueueConsole;manager:boolean}){
  const [queue,setQueue]=useState(initial),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState(''),[retry,setRetry]=useState<OperationInput|null>(null),[confirm,setConfirm]=useState<{operation:'no_show'|'cancel';ticketId:string;number:string}|null>(null);
  const running=useRef(false);const storageKey=`queuezero-action:${initial.queue_id}`;const mounted=useRef(true);
@@ -16,7 +18,7 @@ export function StaffConsole({initial,manager}:{initial:QueueConsole;manager:boo
   if(running.current)return;running.current=true;setBusy(true);setMessage('');setConfirm(null);
   const input=saved??{queueId:queue.queue_id,requestId:crypto.randomUUID(),operation,...(ticketId?{ticketId}:{})};
   try{sessionStorage.setItem(storageKey,JSON.stringify(input))}catch{/* In-memory nonce still protects this session's retries. */}
-  try{const r=await runQueueOperation(input);setMessage(r.message);if(r.retry)setRetry(input);else{setRetry(null);try{sessionStorage.removeItem(storageKey)}catch{/* The acknowledged operation is complete. */}};await refresh()}
+  try{const r=await runQueueOperation(input);if(r.ok&&input.operation==='call_next')captureAnalytics(ANALYTICS_EVENTS.queueCallNext);if(r.ok&&input.operation==='complete')captureAnalytics(ANALYTICS_EVENTS.queueServiceCompleted);if(r.ok&&input.operation==='no_show')captureAnalytics(ANALYTICS_EVENTS.queueCustomerNoShow);if(r.ok&&input.operation==='cancel')captureAnalytics(ANALYTICS_EVENTS.queueCustomerCancelled);setMessage(r.message);if(r.retry)setRetry(input);else{setRetry(null);try{sessionStorage.removeItem(storageKey)}catch{/* The acknowledged operation is complete. */}};await refresh()}
   catch{setRetry(input);setMessage('We couldn’t confirm that action. Retry it safely using the button below.')}
   finally{running.current=false;setBusy(false)}
  }

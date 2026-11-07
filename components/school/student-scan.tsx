@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, GraduationCap, ShieldCheck } from "lucide-react";
 import { recordAttendance, type ScanResult } from "@/lib/school-student/actions";
+import { captureAnalytics } from "@/lib/analytics/client";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import styles from "./attendance-scan.module.css";
 
 type PublicClass = { organization_name: string; course_code: string; course_title: string; starts_at: string | null; planned_ends_at: string | null; attendance_closes_at: string | null; open: boolean };
@@ -21,8 +23,10 @@ export function StudentScan({ token, classInfo }: { token: string; classInfo: Pu
       try { requestId.current ??= sessionStorage.getItem(storageKey); } catch {}
       requestId.current ??= crypto.randomUUID();
       try { sessionStorage.setItem(storageKey, requestId.current); } catch {}
-      setResult(await recordAttendance({ token, requestId: requestId.current, fullName: form.get("fullName"), matricNumber: form.get("matricNumber") }));
-    } catch { setResult({ ok: false, status: "UNAVAILABLE", message: "Connection interrupted. Retry this same submission safely." }); }
+      const response = await recordAttendance({ token, requestId: requestId.current, fullName: form.get("fullName"), matricNumber: form.get("matricNumber") });
+      setResult(response);
+      captureAnalytics(response.ok ? ANALYTICS_EVENTS.attendanceQrCheckinSucceeded : ANALYTICS_EVENTS.attendanceQrCheckinFailed);
+    } catch { setResult({ ok: false, status: "UNAVAILABLE", message: "Connection interrupted. Retry this same submission safely." }); captureAnalytics(ANALYTICS_EVENTS.attendanceQrCheckinFailed); }
     finally { busy.current = false; setPending(false); }
   }
   if (result?.ok) return <section className={styles.success} aria-live="polite"><span className={styles.successIcon}><Check size={30} aria-hidden="true" /></span><p>CHECK-IN COMPLETE</p><h2>Attendance marked ✓</h2><span>You’re recorded for {result.course_code}.</span><dl><div><dt>Name</dt><dd>{result.full_name}</dd></div><div><dt>Matric number</dt><dd>{result.matric_number}</dd></div><div><dt>Time</dt><dd>{result.recorded_at ? new Intl.DateTimeFormat(undefined,{hour:"2-digit",minute:"2-digit"}).format(new Date(result.recorded_at)) : "Recorded"}</dd></div><div><dt>Status</dt><dd data-status={result.status}>{result.status === "LATE" ? "Late" : "Present"}{result.needs_review ? " · Needs review" : ""}</dd></div></dl><p className={styles.noAccount}><ShieldCheck size={15} aria-hidden="true" />You can close this page. No account was created.</p><Link className={styles.optionalAccount} href="/sign-up">Create an optional account <ArrowRight size={16} aria-hidden="true" /></Link></section>;

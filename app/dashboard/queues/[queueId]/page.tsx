@@ -9,6 +9,7 @@ import { formatServiceDuration } from "@/lib/queue/format";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { getManagedQueue } from "@/lib/queue/management";
 import { ArrowLeft, ExternalLink } from "lucide-react";
+import { QueueCreatedAnalytics } from "@/components/analytics/queue-created";
 
 export default async function QueueDetailsPage({ params, searchParams }: {
   params: Promise<{ queueId: string }>;
@@ -24,6 +25,7 @@ export default async function QueueDetailsPage({ params, searchParams }: {
   const manager = Boolean(institution?.snapshot.units.find(unit => unit.id === queue.unit_id)?.permissions.includes("queue.manage")) || membership.role === "owner" || membership.role === "admin";
   return <>
     <Link href="/dashboard/queues" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary"><ArrowLeft size={18} aria-hidden="true" />Queues</Link>
+    <QueueCreatedAnalytics saved={saved} />
     {message && <p role="status" className="my-4 rounded-xl bg-green-50 p-4 text-green-900">{message}</p>}
     <div className="mt-4 flex flex-wrap items-center justify-between gap-4"><h1 className="min-w-0 break-words text-3xl font-semibold">{queue.name}</h1>
       {manager && <Link href={`/dashboard/queues/${queue.id}/edit`} className="inline-flex min-h-12 items-center rounded-xl border border-black/20 px-5 font-semibold">Edit settings</Link>}</div>

@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { Copy, Download, ExternalLink, Printer, QrCode, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
 import type { QueueQrArtifact } from "@/lib/queue/qr";
 import styles from "@/components/queue/queue-qr.module.css";
+import { captureAnalytics } from "@/lib/analytics/client";
+import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 
 export function QueueQrCard({ artifact, queueId, businessName, queueName, sheet = false }: {
   artifact: QueueQrArtifact;
@@ -26,6 +28,7 @@ export function QueueQrCard({ artifact, queueId, businessName, queueName, sheet 
   const imageRef = useRef<HTMLImageElement>(null);
   const router = useRouter();
   const [retrying, startRetry] = useTransition();
+  const qrViewed = useRef(false);
 
   async function copyLink() {
     setCopying(true);
@@ -63,7 +66,7 @@ export function QueueQrCard({ artifact, queueId, businessName, queueName, sheet 
 
   const qrImage = <Image key={imageAttempt} ref={imageRef} unoptimized src={artifact.pngDataUrl} width={1024} height={1024}
     alt={`QR code for ${queueName}`} className={styles.qrImage} loading="eager"
-    onLoad={() => { setReady(true); setImageFailed(false); }}
+    onLoad={() => { setReady(true); setImageFailed(false); if (!qrViewed.current) { qrViewed.current = true; captureAnalytics(ANALYTICS_EVENTS.queueQrViewed); } }}
     onError={() => { setReady(false); setImageFailed(true); }} />;
 
   return <section aria-label={sheet ? "Queue print sheet" : "Share this queue"} data-queue-print-sheet={sheet ? "true" : undefined}
