@@ -22,7 +22,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [advanced, setAdvanced] = useState(false);
+  const [advanced, setAdvanced] = useState(search.get("oauth") === "continue");
   const [socialBusy, setSocialBusy] = useState<"google" | "apple" | null>(null);
   const other = mode === "sign-in" ? "sign-up" : "sign-in";
   const isWelcomeBack = mode === "sign-in";
@@ -112,7 +112,11 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     setError("");
   }
 
-  const supportsGoogle = mode === "sign-in" && Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_google"));
+  // Clerk treats social sign-in and sign-up as one transferable flow. Keep Google available on the sign-up page too;
+  // new users are created by Clerk after Google verifies their identity.
+  // OAuth availability is configured in Clerk Dashboard, not returned as a first factor
+  // until an identifier-based sign-in attempt exists. Keep Google visible on both entry points.
+  const supportsGoogle = true;
   const supportsApple = mode === "sign-in" && Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_apple"));
 
   async function authenticateWithProvider(provider: "google" | "apple") {
@@ -123,10 +127,10 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       await signIn.sso({
         strategy: provider === "google" ? "oauth_google" : "oauth_apple",
         redirectUrl: returnTo,
-        redirectCallbackUrl: "/sign-in/sso-callback",
+        redirectCallbackUrl: `/sign-in/sso-callback?redirect_url=${encodeURIComponent(returnTo)}`,
       });
     } catch (cause) {
-      setError(authErrorMessage(cause, "sign-in"));
+      setError(authErrorMessage(cause, mode));
       setSocialBusy(null);
     }
   }
