@@ -114,7 +114,9 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
 
   // Clerk treats social sign-in and sign-up as one transferable flow. Keep Google available on the sign-up page too;
   // new users are created by Clerk after Google verifies their identity.
-  const supportsGoogle = mode === "sign-up" || Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_google"));
+  // OAuth availability is configured in Clerk Dashboard, not returned as a first factor
+  // until an identifier-based sign-in attempt exists. Keep Google visible on both entry points.
+  const supportsGoogle = true;
   const supportsApple = mode === "sign-in" && Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_apple"));
 
   async function authenticateWithProvider(provider: "google" | "apple") {
