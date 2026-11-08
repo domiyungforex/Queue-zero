@@ -33,7 +33,7 @@ function OAuthCallbackContent() {
       router.replace(`/${mode}?${query.toString()}`);
     };
 
-    const navigate = ({ session, decorateUrl }: { session: { currentTask?: unknown } | null; decorateUrl: (url: string) => string }) => {
+    const navigateToDestination = (session: { currentTask?: unknown } | null, decorateUrl: (url: string) => string) => {
       // Let the existing Clerk UI handle any required session task.
       if (session?.currentTask) {
         continueAt("sign-in");
@@ -45,12 +45,12 @@ function OAuthCallbackContent() {
     void (async () => {
       try {
         if (signIn.status === "complete") {
-          await signIn.finalize({ navigate });
+          await signIn.finalize({ navigate: ({ session, decorateUrl }) => navigateToDestination(session, decorateUrl) });
           return;
         }
 
         if (signUp.status === "complete") {
-          await signUp.finalize({ navigate });
+          await signUp.finalize({ navigate: ({ session, decorateUrl }) => navigateToDestination(session, decorateUrl) });
           return;
         }
 
@@ -60,7 +60,7 @@ function OAuthCallbackContent() {
           const { error: transferError } = await signIn.create({ transfer: true });
           if (transferError) throw transferError;
           if (signIn.status === "complete") {
-            await finalize(signIn);
+            await signIn.finalize({ navigate: ({ session, decorateUrl }) => navigateToDestination(session, decorateUrl) });
             return;
           }
         }
