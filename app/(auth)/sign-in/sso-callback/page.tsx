@@ -33,28 +33,24 @@ function OAuthCallbackContent() {
       router.replace(`/${mode}?${query.toString()}`);
     };
 
-    const finalize = async (flow: typeof signIn | typeof signUp) => {
-      await flow.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          // Let the existing Clerk UI handle any required session task.
-          if (session?.currentTask) {
-            continueAt("sign-in");
-            return;
-          }
-          window.location.assign(decorateUrl(returnTo));
-        },
-      });
+    const navigate = ({ session, decorateUrl }: { session: { currentTask?: unknown } | null; decorateUrl: (url: string) => string }) => {
+      // Let the existing Clerk UI handle any required session task.
+      if (session?.currentTask) {
+        continueAt("sign-in");
+        return;
+      }
+      window.location.assign(decorateUrl(returnTo));
     };
 
     void (async () => {
       try {
         if (signIn.status === "complete") {
-          await finalize(signIn);
+          await signIn.finalize({ navigate });
           return;
         }
 
         if (signUp.status === "complete") {
-          await finalize(signUp);
+          await signUp.finalize({ navigate });
           return;
         }
 
@@ -74,14 +70,14 @@ function OAuthCallbackContent() {
           return;
         }
 
-        if (signUp.status === "missing_requirements" || signUp.status === "needs_verification") {
+        if (signUp.status === "missing_requirements") {
           continueAt("sign-up");
           return;
         }
 
         // Route unresolved Clerk states to its built-in continuation UI rather
         // than leaving users on a blank callback page.
-        continueAt(signUp.status !== "idle" ? "sign-up" : "sign-in");
+        continueAt("sign-in");
       } catch {
         setError("Google sign-in couldn't be completed. Please try again.");
         started.current = false;
