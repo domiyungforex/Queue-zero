@@ -10,7 +10,7 @@ export const schoolSnapshotSchema = z.object({
   students: z.array(z.object({ id, full_name: text, matric_number: text, department_id: id, level: text })),
   enrollments: z.array(z.object({ course_id: id, student_id: id })),
   lecturers: z.array(z.object({ course_id: id, clerk_user_id: text, display_name: text })),
-  classes: z.array(z.object({ id, course_id: id, status: text, starts_at: timestamp, ends_at: timestamp, planned_ends_at: timestamp.optional(), late_after_minutes: z.number(), checkout_enabled: z.boolean(), arrival_open: z.boolean(), departure_required: z.boolean() })),
+  classes: z.array(z.object({ id, course_id: id, status: text, starts_at: timestamp, ends_at: timestamp, planned_ends_at: timestamp.optional(), late_after_minutes: z.number(), checkout_enabled: z.boolean(), arrival_open: z.boolean(), departure_required: z.boolean(), verification_mode: z.enum(["STANDARD", "VERIFIED"]).default("VERIFIED") })),
   attendance: z.array(z.object({ id, class_session_id: id, student_id: id, check_in_at: timestamp, check_out_at: timestamp, status: z.enum(["PRESENT", "LATE", "ABSENT", "EARLY_LEAVE", "INCOMPLETE", "EXCUSED", "FLAGGED"]), flag_reason: text.nullable() })),
   flags: z.array(z.object({ id, class_session_id: id, student_id: id, reason: text, created_at: text, resolved_at: timestamp, resolution: text.nullable() })),
 });
