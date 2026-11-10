@@ -38,7 +38,7 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     }
     const db = await createUserSupabaseClient();
     const result = action === "class"
-      ? await db.rpc("school_create_accountless_class", { p_organization_id: membership.businessId, p_course_id: parsed.data.course_id, p_starts_at: parsed.data.starts_at, p_planned_ends_at: parsed.data.planned_ends_at ?? parsed.data.attendance_closes_at, p_late_after_minutes: parsed.data.late_after_minutes, p_attendance_closes_at: parsed.data.attendance_closes_at })
+      ? await db.rpc("school_create_accountless_class", { p_organization_id: membership.businessId, p_course_id: parsed.data.course_id, p_starts_at: parsed.data.starts_at, p_planned_ends_at: parsed.data.planned_ends_at ?? parsed.data.attendance_closes_at, p_late_after_minutes: parsed.data.late_after_minutes, p_attendance_closes_at: parsed.data.attendance_closes_at, p_verification_mode: parsed.data.verification_mode })
       : action === "revoke_qr"
         ? await db.rpc("school_revoke_qr", { p_organization_id: membership.businessId, p_class_id: parsed.data.class_id }).then(value => ({ ...value, data: value.error ? null : { message: "Class QR revoked." } }))
         : action === "enroll"
