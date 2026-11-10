@@ -76,7 +76,7 @@ declare
  clean_name text:=btrim(p_full_name);
  clean_matric text:=upper(btrim(p_matric_number));
 begin
- if p_request_id is null or p_nonce is null or length(clean_name) not between 1 and 160
+ if p_request_id is null or p_nonce is null or p_device_hash is null or p_network_hash is null or length(clean_name) not between 1 and 160
     or length(clean_matric) not between 1 and 80
     or p_device_hash !~ '^[0-9a-f]{64}$' or p_network_hash !~ '^[0-9a-f]{64}$'
  then raise exception 'Invalid attendance request' using errcode='22023'; end if;
@@ -125,6 +125,7 @@ begin
    return jsonb_build_object('ok',false,'status','NAME_MISMATCH','message','The name entered does not match the official course roster.');
   end if;
  else
+  perform pg_advisory_xact_lock(hashtextextended(p_organization_id::text||':'||private.normalized_matric(clean_matric),2));
   select p.id,p.full_name,sp.matric_number into person,canonical_name,canonical_matric
   from public.people p join public.school_profiles sp on sp.id=p.id and sp.organization_id=p.organization_id
   where p.organization_id=p_organization_id and p.type='STUDENT'
