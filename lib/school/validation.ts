@@ -8,7 +8,7 @@ export const schoolInputSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("lecturer"), course_id: z.uuid(), email: z.email().max(254) }),
   z.object({ action: z.literal("remove_lecturer"), course_id: z.uuid(), user_id: z.string().min(1).max(200) }),
   z.object({ action: z.literal("enroll"), course_id: z.uuid(), students: z.array(studentSchema).min(1).max(200) }),
-  z.object({ action: z.literal("class"), course_id: z.uuid(), starts_at: z.iso.datetime({ offset: true }), planned_ends_at: z.iso.datetime({ offset: true }).nullable().optional(), attendance_closes_at: z.iso.datetime({ offset: true }), late_after_minutes: z.coerce.number().int().min(0).max(120), departure_required: z.boolean() }),
+  z.object({ action: z.literal("class"), course_id: z.uuid(), starts_at: z.iso.datetime({ offset: true }), planned_ends_at: z.iso.datetime({ offset: true }).nullable().optional(), attendance_closes_at: z.iso.datetime({ offset: true }), late_after_minutes: z.coerce.number().int().min(0).max(120), departure_required: z.boolean(), verification_mode: z.enum(["STANDARD", "VERIFIED"]).default("STANDARD") }),
   z.object({ action: z.enum(["open", "close_arrival", "finish", "revoke_qr"]), class_id: z.uuid() }),
   z.object({ action: z.literal("resolve_flag"), flag_id: z.uuid(), resolution: z.string().trim().min(5).max(500) }),
 ]).refine(value => value.action !== "class" || ((!value.planned_ends_at || Date.parse(value.planned_ends_at) > Date.parse(value.starts_at)) && Date.parse(value.attendance_closes_at) > Date.parse(value.starts_at) && (!value.planned_ends_at || Date.parse(value.attendance_closes_at) <= Date.parse(value.planned_ends_at))), { message: "Attendance close and planned end must follow class start." });
