@@ -749,6 +749,7 @@ export type Database = {
                     "arrival_open"?: boolean;
                     "attendance_closes_at"?: string | null;
                     "checkout_enabled"?: boolean;
+                    "verification_mode"?: string;
                     "course_id"?: string;
                     "created_at"?: string;
                     "departure_required"?: boolean;
