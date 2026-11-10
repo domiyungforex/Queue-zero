@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ record: vi.fn() }));
 vi.mock("@/lib/school-student/actions", () => ({ recordAttendance: mocks.record }));
 import { StudentScan } from "@/components/school/student-scan";
-const classInfo = { verification_mode: "STANDARD", organization_name: "Test School", course_code: "PHY 101", course_title: "Mechanics", starts_at: null, planned_ends_at: null, attendance_closes_at: null, open: true };
+const classInfo = { verification_mode: "STANDARD" as const, organization_name: "Test School", course_code: "PHY 101", course_title: "Mechanics", starts_at: null, planned_ends_at: null, attendance_closes_at: null, open: true };
 function submit() { fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Akinyele Dominion" } }); fireEvent.change(screen.getByLabelText("Matric number"), { target: { value: "PHY/2026/0142" } }); fireEvent.click(screen.getByRole("button", { name: "Mark Attendance" })); }
 beforeEach(() => { sessionStorage.clear(); mocks.record.mockResolvedValue({ ok: true, status: "PRESENT", message: "Attendance marked ✓", full_name: "Akinyele Dominion", matric_number: "PHY/2026/0142", course_code: "PHY 101", recorded_at: "2026-10-04T10:04:00Z" }); });
 afterEach(cleanup);
