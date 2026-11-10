@@ -17,7 +17,8 @@ export default async function AttendancePage({ searchParams = Promise.resolve({}
   const sessions = data.classes.filter((session) => (!query.course || session.course_id === query.course) && (!cutoff || !session.starts_at || Date.parse(session.starts_at) >= cutoff));
   const sessionIds = new Set(sessions.map((session) => session.id));
   const finalizedIds = new Set(sessions.filter((session) => session.status === "COMPLETED").map((session) => session.id));
-  const finalized = data.attendance.filter((record) => finalizedIds.has(record.class_session_id));
+  const verifiedIds = new Set(sessions.filter((session) => session.status === "COMPLETED" && session.verification_mode === "VERIFIED").map((session) => session.id));
+  const finalized = data.attendance.filter((record) => verifiedIds.has(record.class_session_id));
   const total = finalized.length;
   const present = finalized.filter((record) => attended.has(record.status)).length;
   const late = finalized.filter((record) => record.status === "LATE").length;
@@ -26,11 +27,11 @@ export default async function AttendancePage({ searchParams = Promise.resolve({}
   const recent = data.attendance.filter((record) => sessionIds.has(record.class_session_id)).sort((a, b) => (b.check_in_at ?? "").localeCompare(a.check_in_at ?? "")).slice(0, 6);
   const trend = sessions.filter((session) => session.status === "COMPLETED").sort((a, b) => (a.starts_at ?? "").localeCompare(b.starts_at ?? "")).slice(-7).map((session) => {
     const records = data.attendance.filter((record) => record.class_session_id === session.id);
-    const value = records.length ? Math.round(records.filter((record) => attended.has(record.status)).length / records.length * 100) : null;
+    const value = session.verification_mode === "VERIFIED" && records.length ? Math.round(records.filter((record) => attended.has(record.status)).length / records.length * 100) : null;
     return { id: session.id, value, label: session.starts_at ? new Intl.DateTimeFormat("en", { weekday: "short", timeZone: "UTC" }).format(new Date(session.starts_at)) : "Class" };
   });
   const breakdown = data.courses.map((course) => {
-    const ids = new Set(sessions.filter((session) => session.course_id === course.id && session.status === "COMPLETED").map((session) => session.id));
+    const ids = new Set(sessions.filter((session) => session.course_id === course.id && session.status === "COMPLETED" && session.verification_mode === "VERIFIED").map((session) => session.id));
     const records = data.attendance.filter((record) => ids.has(record.class_session_id));
     return { course, rate: records.length ? Math.round(records.filter((record) => attended.has(record.status)).length / records.length * 100) : null };
   }).filter((item) => item.rate !== null);
@@ -50,10 +51,10 @@ export default async function AttendancePage({ searchParams = Promise.resolve({}
       <EducationMetric icon={LogOut} value={percent(early, total)} label="Early departures" color="#7c3aed" soft="#f0e9ff" />
     </section>
     <section className={styles.twoColumn}>
-      <div className={styles.panel}><header className={styles.panelHeader}><div><h2>Attendance trend</h2><p>Finalized classes only</p></div></header>{trend.some((item) => item.value !== null) ? <div className={styles.chart} aria-label="Attendance trend chart">{trend.map((item) => <div className={styles.chartItem} key={item.id}><strong>{item.value === null ? "—" : `${item.value}%`}</strong><i className={styles.chartBar} style={{ height: `${item.value ?? 2}%` }} /><small>{item.label}</small></div>)}</div> : <EducationEmpty title="No finalized attendance yet" description="Finish your first class to see attendance insights." icon={CalendarCheck} />}</div>
+      <div className={styles.panel}><header className={styles.panelHeader}><div><h2>Attendance trend</h2><p>Verified sessions only; Standard mode has no assumed denominator</p></div></header>{trend.some((item) => item.value !== null) ? <div className={styles.chart} aria-label="Attendance trend chart">{trend.map((item) => <div className={styles.chartItem} key={item.id}><strong>{item.value === null ? "—" : `${item.value}%`}</strong><i className={styles.chartBar} style={{ height: `${item.value ?? 2}%` }} /><small>{item.label}</small></div>)}</div> : <EducationEmpty title="No finalized attendance yet" description="Finish your first class to see attendance insights." icon={CalendarCheck} />}</div>
       <div className={styles.panel}><header className={styles.panelHeader}><div><h2>Class breakdown</h2><p>Verified attendance rate</p></div></header>{breakdown.length ? <ul className={`${styles.breakdown} ${styles.panelBody}`}>{breakdown.map(({ course, rate }) => <li key={course.id}><strong>{course.code}</strong><span>{rate}%</span><span className={styles.progress}><i style={{ width: `${rate}%` }} /></span></li>)}</ul> : <EducationEmpty title="No class breakdown" description="Completed class records will appear here." />}</div>
     </section>
-    <section className={styles.panel}><header className={styles.panelHeader}><div><h2>Recent attendance</h2><p>Latest verified roster activity</p></div></header>{recent.length ? <ul className={styles.rows}>{recent.map((record) => {
+    <section className={styles.panel}><header className={styles.panelHeader}><div><h2>Recent attendance</h2><p>Latest attendance submissions</p></div></header>{recent.length ? <ul className={styles.rows}>{recent.map((record) => {
       const student = data.students.find((item) => item.id === record.student_id);
       const session = data.classes.find((item) => item.id === record.class_session_id);
       const course = data.courses.find((item) => item.id === session?.course_id);
