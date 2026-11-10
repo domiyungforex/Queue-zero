@@ -16,7 +16,6 @@ export default async function AttendancePage({ searchParams = Promise.resolve({}
   const cutoff = days ? reportingCutoff(days) : null;
   const sessions = data.classes.filter((session) => (!query.course || session.course_id === query.course) && (!cutoff || !session.starts_at || Date.parse(session.starts_at) >= cutoff));
   const sessionIds = new Set(sessions.map((session) => session.id));
-  const finalizedIds = new Set(sessions.filter((session) => session.status === "COMPLETED").map((session) => session.id));
   const verifiedIds = new Set(sessions.filter((session) => session.status === "COMPLETED" && session.verification_mode === "VERIFIED").map((session) => session.id));
   const finalized = data.attendance.filter((record) => verifiedIds.has(record.class_session_id));
   const total = finalized.length;
