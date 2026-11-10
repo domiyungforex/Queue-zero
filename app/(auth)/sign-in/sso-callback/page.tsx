@@ -44,7 +44,9 @@ function OAuthCallbackContent() {
 
     void (async () => {
       try {
-        if (signIn.status === "complete") {
+        // In the current Clerk SDK, createdSessionId is the reliable typed
+        // indicator that a sign-in attempt has produced a session.
+        if (signIn.createdSessionId) {
           await signIn.finalize({ navigate: ({ session, decorateUrl }) => navigateToDestination(session, decorateUrl) });
           return;
         }
@@ -59,7 +61,7 @@ function OAuthCallbackContent() {
         if (signUp.isTransferable) {
           const { error: transferError } = await signIn.create({ transfer: true });
           if (transferError) throw transferError;
-          if (signIn.status === "complete") {
+          if (signIn.createdSessionId) {
             await signIn.finalize({ navigate: ({ session, decorateUrl }) => navigateToDestination(session, decorateUrl) });
             return;
           }
