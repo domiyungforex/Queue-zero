@@ -3102,6 +3102,7 @@ export type Database = {
                     "p_organization_id": string;
                     "p_planned_ends_at": string;
                     "p_starts_at": string;
+                    "p_verification_mode"?: string;
                 };
                 Returns: Json;
             };
