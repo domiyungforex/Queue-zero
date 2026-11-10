@@ -7,7 +7,7 @@ import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import styles from "./attendance-scan.module.css";
 
-type PublicClass = { organization_name: string; course_code: string; course_title: string; starts_at: string | null; planned_ends_at: string | null; attendance_closes_at: string | null; open: boolean };
+type PublicClass = { organization_name: string; course_code: string; course_title: string; starts_at: string | null; planned_ends_at: string | null; attendance_closes_at: string | null; verification_mode: "STANDARD" | "VERIFIED"; open: boolean };
 export function StudentScan({ token, classInfo }: { token: string; classInfo: PublicClass }) {
   const requestId = useRef<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -31,7 +31,7 @@ export function StudentScan({ token, classInfo }: { token: string; classInfo: Pu
   }
   if (result?.ok) return <section className={styles.success} aria-live="polite"><span className={styles.successIcon}><Check size={30} aria-hidden="true" /></span><p>CHECK-IN COMPLETE</p><h2>Attendance marked ✓</h2><span>You’re recorded for {result.course_code}.</span><dl><div><dt>Name</dt><dd>{result.full_name}</dd></div><div><dt>Matric number</dt><dd>{result.matric_number}</dd></div><div><dt>Time</dt><dd>{result.recorded_at ? new Intl.DateTimeFormat(undefined,{hour:"2-digit",minute:"2-digit"}).format(new Date(result.recorded_at)) : "Recorded"}</dd></div><div><dt>Status</dt><dd data-status={result.status}>{result.status === "LATE" ? "Late" : "Present"}{result.needs_review ? " · Needs review" : ""}</dd></div></dl><p className={styles.noAccount}><ShieldCheck size={15} aria-hidden="true" />You can close this page. No account was created.</p><Link className={styles.optionalAccount} href="/sign-up">Create an optional account <ArrowRight size={16} aria-hidden="true" /></Link></section>;
   return <section className={styles.scanForm}>
-    <div className={styles.classCard}><span><GraduationCap size={20} aria-hidden="true" /></span><div><p>{classInfo.organization_name}</p><h2>{classInfo.course_code}</h2><small>{classInfo.course_title}</small></div></div>
+    <div className={styles.classCard}><span><GraduationCap size={20} aria-hidden="true" /></span><div><p>{classInfo.organization_name}</p><h2>{classInfo.course_code}</h2><small>{classInfo.course_title}</small><small>{classInfo.verification_mode === "VERIFIED" ? "Verified attendance · course roster required" : "Standard attendance · no prior registration required"}</small></div></div>
     <form action={scan}>
       <label>Full name<input name="fullName" autoComplete="name" maxLength={160} placeholder="Enter your full name" required /></label>
       <label>Matric number<input name="matricNumber" autoCapitalize="characters" autoComplete="off" maxLength={80} placeholder="Enter your matric number" required /></label>
@@ -39,6 +39,6 @@ export function StudentScan({ token, classInfo }: { token: string; classInfo: Pu
     </form>
     {result && <div role="alert" className={styles.formError}><strong>{result.message}</strong></div>}
     {!classInfo.open && <p role="alert" className={styles.formError}>Attendance for this class is closed.</p>}
-    <p className={styles.privacy}><ShieldCheck size={16} aria-hidden="true" />Your details are checked against the official roster. Browser signals may support lecturer review; they do not prove identity or location.</p>
+    <p className={styles.privacy}><ShieldCheck size={16} aria-hidden="true" />{classInfo.verification_mode === "VERIFIED" ? "Your matric number and name must match the official course roster." : "No CSV or advance registration is required. Your name and matric number are recorded for this class."} Browser signals may support lecturer review; they do not prove identity or location.</p>
   </section>;
 }

@@ -719,6 +719,7 @@ export type Database = {
                     "arrival_open": boolean;
                     "attendance_closes_at": string | null;
                     "checkout_enabled": boolean;
+                    "verification_mode": string;
                     "course_id": string;
                     "created_at": string;
                     "departure_required": boolean;
@@ -733,6 +734,7 @@ export type Database = {
                     "arrival_open"?: boolean;
                     "attendance_closes_at"?: string | null;
                     "checkout_enabled"?: boolean;
+                    "verification_mode"?: string;
                     "course_id": string;
                     "created_at"?: string;
                     "departure_required"?: boolean;
@@ -747,6 +749,7 @@ export type Database = {
                     "arrival_open"?: boolean;
                     "attendance_closes_at"?: string | null;
                     "checkout_enabled"?: boolean;
+                    "verification_mode"?: string;
                     "course_id"?: string;
                     "created_at"?: string;
                     "departure_required"?: boolean;
@@ -3102,6 +3105,7 @@ export type Database = {
                     "p_organization_id": string;
                     "p_planned_ends_at": string;
                     "p_starts_at": string;
+                    "p_verification_mode"?: string;
                 };
                 Returns: Json;
             };
