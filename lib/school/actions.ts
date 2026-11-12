@@ -62,8 +62,36 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
       payload = { course_id: parsed.data.course_id, user_id: matched[0].id, display_name: matched[0].fullName || email, organization_id: membership.businessId };
     }
     const db = await createUserSupabaseClient();
-    const result = action === "class"
-      ? await db.rpc("school_create_accountless_class", {
+    let result: { data: unknown; error: { code?: string; message?: string } | null } = { data: null, error: null };
+
+    if (action === "class") {
+      // Primary call with all 11 parameters (smart attendance system schema)
+      const primaryResult = await db.rpc("school_create_accountless_class", {
+        p_organization_id: membership.businessId,
+        p_course_id: parsed.data.course_id,
+        p_starts_at: parsed.data.starts_at,
+        p_planned_ends_at: parsed.data.planned_ends_at ?? parsed.data.attendance_closes_at,
+        p_late_after_minutes: parsed.data.late_after_minutes,
+        p_attendance_closes_at: parsed.data.attendance_closes_at,
+        p_verification_mode: parsed.data.verification_mode,
+        p_title: parsed.data.title ?? null,
+        p_location_lat: parsed.data.location_lat ?? null,
+        p_location_lng: parsed.data.location_lng ?? null,
+        p_geofence_radius_meters: parsed.data.geofence_radius_meters ?? 100,
+      });
+
+      // If the database has an older RPC signature (e.g. 7 parameters from 20261110030000_smart_attendance_modes.sql
+      // or PostgREST schema cache hasn't reloaded the 11-param signature), gracefully fall back:
+      if (
+        primaryResult.error &&
+        (primaryResult.error.code === "PGRST202" ||
+          (primaryResult.error.message && primaryResult.error.message.includes("schema cache")))
+      ) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("Retrying school_create_accountless_class with 7-param signature");
+        }
+        // Fallback 1: 7-param signature (with verification mode)
+        const fallback7Result = await (db.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { code?: string; message?: string } | null }>)("school_create_accountless_class", {
           p_organization_id: membership.businessId,
           p_course_id: parsed.data.course_id,
           p_starts_at: parsed.data.starts_at,
@@ -71,16 +99,38 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
           p_late_after_minutes: parsed.data.late_after_minutes,
           p_attendance_closes_at: parsed.data.attendance_closes_at,
           p_verification_mode: parsed.data.verification_mode,
-          p_title: parsed.data.title ?? null,
-          p_location_lat: parsed.data.location_lat ?? null,
-          p_location_lng: parsed.data.location_lng ?? null,
-          p_geofence_radius_meters: parsed.data.geofence_radius_meters ?? 100,
-        })
-      : action === "revoke_qr"
-        ? await db.rpc("school_revoke_qr", { p_organization_id: membership.businessId, p_class_id: parsed.data.class_id }).then(value => ({ ...value, data: value.error ? null : { message: "Class QR revoked." } }))
-        : action === "enroll"
-          ? await db.rpc("school_import_roster", { p_organization_id: membership.businessId, p_course_id: parsed.data.course_id, p_students: parsed.data.students })
-          : await db.rpc("school_manage", { p_action: action, p_payload: payload });
+        });
+
+        if (
+          fallback7Result.error &&
+          (fallback7Result.error.code === "PGRST202" ||
+            (fallback7Result.error.message && fallback7Result.error.message.includes("schema cache")))
+        ) {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("Retrying school_create_accountless_class with 6-param legacy signature");
+          }
+          // Fallback 2: 6-param legacy signature
+          result = await (db.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { code?: string; message?: string } | null }>)("school_create_accountless_class", {
+            p_organization_id: membership.businessId,
+            p_course_id: parsed.data.course_id,
+            p_starts_at: parsed.data.starts_at,
+            p_planned_ends_at: parsed.data.planned_ends_at ?? parsed.data.attendance_closes_at,
+            p_late_after_minutes: parsed.data.late_after_minutes,
+            p_attendance_closes_at: parsed.data.attendance_closes_at,
+          });
+        } else {
+          result = fallback7Result;
+        }
+      } else {
+        result = primaryResult;
+      }
+    } else if (action === "revoke_qr") {
+      result = await db.rpc("school_revoke_qr", { p_organization_id: membership.businessId, p_class_id: parsed.data.class_id }).then(value => ({ ...value, data: value.error ? null : { message: "Class QR revoked." } }));
+    } else if (action === "enroll") {
+      result = await db.rpc("school_import_roster", { p_organization_id: membership.businessId, p_course_id: parsed.data.course_id, p_students: parsed.data.students });
+    } else {
+      result = await db.rpc("school_manage", { p_action: action, p_payload: payload });
+    }
     if (result.error) {
       if (process.env.NODE_ENV !== "production") console.warn("School action failed", { action, code: result.error.code, message: result.error.message });
       const attendanceAction = ["class", "open", "close_arrival", "finish", "revoke_qr", "resolve_flag"].includes(action);
