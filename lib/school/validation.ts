@@ -57,8 +57,9 @@ export function parseStudentCsvPreview(input: string) {
   const allowed = new Set(["name","full_name","student_name","student","matric_number","matric","matric_no","mat_no","student_id","programme","program","major","course_of_study","department","level","academic_level","year","email"]);
   const nameIndex = header?.findIndex(v => ["name","full_name","student_name","student"].includes(v)) ?? -1;
   const matricIndex = header?.findIndex(v => ["matric_number","matric","matric_no","mat_no","student_id"].includes(v)) ?? -1;
-  const programmeIndex = header?.findIndex(v => ["programme","program","major","course_of_study","department"].includes(v)) ?? -1;
-  const levelIndex = header?.findIndex(v => ["level","academic_level","year"].includes(v)) ?? -1;
+  const _programmeIndex = header?.findIndex(v => ["programme","program","major","course_of_study","department"].includes(v)) ?? -1;
+  const _levelIndex = header?.findIndex(v => ["level","academic_level","year"].includes(v)) ?? -1;
+  void _programmeIndex; void _levelIndex;
   const emailIndex = header?.indexOf("email") ?? -1;
   if (!header || nameIndex < 0 || matricIndex < 0 || new Set(header).size !== header.length || header.some(value => !allowed.has(value))) throw new Error("Use required columns matric_number, student_name; programme and level are optional.");
   if (!rows.length || rows.length > 500) throw new Error("Include between 1 and 500 students.");

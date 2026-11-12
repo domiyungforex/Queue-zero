@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -131,7 +131,7 @@ export function StudentScan({
   }, []);
 
   // Request location when required
-  const requestLocation = () => {
+  const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setLocationState({
         status: "error",
@@ -192,14 +192,15 @@ export function StudentScan({
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }
     );
-  };
+  }, [classInfo.location_lat, classInfo.location_lng, classInfo.geofence_radius_meters]);
 
-  // Auto trigger location if required and on step 1
+  // Auto trigger location if required and idle — deferred to avoid setState-in-effect
   useEffect(() => {
     if (isLocationRequired && locationState.status === "idle") {
-      requestLocation();
+      const id = setTimeout(() => { requestLocation(); }, 0);
+      return () => clearTimeout(id);
     }
-  }, [isLocationRequired]);
+  }, [isLocationRequired, locationState.status, requestLocation]);
 
   // Verified mode lookup handler
   const handleLookup = async (inputMatric?: string) => {
@@ -278,6 +279,31 @@ export function StudentScan({
     }
   };
 
+  // Capture photo from video stream — declared before quality-check effect so the ref is stable
+  const captureSelfie = useCallback(() => {
+    if (!videoRef.current) return;
+    try {
+      const video = videoRef.current;
+      const canvas = document.createElement("canvas");
+      const size = Math.min(video.videoWidth || 480, video.videoHeight || 480);
+      canvas.width = 400;
+      canvas.height = 400;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const sx = ((video.videoWidth || 400) - size) / 2;
+      const sy = ((video.videoHeight || 400) - size) / 2;
+      ctx.drawImage(video, sx, sy, size, size, 0, 0, 400, 400);
+
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      setCapturedPhoto(dataUrl);
+      setAutoCaptureCountdown(null);
+      stopCamera();
+    } catch {
+      setCameraError("Failed to capture image. Please retry.");
+    }
+  }, []);
+
   // Live quality check loop & optional automatic capture
   useEffect(() => {
     if (step !== 2 || capturedPhoto || !streamRef.current) return;
@@ -330,32 +356,7 @@ export function StudentScan({
       active = false;
       clearInterval(interval);
     };
-  }, [step, capturedPhoto]);
-
-  // Capture photo from video stream
-  const captureSelfie = () => {
-    if (!videoRef.current) return;
-    try {
-      const video = videoRef.current;
-      const canvas = document.createElement("canvas");
-      const size = Math.min(video.videoWidth || 480, video.videoHeight || 480);
-      canvas.width = 400;
-      canvas.height = 400;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      const sx = ((video.videoWidth || 400) - size) / 2;
-      const sy = ((video.videoHeight || 400) - size) / 2;
-      ctx.drawImage(video, sx, sy, size, size, 0, 0, 400, 400);
-
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-      setCapturedPhoto(dataUrl);
-      setAutoCaptureCountdown(null);
-      stopCamera();
-    } catch {
-      setCameraError("Failed to capture image. Please retry.");
-    }
-  };
+  }, [step, capturedPhoto, captureSelfie]);
 
   const retakeSelfie = () => {
     setCapturedPhoto(null);

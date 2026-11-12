@@ -11,7 +11,6 @@ import {
   RefreshCw,
   ScanLine,
   ShieldCheck,
-  X,
 } from "lucide-react";
 import styles from "./attendance-qr.module.css";
 import { captureAnalytics } from "@/lib/analytics/client";
