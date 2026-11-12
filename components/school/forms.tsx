@@ -1,9 +1,10 @@
 "use client";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, AlertCircle, RefreshCw, MapPin } from "lucide-react";
 import { importRoster, manageSchool } from "@/lib/school/actions";
 import type { SchoolSnapshot } from "@/lib/school/contracts";
 
@@ -25,10 +26,25 @@ export function TextField({ name, label, type = "text", maxLength = 160, require
 export function SelectField({ name, label, options }: { name: string; label: string; options: { id: string; name: string }[] }) { return <label>{label}<select name={name} required defaultValue=""><option value="" disabled>Select {label.toLowerCase()}</option>{options.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>; }
 export function SetupForms({ snapshot, canManage = true }: { snapshot: SchoolSnapshot; canManage?: boolean }) { return <div className="school-grid">{canManage && <><SchoolForm action="faculty" title="Add faculty"><TextField name="name" label="Faculty name" /></SchoolForm><SchoolForm action="department" title="Add department"><SelectField name="faculty_id" label="Faculty" options={snapshot.faculties} /><TextField name="name" label="Department name" /></SchoolForm></>}<SchoolForm action="course" title="Create course"><SelectField name="department_id" label="Department" options={snapshot.departments} /><TextField name="code" label="Course code" maxLength={40} /><TextField name="title" label="Course title" /></SchoolForm></div>; }
 export function CreateClassForm({ courseId }: { courseId: string }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
+
+  // Form values state to guarantee preservation across failed attempts
+  const [title, setTitle] = useState("");
+  const [startsAt, setStartsAt] = useState("");
+  const [attendanceClosesAt, setAttendanceClosesAt] = useState("");
+  const [plannedEndsAt, setPlannedEndsAt] = useState("");
+  const [lateAfterMinutes, setLateAfterMinutes] = useState("10");
+  const [verificationMode, setVerificationMode] = useState<"STANDARD" | "VERIFIED">("STANDARD");
+
+  // Geofence state
   const [useGeofence, setUseGeofence] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [lat, setLat] = useState<string>("");
   const [lng, setLng] = useState<string>("");
+  const [geofenceRadius, setGeofenceRadius] = useState("100");
 
   const handleCaptureCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -50,19 +66,128 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
     );
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isPending || isSuccess) return;
+
+    setErrorMessage("");
+
+    const formData = new FormData();
+    formData.set("action", "class");
+    formData.set("course_id", courseId);
+    if (title.trim()) formData.set("title", title.trim());
+    formData.set("starts_at", startsAt);
+    formData.set("attendance_closes_at", attendanceClosesAt);
+    if (plannedEndsAt) formData.set("planned_ends_at", plannedEndsAt);
+    formData.set("late_after_minutes", lateAfterMinutes);
+    formData.set("verification_mode", verificationMode);
+
+    if (useGeofence && lat && lng) {
+      formData.set("location_lat", lat);
+      formData.set("location_lng", lng);
+      formData.set("geofence_radius_meters", geofenceRadius);
+    }
+
+    startTransition(async () => {
+      try {
+        const result = await manageSchool({ ok: false, message: "" }, formData);
+        if (result.ok && result.id) {
+          setIsSuccess(true);
+          captureAnalytics(ANALYTICS_EVENTS.classSessionStarted);
+          router.push(`/dashboard/attendance/${result.id}`);
+        } else {
+          setErrorMessage(result.message || "Failed to create class attendance session.");
+        }
+      } catch (err) {
+        setErrorMessage(err instanceof Error ? err.message : "Connection failed. Please retry.");
+      }
+    });
+  };
+
   return (
-    <SchoolForm action="class" title="Create class attendance session" submit="Create class" fields={{ course_id: courseId }}>
-      <TextField name="title" label="Session title (optional, e.g. Lecture 4: Database Indexing)" maxLength={200} required={false} />
-      <TextField name="starts_at" label="Class start (UTC)" type="datetime-local" />
-      <TextField name="attendance_closes_at" label="Attendance closes (UTC)" type="datetime-local" />
-      <TextField name="planned_ends_at" label="Class end (UTC, optional)" type="datetime-local" required={false} />
+    <form onSubmit={handleSubmit} className="school-form school-create-class-form">
+      <h2>Create class attendance session</h2>
+
+      {errorMessage && (
+        <div className="school-form-error" role="alert">
+          <AlertCircle size={18} aria-hidden="true" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {isSuccess && (
+        <div className="school-form-success" role="status">
+          <RefreshCw size={18} className="animate-spin" aria-hidden="true" />
+          <span>Session created! Opening attendance dashboard…</span>
+        </div>
+      )}
+
       <label>
-        Late after (minutes)
-        <input type="number" name="late_after_minutes" min="0" max="120" defaultValue="10" required />
+        Session title (optional)
+        <input
+          name="title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. Lecture 4: Database Indexing"
+          maxLength={200}
+        />
       </label>
+
+      <div className="school-form-row">
+        <label>
+          Class start (UTC)
+          <input
+            name="starts_at"
+            type="datetime-local"
+            value={startsAt}
+            onChange={(e) => setStartsAt(e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Attendance closes (UTC)
+          <input
+            name="attendance_closes_at"
+            type="datetime-local"
+            value={attendanceClosesAt}
+            onChange={(e) => setAttendanceClosesAt(e.target.value)}
+            required
+          />
+        </label>
+      </div>
+
+      <div className="school-form-row">
+        <label>
+          Class end (UTC, optional)
+          <input
+            name="planned_ends_at"
+            type="datetime-local"
+            value={plannedEndsAt}
+            onChange={(e) => setPlannedEndsAt(e.target.value)}
+          />
+        </label>
+        <label>
+          Late after (minutes)
+          <input
+            type="number"
+            name="late_after_minutes"
+            min="0"
+            max="120"
+            value={lateAfterMinutes}
+            onChange={(e) => setLateAfterMinutes(e.target.value)}
+            required
+          />
+        </label>
+      </div>
+
       <label>
         Attendance verification mode
-        <select name="verification_mode" defaultValue="STANDARD">
+        <select
+          name="verification_mode"
+          value={verificationMode}
+          onChange={(e) => setVerificationMode(e.target.value as "STANDARD" | "VERIFIED")}
+        >
           <option value="STANDARD">Standard mode (Default) — instant scanning, no advance CSV needed</option>
           <option value="VERIFIED">Verified mode — validate against uploaded course roster</option>
         </select>
@@ -71,22 +196,23 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
         Standard mode allows students to sign in immediately without prior student upload. Verified mode checks each student against the official roster.
       </p>
 
-      <div style={{ marginTop: "1rem", padding: "1rem", background: "#f8faf9", borderRadius: "8px", border: "1px solid #e2e8e5" }}>
-        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontWeight: 600 }}>
+      {/* Geofence section */}
+      <div className="school-geofence-card">
+        <label className="school-geofence-toggle">
           <input
             type="checkbox"
             checked={useGeofence}
             onChange={(e) => setUseGeofence(e.target.checked)}
           />
-          Enable classroom location verification (Geofencing)
+          <span>Enable classroom location verification (Geofencing)</span>
         </label>
         {useGeofence && (
-          <div style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div className="school-geofence-fields">
             <p className="text-sm text-muted">
               Require students to be physically within the classroom or lecture hall radius to mark attendance.
             </p>
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end" }}>
-              <label style={{ flex: 1 }}>
+            <div className="school-geofence-inputs">
+              <label>
                 Latitude
                 <input
                   type="number"
@@ -98,7 +224,7 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
                   required={useGeofence}
                 />
               </label>
-              <label style={{ flex: 1 }}>
+              <label>
                 Longitude
                 <input
                   type="number"
@@ -110,16 +236,16 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
                   required={useGeofence}
                 />
               </label>
-              <button
-                type="button"
-                className="button-secondary"
-                onClick={handleCaptureCurrentLocation}
-                disabled={detectingLocation}
-                style={{ marginBottom: "2px" }}
-              >
-                {detectingLocation ? "Detecting…" : "Use my location"}
-              </button>
             </div>
+            <button
+              type="button"
+              className="button-secondary school-location-btn"
+              onClick={handleCaptureCurrentLocation}
+              disabled={detectingLocation}
+            >
+              <MapPin size={16} aria-hidden="true" />
+              {detectingLocation ? "Detecting location…" : "Use current device location"}
+            </button>
             <label>
               Permitted radius (meters)
               <input
@@ -127,14 +253,26 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
                 name="geofence_radius_meters"
                 min="10"
                 max="5000"
-                defaultValue="100"
+                value={geofenceRadius}
+                onChange={(e) => setGeofenceRadius(e.target.value)}
                 required={useGeofence}
               />
             </label>
           </div>
         )}
       </div>
-    </SchoolForm>
+
+      <button disabled={isPending || isSuccess} className="button-primary" type="submit">
+        {isPending ? (
+          <>
+            <RefreshCw size={16} className="animate-spin" aria-hidden="true" />
+            <span>Creating class session…</span>
+          </>
+        ) : (
+          "Create class & open attendance"
+        )}
+      </button>
+    </form>
   );
 }
 export function EnrollmentForm({ snapshot, courseId }: { snapshot: SchoolSnapshot; courseId?: string }) {

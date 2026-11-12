@@ -5,6 +5,8 @@ const stateMessages: Record<string, string> = {
   "Class cannot be reopened": "This attendance session has ended.",
   "Class is not open": "This attendance session is not open.",
   "Class cannot finish before its scheduled start": "This class cannot be finished before its scheduled start.",
+  "Invalid class attendance window": "Please check your class times. Closing time must be after start time and within 6 hours.",
+  "Choose a valid attendance mode": "Please select a valid attendance mode (Standard or Verified).",
   // Compatibility message for a database that has not received the migration.
   // Lecturer assignment is optional and must not block attendance.
   "Assign a lecturer before opening attendance": "Attendance could not open because this workspace needs a database update.",

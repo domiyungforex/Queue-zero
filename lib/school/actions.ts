@@ -28,7 +28,11 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
       if (!raw.geofence_radius_meters || raw.geofence_radius_meters === "") raw.geofence_radius_meters = null;
     }
     const parsed = schoolInputSchema.safeParse(raw);
-    if (!parsed.success) return { ok: false, message: "Please check the form fields and try again." };
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const detailMessage = issue ? issue.message : "Please check the form fields and try again.";
+      return { ok: false, message: detailMessage };
+    }
     const { action, ...fields } = parsed.data;
     if (["faculty", "department", "lecturer", "remove_lecturer"].includes(action) && !membership.institutionType && membership.role === "lecturer") return { ok: false, message: "Only an owner or administrator can change school setup." };
     let payload: Record<string, Json | undefined> = { ...fields, organization_id: membership.businessId };
