@@ -19,8 +19,19 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     if (raw.action === "class") {
       raw.departure_required = false;
       for (const field of ["starts_at", "planned_ends_at", "attendance_closes_at"]) {
-        const value = String(raw[field] ?? "");
-        raw[field] = field === "planned_ends_at" && !value ? null : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value + ":00Z" : value;
+        const val = raw[field];
+        if (!val || val === "") {
+          raw[field] = field === "planned_ends_at" ? null : "";
+        } else {
+          const str = String(val).trim();
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(str)) {
+            raw[field] = str + ":00Z";
+          } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(str)) {
+            raw[field] = str + "Z";
+          } else {
+            raw[field] = str;
+          }
+        }
       }
       if (!raw.title) raw.title = null;
       if (!raw.location_lat || raw.location_lat === "") raw.location_lat = null;
@@ -71,7 +82,7 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
           ? await db.rpc("school_import_roster", { p_organization_id: membership.businessId, p_course_id: parsed.data.course_id, p_students: parsed.data.students })
           : await db.rpc("school_manage", { p_action: action, p_payload: payload });
     if (result.error) {
-      if (process.env.NODE_ENV !== "production") console.warn("School action failed", { action, code: result.error.code });
+      if (process.env.NODE_ENV !== "production") console.warn("School action failed", { action, code: result.error.code, message: result.error.message });
       const attendanceAction = ["class", "open", "close_arrival", "finish", "revoke_qr", "resolve_flag"].includes(action);
       return { ok: false, message: attendanceAction ? schoolActionErrorMessage(result.error) : result.error.code === "42501" ? "This record is unavailable or your access has changed." : result.error.code === "23505" ? "This record already exists. Check the course, email or matric number." : "We couldn’t save this change. Try again." };
     }
@@ -81,8 +92,12 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     return { ok: true, ...response.data };
   } catch (error) {
     unstable_rethrow(error);
+    if (process.env.NODE_ENV !== "production") console.warn("manageSchool catch error", error);
     // Validation messages contain row positions, never student PII or provider errors.
     if (error instanceof Error && /^(Import at most|Use the header|Include between|Check the CSV|Check the name|Row \d|Duplicate student)/.test(error.message)) return { ok: false, message: error.message };
+    if (error instanceof Error && error.message && !error.message.includes("fetch failed") && !error.message.includes("ENOTFOUND")) {
+      return { ok: false, message: schoolActionErrorMessage({ message: error.message }) };
+    }
     return { ok: false, message: "We couldn’t connect. Try again." };
   }
 }
