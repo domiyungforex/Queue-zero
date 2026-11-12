@@ -86,7 +86,7 @@ export function AttendanceQr({
           width: 600,
           margin: 3,
           errorCorrectionLevel: "M",
-          color: { dark: "#003d32", light: "#ffffff" },
+          color: { dark: "#0f172a", light: "#ffffff" },
         });
         if (!stopped) {
           setQr({ image, expires, url: parsed.data.url });

@@ -64,7 +64,9 @@ export async function recordAttendance(input: unknown): Promise<ScanResult> {
     const token = validateAttendanceToken(parsed.data.token, attendanceSecret());
     const db = createJoinSupabaseClient();
     const [deviceHash, networkHash] = await Promise.all([attendanceDeviceHash(token.organization_id), attendanceNetworkHash(token.organization_id)]);
-    const { data, error } = await db.rpc("school_attend_accountless", {
+    
+    // Primary: full 12-parameter signature (photo, location coordinates and accuracy)
+    let attendRes = await db.rpc("school_attend_accountless", {
       p_organization_id: token.organization_id,
       p_class_id: token.session_id,
       p_nonce: token.nonce,
@@ -78,8 +80,38 @@ export async function recordAttendance(input: unknown): Promise<ScanResult> {
       p_location_lng: parsed.data.longitude ?? null,
       p_location_accuracy_meters: parsed.data.accuracy ?? null,
     });
-    if (error) return { ok: false, status: "UNAVAILABLE", message: "Attendance could not be recorded. Check your connection and try again." };
-    const result = resultSchema.safeParse(data);
+
+    // Fallback: If PostgREST has not cached 12 params (PGRST202), fall back to 8 params
+    if (
+      attendRes.error &&
+      (attendRes.error.code === "PGRST202" ||
+        (attendRes.error.message && attendRes.error.message.includes("schema cache")))
+    ) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Retrying school_attend_accountless with 8-param signature");
+      }
+      attendRes = await (db.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<typeof attendRes>)("school_attend_accountless", {
+        p_organization_id: token.organization_id,
+        p_class_id: token.session_id,
+        p_nonce: token.nonce,
+        p_full_name: parsed.data.fullName,
+        p_matric_number: parsed.data.matricNumber,
+        p_device_hash: deviceHash,
+        p_network_hash: networkHash,
+        p_request_id: parsed.data.requestId,
+      });
+    }
+
+    if (attendRes.error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Attendance record failed", { code: attendRes.error.code, message: attendRes.error.message });
+      }
+      if (attendRes.error.code === "22023") {
+        return { ok: false, status: "INVALID", message: attendRes.error.message || "Attendance is closed or details are invalid." };
+      }
+      return { ok: false, status: "UNAVAILABLE", message: "Attendance could not be recorded. Check your connection and try again." };
+    }
+    const result = resultSchema.safeParse(attendRes.data);
     return result.success ? result.data : { ok: false, status: "UNAVAILABLE", message: "Attendance could not be confirmed. Retry this submission." };
   } catch (error) {
     if (error instanceof ExpiredAttendanceQr) return { ok: false, status: "CLOSED", expired: true, message: "Attendance for this class is closed." };

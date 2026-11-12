@@ -1,53 +1,57 @@
 .card {
   overflow: hidden;
-  border: 1px solid #e1ebe6;
-  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
   background: #ffffff;
-  box-shadow: 0 16px 40px rgba(0, 61, 50, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  max-width: 100%;
 }
 
 .cardHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
-  padding: 20px 24px;
-  border-bottom: 1px solid #edf2f0;
-  background: #fbfdfc;
+  padding: clamp(16px, 2.5vw, 22px);
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
 .headerTitleGroup {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .icon {
   display: grid;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 12px;
   color: #ffffff;
-  background: linear-gradient(135deg, #003d32, #065f46);
-  box-shadow: 0 10px 20px rgba(0, 61, 50, 0.18);
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
 }
 
 .eyebrow {
   margin: 0;
-  color: #047857;
+  color: #64748b;
   font-size: 10px;
-  font-weight: 850;
+  font-weight: 800;
   letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 .cardTitle {
   margin: 2px 0 0;
-  color: #111318;
-  font-size: 20px;
-  font-weight: 850;
-  letter-spacing: -0.03em;
+  color: #0f172a;
+  font-size: clamp(17px, 2vw, 20px);
+  font-weight: 750;
+  letter-spacing: -0.02em;
 }
 
 .cardSubtitle {
@@ -55,12 +59,14 @@
   margin-top: 2px;
   color: #64748b;
   font-size: 12px;
+  line-height: 1.4;
 }
 
 .headerActions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .projectorButton {
@@ -69,19 +75,19 @@
   gap: 6px;
   min-height: 40px;
   border: 0;
-  border-radius: 12px;
-  background: #003d32;
+  border-radius: 10px;
+  background: #0f172a;
   color: #ffffff;
   padding: 0 16px;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease;
-  box-shadow: 0 4px 12px rgba(0, 61, 50, 0.15);
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
 }
 
 .projectorButton:hover {
-  background: #064e3b;
+  background: #1e293b;
 }
 
 .refreshButton {
@@ -89,69 +95,71 @@
   align-items: center;
   gap: 6px;
   min-height: 40px;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
   background: #ffffff;
-  color: #1f2937;
+  color: #334155;
   padding: 0 14px;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .refreshButton:hover {
-  background: #f9fafb;
+  background: #f1f5f9;
 }
 
 .qrArea {
   display: grid;
   grid-template-columns: minmax(260px, 0.9fr) minmax(240px, 1.1fr);
   align-items: center;
-  gap: 36px;
-  padding: 32px 28px;
+  gap: clamp(20px, 3.5vw, 36px);
+  padding: clamp(20px, 3.5vw, 32px);
+  max-width: 100%;
 }
 
 .qrFrame {
   position: relative;
-  width: min(100%, 340px);
+  width: min(100%, 320px);
   margin: 0 auto;
-  border: 2px solid #bbf7d0;
-  border-radius: 24px;
-  padding: 16px 16px 48px;
+  border: 2px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 16px 16px 46px;
   background: #ffffff;
-  box-shadow: 0 16px 36px rgba(0, 61, 50, 0.08);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
 
 .qrImage {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 14px;
+  border-radius: 12px;
 }
 
 .scanBadge {
   position: absolute;
-  right: 16px;
-  bottom: 14px;
-  left: 16px;
+  right: 14px;
+  bottom: 12px;
+  left: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: #047857;
+  color: #0f172a;
   font-size: 11px;
-  font-weight: 800;
-  background: #f0fdf4;
+  font-weight: 750;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   padding: 6px;
   border-radius: 8px;
 }
 
 .instructions h3 {
   margin: 0 0 14px;
-  color: #111318;
-  font-size: 20px;
-  font-weight: 850;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 750;
 }
 
 .instructions ol {
@@ -166,80 +174,85 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #374151;
+  color: #334155;
   font-size: 13px;
+  line-height: 1.4;
 }
 
 .instructions li b {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
   place-items: center;
   border-radius: 8px;
-  color: #003d32;
-  background: #e6f7f2;
+  color: #0f172a;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 750;
 }
 
 .metaRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 }
 
 .expiryBadge, .privacyBadge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   margin: 0;
   padding: 6px 12px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 11px;
+  font-weight: 600;
 }
 
 .expiryBadge {
   background: #fef3c7;
   color: #92400e;
+  border: 1px solid #fde68a;
 }
 
 .privacyBadge {
-  background: #f0fdf4;
-  color: #166534;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
 }
 
 .state {
   display: grid;
-  min-height: 280px;
+  min-height: 260px;
   place-items: center;
   align-content: center;
   gap: 10px;
-  padding: 30px;
+  padding: 24px;
   text-align: center;
 }
 
 .state strong {
-  color: #111318;
-  font-size: 18px;
+  color: #0f172a;
+  font-size: 17px;
 }
 
 .state p {
-  max-width: 330px;
+  max-width: 320px;
   color: #64748b;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .loader, .errorIcon {
   display: block;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
 }
 
 .loader {
-  border: 4px solid #bbf7d0;
-  border-top-color: #003d32;
+  border: 4px solid #e2e8f0;
+  border-top-color: #0f172a;
   animation: spin 0.8s linear infinite;
 }
 
@@ -251,9 +264,9 @@
 .errorIcon::before, .errorIcon::after {
   content: "";
   position: absolute;
-  top: 20px;
-  left: 11px;
-  width: 22px;
+  top: 18px;
+  left: 10px;
+  width: 20px;
   height: 3px;
   border-radius: 3px;
   background: #dc2626;
@@ -266,228 +279,257 @@
 
 .retry {
   display: flex;
-  min-height: 44px;
+  min-height: 42px;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 0 auto 24px;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  padding: 0 20px;
-  color: #111318;
+  margin: 0 auto 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0 18px;
+  color: #0f172a;
   background: #ffffff;
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.retry:hover {
+  background: #f1f5f9;
 }
 
 .footerNote {
-  padding: 14px 24px;
-  border-top: 1px solid #edf2f0;
+  padding: 12px 20px;
+  border-top: 1px solid #e2e8f0;
   color: #64748b;
-  background: #fafcfb;
+  background: #f8fafc;
   font-size: 11px;
   line-height: 1.5;
   text-align: center;
 }
 
-/* Projector Mode Fullscreen Modal */
+/* =========================================================
+   Classroom Projector View (Responsive & Sleek Slate Dark)
+   ========================================================= */
+
 .projectorOverlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #00221c;
-  background: radial-gradient(circle at 50% 30%, #003d32 0%, #001f19 100%);
+  background: #090d16;
+  background: radial-gradient(circle at 50% 20%, #172033 0%, #090d16 100%);
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  padding: 24px 36px;
+  padding: clamp(14px, 2.5vw, 32px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: fadeIn 0.2s ease-out;
 }
 
 .projectorContainer {
-  width: min(100%, 1200px);
+  width: min(100%, 1160px);
   margin: auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: clamp(16px, 2.5vw, 28px);
 }
 
 .projectorHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  padding-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 18px;
 }
 
 .projectorTitle {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  min-width: 0;
 }
 
 .projectorIcon {
   display: grid;
-  width: 56px;
-  height: 56px;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 auto;
   place-items: center;
-  border-radius: 16px;
-  background: #10b981;
-  color: #003d32;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .projectorEyebrow {
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 800;
   letter-spacing: 0.15em;
-  color: #34d399;
+  color: #94a3b8;
+  text-transform: uppercase;
 }
 
 .projectorTitle h1 {
-  margin: 4px 0 0;
-  font-size: clamp(26px, 4vw, 36px);
-  font-weight: 850;
+  margin: 3px 0 0;
+  font-size: clamp(22px, 3.5vw, 32px);
+  font-weight: 800;
   letter-spacing: -0.03em;
+  color: #ffffff;
 }
 
 .projectorTitle p {
-  margin: 4px 0 0;
-  color: #a7f3d0;
-  font-size: 14px;
+  margin: 3px 0 0;
+  color: #cbd5e1;
+  font-size: 13px;
 }
 
 .projectorControls {
   display: flex;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .projectorActionBtn, .projectorCloseBtn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 46px;
-  border-radius: 12px;
-  padding: 0 20px;
+  min-height: 42px;
+  border-radius: 10px;
+  padding: 0 16px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 750;
   cursor: pointer;
   border: 0;
   transition: all 0.15s ease;
 }
 
 .projectorActionBtn {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .projectorActionBtn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .projectorCloseBtn {
   background: #ffffff;
-  color: #003d32;
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .projectorCloseBtn:hover {
-  background: #f0fdf4;
+  background: #f1f5f9;
 }
 
 .projectorBody {
   display: grid;
-  grid-template-columns: minmax(360px, 1fr) minmax(320px, 1fr);
-  gap: 40px;
+  grid-template-columns: minmax(300px, 1fr) minmax(280px, 1fr);
+  gap: clamp(20px, 4vw, 44px);
   align-items: center;
 }
 
 .projectorQrCard {
   background: #ffffff;
-  border-radius: 32px;
-  padding: 24px 24px 28px;
+  border-radius: 24px;
+  padding: clamp(16px, 3vw, 24px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  gap: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .projectorQrImage {
   display: block;
   width: 100%;
-  max-width: 480px;
+  max-width: 440px;
   height: auto;
-  border-radius: 18px;
+  border-radius: 14px;
 }
 
 .projectorScanTag {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  color: #003d32;
-  font-size: 14px;
-  font-weight: 850;
-  background: #e6f7f2;
-  padding: 8px 18px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 750;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
   border-radius: 99px;
+  text-align: center;
+  width: 100%;
 }
 
 .projectorInstructions {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
 }
 
 .projectorSteps {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
 }
 
 .pStep {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 16px 20px;
-  border-radius: 18px;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 18px;
+  border-radius: 14px;
 }
 
 .pStepNum {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 10px;
-  background: #10b981;
-  color: #003d32;
-  font-size: 15px;
-  font-weight: 850;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .pStep strong {
   display: block;
-  font-size: 16px;
+  font-size: 15px;
   color: #ffffff;
 }
 
 .pStep p {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   font-size: 13px;
   color: #cbd5e1;
+  line-height: 1.4;
 }
 
 .projectorFooterCard {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 16px 20px;
-  border-radius: 16px;
+  padding: 14px 18px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .projectorCountdown {
@@ -495,7 +537,8 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: #fbbf24;
+  color: #fde047;
+  font-weight: 600;
 }
 
 .projectorSecText {
@@ -508,7 +551,7 @@
 }
 
 .projectorSecText svg {
-  color: #34d399;
+  color: #cbd5e1;
 }
 
 @keyframes spin {
@@ -520,15 +563,57 @@
   to { opacity: 1; }
 }
 
-@media (max-width: 850px) {
+/* =========================================================
+   Responsive Breakpoints for All Devices
+   ========================================================= */
+
+@media (max-width: 860px) {
   .qrArea {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 22px;
   }
   .projectorBody {
     grid-template-columns: 1fr;
+    gap: 22px;
   }
   .projectorOverlay {
-    padding: 18px 20px;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .headerActions {
+    width: 100%;
+    display: flex;
+  }
+  .projectorButton, .refreshButton {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+  .projectorHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .projectorControls {
+    width: 100%;
+  }
+  .projectorActionBtn, .projectorCloseBtn {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+  .projectorFooterCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .qrFrame {
+    width: 100%;
+    max-width: 280px;
+    padding: 12px 12px 42px;
   }
 }

@@ -138,6 +138,16 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     }
     const response = z.object({ id: z.uuid().optional(), message: z.string() }).safeParse(result.data);
     if (!response.success) return { ok: false, message: "The response was unavailable. Reload to check before retrying." };
+    if (action === "class" && response.data.id) {
+      try {
+        await db.rpc("school_manage", {
+          p_action: "open",
+          p_payload: { class_id: response.data.id, organization_id: membership.businessId },
+        });
+      } catch {
+        // Lecturer can still open via controls if auto-open encounters edge state
+      }
+    }
     revalidatePath("/dashboard", "layout");
     return { ok: true, ...response.data };
   } catch (error) {
