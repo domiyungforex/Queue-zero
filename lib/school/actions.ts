@@ -16,7 +16,17 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
   try {
     const raw: Record<string, unknown> = Object.fromEntries(form.entries());
     if (raw.action === "enroll") raw.students = parseStudentCsv(String(raw.csv ?? ""));
-    if (raw.action === "class") { raw.departure_required = false; for (const field of ["starts_at", "planned_ends_at", "attendance_closes_at"]) { const value = String(raw[field] ?? ""); raw[field] = field === "planned_ends_at" && !value ? null : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value + ":00Z" : value; } }
+    if (raw.action === "class") {
+      raw.departure_required = false;
+      for (const field of ["starts_at", "planned_ends_at", "attendance_closes_at"]) {
+        const value = String(raw[field] ?? "");
+        raw[field] = field === "planned_ends_at" && !value ? null : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value + ":00Z" : value;
+      }
+      if (!raw.title) raw.title = null;
+      if (!raw.location_lat || raw.location_lat === "") raw.location_lat = null;
+      if (!raw.location_lng || raw.location_lng === "") raw.location_lng = null;
+      if (!raw.geofence_radius_meters || raw.geofence_radius_meters === "") raw.geofence_radius_meters = null;
+    }
     const parsed = schoolInputSchema.safeParse(raw);
     if (!parsed.success) return { ok: false, message: "Please check the form fields and try again." };
     const { action, ...fields } = parsed.data;
@@ -38,7 +48,19 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     }
     const db = await createUserSupabaseClient();
     const result = action === "class"
-      ? await db.rpc("school_create_accountless_class", { p_organization_id: membership.businessId, p_course_id: parsed.data.course_id, p_starts_at: parsed.data.starts_at, p_planned_ends_at: parsed.data.planned_ends_at ?? parsed.data.attendance_closes_at, p_late_after_minutes: parsed.data.late_after_minutes, p_attendance_closes_at: parsed.data.attendance_closes_at, p_verification_mode: parsed.data.verification_mode })
+      ? await db.rpc("school_create_accountless_class", {
+          p_organization_id: membership.businessId,
+          p_course_id: parsed.data.course_id,
+          p_starts_at: parsed.data.starts_at,
+          p_planned_ends_at: parsed.data.planned_ends_at ?? parsed.data.attendance_closes_at,
+          p_late_after_minutes: parsed.data.late_after_minutes,
+          p_attendance_closes_at: parsed.data.attendance_closes_at,
+          p_verification_mode: parsed.data.verification_mode,
+          p_title: parsed.data.title ?? null,
+          p_location_lat: parsed.data.location_lat ?? null,
+          p_location_lng: parsed.data.location_lng ?? null,
+          p_geofence_radius_meters: parsed.data.geofence_radius_meters ?? 100,
+        })
       : action === "revoke_qr"
         ? await db.rpc("school_revoke_qr", { p_organization_id: membership.businessId, p_class_id: parsed.data.class_id }).then(value => ({ ...value, data: value.error ? null : { message: "Class QR revoked." } }))
         : action === "enroll"

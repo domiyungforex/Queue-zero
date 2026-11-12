@@ -239,6 +239,12 @@ export type Database = {
                     "student_id": string;
                     "submitted_matric_number": string | null;
                     "submitted_name": string | null;
+                    "photo_url": string | null;
+                    "location_lat": number | null;
+                    "location_lng": number | null;
+                    "location_accuracy_meters": number | null;
+                    "location_verified": boolean;
+                    "verification_mode": string;
                     "updated_at": string;
                     "verification_score": number | null;
                 };
@@ -255,6 +261,12 @@ export type Database = {
                     "student_id": string;
                     "submitted_matric_number"?: string | null;
                     "submitted_name"?: string | null;
+                    "photo_url"?: string | null;
+                    "location_lat"?: number | null;
+                    "location_lng"?: number | null;
+                    "location_accuracy_meters"?: number | null;
+                    "location_verified"?: boolean;
+                    "verification_mode"?: string;
                     "updated_at"?: string;
                     "verification_score"?: number | null;
                 };
@@ -271,6 +283,12 @@ export type Database = {
                     "student_id"?: string;
                     "submitted_matric_number"?: string | null;
                     "submitted_name"?: string | null;
+                    "photo_url"?: string | null;
+                    "location_lat"?: number | null;
+                    "location_lng"?: number | null;
+                    "location_accuracy_meters"?: number | null;
+                    "location_verified"?: boolean;
+                    "verification_mode"?: string;
                     "updated_at"?: string;
                     "verification_score"?: number | null;
                 };
@@ -729,6 +747,10 @@ export type Database = {
                     "organization_id": string;
                     "planned_ends_at": string | null;
                     "qr_revoked_at": string | null;
+                    "title": string | null;
+                    "location_lat": number | null;
+                    "location_lng": number | null;
+                    "geofence_radius_meters": number | null;
                 };
                 Insert: {
                     "arrival_open"?: boolean;
@@ -744,6 +766,10 @@ export type Database = {
                     "organization_id": string;
                     "planned_ends_at"?: string | null;
                     "qr_revoked_at"?: string | null;
+                    "title"?: string | null;
+                    "location_lat"?: number | null;
+                    "location_lng"?: number | null;
+                    "geofence_radius_meters"?: number | null;
                 };
                 Update: {
                     "arrival_open"?: boolean;
@@ -759,6 +785,10 @@ export type Database = {
                     "organization_id"?: string;
                     "planned_ends_at"?: string | null;
                     "qr_revoked_at"?: string | null;
+                    "title"?: string | null;
+                    "location_lat"?: number | null;
+                    "location_lng"?: number | null;
+                    "geofence_radius_meters"?: number | null;
                 };
                 Relationships: [
                     {
@@ -2060,6 +2090,7 @@ export type Database = {
                     "level": string;
                     "matric_number": string;
                     "organization_id": string;
+                    "programme": string | null;
                 };
                 Insert: {
                     "created_at"?: string;
@@ -2068,6 +2099,7 @@ export type Database = {
                     "level": string;
                     "matric_number": string;
                     "organization_id": string;
+                    "programme"?: string | null;
                 };
                 Update: {
                     "created_at"?: string;
@@ -2076,6 +2108,7 @@ export type Database = {
                     "level"?: string;
                     "matric_number"?: string;
                     "organization_id"?: string;
+                    "programme"?: string | null;
                 };
                 Relationships: [
                     {
@@ -3086,6 +3119,10 @@ export type Database = {
                     "p_nonce": string;
                     "p_organization_id": string;
                     "p_request_id": string;
+                    "p_photo_url"?: string | null;
+                    "p_location_lat"?: number | null;
+                    "p_location_lng"?: number | null;
+                    "p_location_accuracy_meters"?: number | null;
                 };
                 Returns: Json;
             };
@@ -3106,6 +3143,18 @@ export type Database = {
                     "p_planned_ends_at": string;
                     "p_starts_at": string;
                     "p_verification_mode"?: string;
+                    "p_title"?: string | null;
+                    "p_location_lat"?: number | null;
+                    "p_location_lng"?: number | null;
+                    "p_geofence_radius_meters"?: number | null;
+                };
+                Returns: Json;
+            };
+            "school_student_lookup": {
+                Args: {
+                    "p_class_id": string;
+                    "p_matric_number": string;
+                    "p_organization_id": string;
                 };
                 Returns: Json;
             };

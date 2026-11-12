@@ -7,4 +7,8 @@ export const attendanceScanSchema = z.object({
   requestId: z.uuid(),
   fullName: z.string().trim().min(1).max(160),
   matricNumber: z.string().trim().min(1).max(80),
+  photo: z.string().max(2_000_000).optional().nullable(),
+  latitude: z.number().min(-90).max(90).optional().nullable(),
+  longitude: z.number().min(-180).max(180).optional().nullable(),
+  accuracy: z.number().min(0).max(100_000).optional().nullable(),
 }).strict();
