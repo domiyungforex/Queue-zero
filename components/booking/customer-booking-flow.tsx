@@ -11,7 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { BookingAvailabilitySlot, PublicBookingInfo } from "@/lib/booking/types";
-import { getSelectableDates } from "@/lib/booking/availability";
+import { getSelectableDates } from "@/lib/booking/dates";
 import { createBooking } from "@/lib/booking/actions";
 import styles from "./booking.module.css";
 
