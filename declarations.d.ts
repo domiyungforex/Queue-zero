@@ -92,4 +92,10 @@ declare module "lucide-react" {
   export const Zap: LucideIcon;
   export const Volume2: LucideIcon;
   export const X: LucideIcon;
+  export const Calendar: LucideIcon;
+  export const Phone: LucideIcon;
+  export const User: LucideIcon;
+  export const XCircle: LucideIcon;
+  export const AlertTriangle: LucideIcon;
+  export const Eye: LucideIcon;
 }

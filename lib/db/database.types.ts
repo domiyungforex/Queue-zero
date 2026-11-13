@@ -5,6 +5,195 @@ export type Json = string | number | boolean | null | {
 export type Database = {
     "public": {
         Tables: {
+            "booking_settings": {
+                Row: {
+                    "id": string;
+                    "organization_id": string;
+                    "queue_id": string | null;
+                    "enabled": boolean;
+                    "booking_type": string;
+                    "operating_days": number[];
+                    "opening_time": string;
+                    "closing_time": string;
+                    "slot_interval_minutes": number;
+                    "max_capacity_per_slot": number;
+                    "min_advance_minutes": number;
+                    "max_advance_days": number;
+                    "arrival_grace_minutes": number;
+                    "allocation_mode": string;
+                    "walkin_reserved_capacity": number;
+                    "booking_priority_policy": string;
+                    "cancellation_allowed": boolean;
+                    "rescheduling_allowed": boolean;
+                    "created_at": string;
+                    "updated_at": string;
+                };
+                Insert: {
+                    "id"?: string;
+                    "organization_id": string;
+                    "queue_id"?: string | null;
+                    "enabled"?: boolean;
+                    "booking_type"?: string;
+                    "operating_days"?: number[];
+                    "opening_time"?: string;
+                    "closing_time"?: string;
+                    "slot_interval_minutes"?: number;
+                    "max_capacity_per_slot"?: number;
+                    "min_advance_minutes"?: number;
+                    "max_advance_days"?: number;
+                    "arrival_grace_minutes"?: number;
+                    "allocation_mode"?: string;
+                    "walkin_reserved_capacity"?: number;
+                    "booking_priority_policy"?: string;
+                    "cancellation_allowed"?: boolean;
+                    "rescheduling_allowed"?: boolean;
+                    "created_at"?: string;
+                    "updated_at"?: string;
+                };
+                Update: {
+                    "id"?: string;
+                    "organization_id"?: string;
+                    "queue_id"?: string | null;
+                    "enabled"?: boolean;
+                    "booking_type"?: string;
+                    "operating_days"?: number[];
+                    "opening_time"?: string;
+                    "closing_time"?: string;
+                    "slot_interval_minutes"?: number;
+                    "max_capacity_per_slot"?: number;
+                    "min_advance_minutes"?: number;
+                    "max_advance_days"?: number;
+                    "arrival_grace_minutes"?: number;
+                    "allocation_mode"?: string;
+                    "walkin_reserved_capacity"?: number;
+                    "booking_priority_policy"?: string;
+                    "cancellation_allowed"?: boolean;
+                    "rescheduling_allowed"?: boolean;
+                    "created_at"?: string;
+                    "updated_at"?: string;
+                };
+                Relationships: [];
+            };
+            "bookings": {
+                Row: {
+                    "id": string;
+                    "organization_id": string;
+                    "location_id": string;
+                    "queue_id": string;
+                    "service_id": string | null;
+                    "customer_name": string;
+                    "customer_phone": string;
+                    "customer_email": string | null;
+                    "booking_reference": string;
+                    "management_token": string;
+                    "booking_type": string;
+                    "booking_date": string;
+                    "start_time": string;
+                    "end_time": string;
+                    "starts_at": string;
+                    "ends_at": string;
+                    "timezone": string;
+                    "status": string;
+                    "checked_in_at": string | null;
+                    "queue_ticket_id": string | null;
+                    "cancellation_reason": string | null;
+                    "cancelled_at": string | null;
+                    "no_show_at": string | null;
+                    "notes": string | null;
+                    "created_at": string;
+                    "updated_at": string;
+                };
+                Insert: {
+                    "id"?: string;
+                    "organization_id": string;
+                    "location_id": string;
+                    "queue_id": string;
+                    "service_id"?: string | null;
+                    "customer_name": string;
+                    "customer_phone": string;
+                    "customer_email"?: string | null;
+                    "booking_reference": string;
+                    "management_token"?: string;
+                    "booking_type"?: string;
+                    "booking_date": string;
+                    "start_time": string;
+                    "end_time": string;
+                    "starts_at": string;
+                    "ends_at": string;
+                    "timezone"?: string;
+                    "status"?: string;
+                    "checked_in_at"?: string | null;
+                    "queue_ticket_id"?: string | null;
+                    "cancellation_reason"?: string | null;
+                    "cancelled_at"?: string | null;
+                    "no_show_at"?: string | null;
+                    "notes"?: string | null;
+                    "created_at"?: string;
+                    "updated_at"?: string;
+                };
+                Update: {
+                    "id"?: string;
+                    "organization_id"?: string;
+                    "location_id"?: string;
+                    "queue_id"?: string;
+                    "service_id"?: string | null;
+                    "customer_name"?: string;
+                    "customer_phone"?: string;
+                    "customer_email"?: string | null;
+                    "booking_reference"?: string;
+                    "management_token"?: string;
+                    "booking_type"?: string;
+                    "booking_date"?: string;
+                    "start_time"?: string;
+                    "end_time"?: string;
+                    "starts_at"?: string;
+                    "ends_at"?: string;
+                    "timezone"?: string;
+                    "status"?: string;
+                    "checked_in_at"?: string | null;
+                    "queue_ticket_id"?: string | null;
+                    "cancellation_reason"?: string | null;
+                    "cancelled_at"?: string | null;
+                    "no_show_at"?: string | null;
+                    "notes"?: string | null;
+                    "created_at"?: string;
+                    "updated_at"?: string;
+                };
+                Relationships: [];
+            };
+            "booking_events": {
+                Row: {
+                    "id": string;
+                    "organization_id": string;
+                    "booking_id": string;
+                    "event_type": string;
+                    "actor_type": string;
+                    "actor_id": string | null;
+                    "payload": Json;
+                    "created_at": string;
+                };
+                Insert: {
+                    "id"?: string;
+                    "organization_id": string;
+                    "booking_id": string;
+                    "event_type": string;
+                    "actor_type": string;
+                    "actor_id"?: string | null;
+                    "payload"?: Json;
+                    "created_at"?: string;
+                };
+                Update: {
+                    "id"?: string;
+                    "organization_id"?: string;
+                    "booking_id"?: string;
+                    "event_type"?: string;
+                    "actor_type"?: string;
+                    "actor_id"?: string | null;
+                    "payload"?: Json;
+                    "created_at"?: string;
+                };
+                Relationships: [];
+            };
             "appointments": {
                 Row: {
                     "created_at": string;
@@ -2603,6 +2792,83 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
+            "get_public_booking_info": {
+                Args: {
+                    "p_slug": string;
+                };
+                Returns: Json;
+            };
+            "get_booking_availability": {
+                Args: {
+                    "p_slug": string;
+                    "p_date": string;
+                };
+                Returns: Json;
+            };
+            "book_time_atomic": {
+                Args: {
+                    "p_slug": string;
+                    "p_date": string;
+                    "p_start_time": string;
+                    "p_customer_name": string;
+                    "p_phone": string;
+                    "p_email"?: string | null;
+                    "p_request_id"?: string;
+                };
+                Returns: Json;
+            };
+            "get_public_booking": {
+                Args: {
+                    "p_token": string;
+                };
+                Returns: Json;
+            };
+            "check_in_booking_atomic": {
+                Args: {
+                    "p_token": string;
+                    "p_actor_type"?: string;
+                    "p_actor_id"?: string | null;
+                };
+                Returns: Json;
+            };
+            "cancel_booking_atomic": {
+                Args: {
+                    "p_token": string;
+                    "p_reason"?: string | null;
+                    "p_actor_type"?: string;
+                    "p_actor_id"?: string | null;
+                };
+                Returns: Json;
+            };
+            "reschedule_booking_atomic": {
+                Args: {
+                    "p_token": string;
+                    "p_new_date": string;
+                    "p_new_start_time": string;
+                    "p_actor_type"?: string;
+                    "p_actor_id"?: string | null;
+                };
+                Returns: Json;
+            };
+            "get_staff_bookings": {
+                Args: {
+                    "p_business_id": string;
+                    "p_date"?: string | null;
+                    "p_queue_id"?: string | null;
+                    "p_status"?: string | null;
+                    "p_search"?: string | null;
+                    "p_limit"?: number;
+                    "p_offset"?: number;
+                };
+                Returns: Json;
+            };
+            "get_booking_metrics": {
+                Args: {
+                    "p_business_id": string;
+                    "p_date"?: string | null;
+                };
+                Returns: Json;
+            };
             "business_metrics": {
                 Args: {
                     "p_business_id": string;

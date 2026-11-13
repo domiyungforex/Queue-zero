@@ -6,6 +6,7 @@ import {
   BarChart3,
   BookOpen,
   Building2,
+  CalendarClock,
   CalendarDays,
   ClipboardCheck,
   CreditCard,
@@ -76,6 +77,7 @@ export function DashboardNavigation({
     links.push(
       { href: "/dashboard/services", label: "Services", icon: Building2 },
       { href: "/dashboard/queues", label: "Queues", icon: ListOrdered },
+      { href: "/dashboard/bookings", label: "Bookings", icon: CalendarClock },
     );
     if (manager) {
       links.push(
@@ -92,6 +94,7 @@ export function DashboardNavigation({
     }
     if (manager) links.push({ href: "/dashboard/locations", label: "Locations", icon: MapPin });
     links.push({ href: "/dashboard/queues", label: "Queues", icon: ListOrdered });
+    if (manager || role === "staff") links.push({ href: "/dashboard/bookings", label: "Bookings", icon: CalendarClock });
     if (teaching) {
       links.push(
         { href: "/dashboard/courses", label: "Courses", icon: BookOpen },

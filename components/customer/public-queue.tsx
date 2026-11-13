@@ -39,6 +39,9 @@ export function PublicQueueView({ queue }: { queue: PublicQueue }) {
     <div className="mt-6">
       {queue.status === "open" ? <Link prefetch={false} href={`/q/${queue.slug}/join`} aria-describedby="join-availability" className="flex min-h-14 w-full items-center justify-center rounded-xl bg-primary px-6 py-4 text-lg font-semibold text-white">Join queue</Link> :
         <button type="button" disabled aria-describedby="join-availability" className="min-h-14 w-full cursor-not-allowed rounded-xl bg-black/10 px-6 py-4 text-lg font-semibold text-muted">{state.button}</button>}
+      <Link href={`/book/${queue.slug}`} className="mt-3 flex min-h-12 w-full items-center justify-center rounded-xl border border-black/15 bg-white px-6 py-3 text-base font-semibold text-neutral-900 transition hover:bg-neutral-50">
+        Book a time instead
+      </Link>
       <p id="join-availability" className="mt-3 text-center text-sm leading-relaxed text-muted">{state.message}</p>
     </div>
     <div className="mt-5"><LiveRefresh topic={`public-queue:${queue.slug}`} /></div>

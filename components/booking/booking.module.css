@@ -1,0 +1,447 @@
+/* Customer Booking & Management Styles */
+
+.container {
+  width: min(100%, 540px);
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  font-family: inherit;
+  color: #111318;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #eee7e3;
+  border-radius: 22px;
+  box-shadow: 0 10px 35px rgba(58, 30, 18, 0.06);
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.cardHeader {
+  padding: 24px;
+  background: linear-gradient(145deg, #fffaf7 0%, #fff2eb 100%);
+  border-bottom: 1px solid #f3e6de;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e05318;
+  background: #fff2eb;
+  border: 1px solid #ffd5c2;
+  padding: 4px 10px;
+  border-radius: 99px;
+  margin-bottom: 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(22px, 5vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #111318;
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #73788a;
+  line-height: 1.5;
+}
+
+/* Stepper Progress Bar */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #eee7e3;
+}
+
+.stepNode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+.stepNodeActive {
+  opacity: 1;
+}
+
+.stepNumber {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f4eee9;
+  color: #8b8077;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.stepNumberActive {
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(255, 107, 43, 0.35);
+}
+
+.stepLabel {
+  font-size: 11px;
+  font-weight: 750;
+  color: #111318;
+}
+
+.stepConnector {
+  flex: 1;
+  height: 2px;
+  margin: 0 8px;
+  background: #eee7e3;
+  border-radius: 2px;
+}
+
+.stepConnectorActive {
+  background: linear-gradient(90deg, #ff6b2b, #ff4765);
+}
+
+/* Body and Form */
+.body {
+  padding: 24px;
+}
+
+.sectionHeading {
+  font-size: 16px;
+  font-weight: 750;
+  color: #111318;
+  margin: 0 0 4px;
+}
+
+.sectionHelp {
+  font-size: 12px;
+  color: #73788a;
+  margin: 0 0 16px;
+}
+
+/* Date Selector */
+.dateScroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dateTile {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  padding: 10px 8px;
+  border: 1.5px solid #eee7e3;
+  border-radius: 14px;
+  background: #fffaf7;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dateTile:hover:not(:disabled) {
+  border-color: #ffd5c2;
+  background: #fff2eb;
+}
+
+.dateTileSelected {
+  border-color: #ff6b2b;
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(255, 107, 43, 0.3);
+}
+
+.dateTileSelected .dateDay,
+.dateTileSelected .dateLabel {
+  color: #ffffff;
+}
+
+.dateTile:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+
+.dateDay {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #73788a;
+}
+
+.dateLabel {
+  font-size: 13px;
+  font-weight: 750;
+  color: #111318;
+  margin-top: 2px;
+}
+
+/* Slot Grid */
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.slotButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 10px;
+  border: 1.5px solid #eee7e3;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.slotButton:hover:not(:disabled) {
+  border-color: #ffd5c2;
+  background: #fffaf7;
+}
+
+.slotButtonSelected {
+  border-color: #ff6b2b;
+  background: #fff2eb;
+  box-shadow: 0 0 0 1px #ff6b2b;
+}
+
+.slotButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.slotTime {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111318;
+}
+
+.slotCap {
+  font-size: 10px;
+  font-weight: 700;
+  color: #059669;
+  margin-top: 2px;
+}
+
+.slotCapFull {
+  color: #dc2626;
+}
+
+/* Form Fields */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 750;
+  color: #111318;
+}
+
+.input {
+  min-height: 46px;
+  border: 1.5px solid #dcd5d0;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 15px;
+  color: #111318;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  border-color: #ff6b2b;
+  box-shadow: 0 0 0 3px rgba(255, 107, 43, 0.15);
+}
+
+/* Summary Box */
+.summaryBox {
+  border: 1px solid #eee7e3;
+  border-radius: 14px;
+  padding: 16px;
+  background: #fffaf7;
+  margin-bottom: 20px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3e6de;
+  font-size: 13px;
+}
+
+.summaryRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.summaryLabel {
+  color: #73788a;
+  font-weight: 600;
+}
+
+.summaryValue {
+  color: #111318;
+  font-weight: 750;
+  text-align: right;
+}
+
+/* Actions */
+.primaryButton {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
+  box-shadow: 0 6px 18px rgba(255, 107, 43, 0.32);
+  font-size: 15px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f05c1b 0%, #ee3a58 100%);
+  box-shadow: 0 8px 22px rgba(255, 107, 43, 0.4);
+}
+
+.primaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.secondaryButton {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1.5px solid #dcd5d0;
+  border-radius: 12px;
+  color: #111318;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.secondaryButton:hover {
+  background: #fffaf7;
+}
+
+.dangerButton {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #dc2626;
+  background: #fef2f2;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dangerButton:hover {
+  background: #fee2e2;
+}
+
+.errorBanner {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+/* Modal Overlay */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(17, 19, 24, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.modalContent {
+  width: min(100%, 460px);
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Ticket Banner after Check-In */
+.ticketCard {
+  border: 2px solid #ff6b2b;
+  background: linear-gradient(145deg, #ffffff 0%, #fff2eb 100%);
+  border-radius: 18px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(255, 107, 43, 0.2);
+  margin-bottom: 20px;
+}
+
+.ticketBadge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #e05318;
+  text-transform: uppercase;
+}
+
+.ticketNumber {
+  font-size: 38px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  color: #111318;
+  margin: 4px 0;
+}
