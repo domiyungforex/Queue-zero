@@ -1,8 +1,8 @@
 .page {
   min-height: 100dvh;
   padding: max(20px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
-  color: #0f172a;
-  background: #f8fafc;
+  color: #111318;
+  background: #fffaf7;
   font-family: inherit;
 }
 
@@ -23,34 +23,34 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #334155;
+  color: #d94814;
   font-size: 11px;
-  font-weight: 700;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  font-weight: 750;
+  background: #fff2eb;
+  border: 1px solid #ffd5c2;
   padding: 6px 12px;
   border-radius: 99px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(255, 107, 43, 0.08);
 }
 
 .siteHeader > span svg {
-  color: #475569;
+  color: #ff6b2b;
 }
 
 .card {
   overflow: hidden;
   margin-top: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #eee7e3;
   border-radius: 22px;
   background: #ffffff;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 35px rgba(58, 30, 18, 0.06);
 }
 
 .cardIntro {
   position: relative;
   padding: 24px 24px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(145deg, #fffaf7 0%, #fff2eb 100%);
+  border-bottom: 1px solid #f3e6de;
 }
 
 .scanIcon {
@@ -61,12 +61,12 @@
   margin-bottom: 14px;
   border-radius: 12px;
   color: #ffffff;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
+  box-shadow: 0 6px 16px rgba(255, 107, 43, 0.3);
 }
 
 .cardIntro p {
-  color: #64748b;
+  color: #e05318;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.15em;
@@ -80,14 +80,14 @@
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.15;
-  color: #0f172a;
+  color: #111318;
 }
 
 .cardIntro > span:last-child {
   display: block;
   max-width: 420px;
   margin-top: 6px;
-  color: #64748b;
+  color: #73788a;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -98,15 +98,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px 14px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-bottom: 1px solid #eee7e3;
 }
 
 .stepNode {
   display: flex;
   align-items: center;
   gap: 8px;
-  opacity: 0.5;
+  opacity: 0.45;
   transition: opacity 0.2s ease;
 }
 
@@ -120,34 +120,34 @@
   height: 26px;
   place-items: center;
   border-radius: 50%;
-  background: #e2e8f0;
-  color: #475569;
+  background: #f4eee9;
+  color: #8b8077;
   font-size: 11px;
   font-weight: 800;
 }
 
 .stepActive .stepNumber {
-  background: #0f172a;
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 3px 10px rgba(255, 107, 43, 0.35);
 }
 
 .stepLabel {
   font-size: 12px;
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: 750;
+  color: #111318;
 }
 
 .stepConnector {
   flex: 1;
   height: 2px;
   margin: 0 10px;
-  background: #e2e8f0;
+  background: #eee7e3;
   border-radius: 2px;
 }
 
 .connectorActive {
-  background: #0f172a;
+  background: linear-gradient(90deg, #ff6b2b, #ff4765);
 }
 
 /* Class Info Bar */
@@ -157,7 +157,7 @@
   gap: 14px;
   padding: 16px 24px;
   background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #eee7e3;
 }
 
 .classIcon {
@@ -167,9 +167,9 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 10px;
-  color: #0f172a;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  color: #ff6b2b;
+  background: #fff2eb;
+  border: 1px solid #ffd5c2;
 }
 
 .classMeta {
@@ -178,7 +178,7 @@
 
 .orgName {
   margin: 0;
-  color: #64748b;
+  color: #73788a;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -189,13 +189,13 @@
   margin: 2px 0 0;
   font-size: 17px;
   font-weight: 800;
-  color: #0f172a;
+  color: #111318;
 }
 
 .courseTitle {
   display: block;
   margin-top: 2px;
-  color: #64748b;
+  color: #73788a;
   font-size: 12px;
   line-height: 1.4;
 }
@@ -205,11 +205,11 @@
   margin-top: 6px;
   padding: 3px 8px;
   border-radius: 6px;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  color: #334155;
+  background: #fff2eb;
+  border: 1px solid #ffd5c2;
+  color: #d94814;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 /* Step Container */
@@ -225,12 +225,12 @@
   margin: 0;
   font-size: 19px;
   font-weight: 800;
-  color: #0f172a;
+  color: #111318;
 }
 
 .stepDescription {
   margin: 4px 0 0;
-  color: #64748b;
+  color: #73788a;
   font-size: 13px;
   line-height: 1.4;
 }
@@ -247,18 +247,18 @@
 }
 
 .fieldLabel {
-  color: #334155;
+  color: #111318;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .textInput {
   width: 100%;
   min-height: 48px;
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid #dcd5d0;
   border-radius: 12px;
   padding: 0 14px;
-  color: #0f172a;
+  color: #111318;
   background: #ffffff;
   font-size: 16px;
   outline: none;
@@ -267,8 +267,8 @@
 }
 
 .textInput:focus {
-  border-color: #0f172a;
-  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.12);
+  border-color: #ff6b2b;
+  box-shadow: 0 0 0 3px rgba(255, 107, 43, 0.2);
 }
 
 .inputWithAction {
@@ -287,30 +287,32 @@
   justify-content: center;
   border: 0;
   border-radius: 12px;
-  background: #0f172a;
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
   color: #ffffff;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 750;
   padding: 0 16px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
+  box-shadow: 0 3px 10px rgba(255, 107, 43, 0.25);
 }
 
 .lookupButton:hover:not(:disabled) {
-  background: #1e293b;
+  background: linear-gradient(135deg, #f05c1b 0%, #ee3a58 100%);
 }
 
 .lookupButton:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* Student Found Banner */
 .studentFoundBanner {
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid #ffd5c2;
   border-radius: 14px;
   padding: 14px 16px;
-  background: #f8fafc;
+  background: #fff8f5;
   display: grid;
   gap: 8px;
   animation: fadeIn 0.25s ease-out;
@@ -320,9 +322,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #0f172a;
+  color: #d94814;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 850;
   letter-spacing: 0.05em;
 }
 
@@ -334,8 +336,8 @@
 .verifiedName {
   margin: 0;
   font-size: 16px;
-  font-weight: 800;
-  color: #0f172a;
+  font-weight: 850;
+  color: #111318;
 }
 
 .verifiedMeta {
@@ -343,15 +345,15 @@
   flex-wrap: wrap;
   gap: 6px;
   font-size: 12px;
-  color: #475569;
+  color: #73788a;
 }
 
 /* Location Section */
 .locationSection {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #eee7e3;
   border-radius: 14px;
   padding: 14px 16px;
-  background: #f8fafc;
+  background: #fffaf7;
   display: grid;
   gap: 10px;
 }
@@ -363,20 +365,20 @@
 }
 
 .locationIcon {
-  color: #0f172a;
+  color: #ff6b2b;
   margin-top: 2px;
 }
 
 .locationHeader strong {
   display: block;
   font-size: 13px;
-  color: #0f172a;
+  color: #111318;
 }
 
 .locationHeader p {
   margin: 2px 0 0;
   font-size: 11px;
-  color: #64748b;
+  color: #73788a;
 }
 
 .locationStateBox {
@@ -385,8 +387,8 @@
   gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #f1f5f9;
-  color: #1e293b;
+  background: #fff2eb;
+  color: #d94814;
   font-size: 12px;
 }
 
@@ -396,9 +398,9 @@
   gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #f1f5f9;
-  color: #0f172a;
-  border: 1px solid #cbd5e1;
+  background: #fff8f5;
+  color: #d94814;
+  border: 1px solid #ffd5c2;
   font-size: 12px;
 }
 
@@ -460,8 +462,8 @@
   aspect-ratio: 1 / 1;
   border-radius: 20px;
   overflow: hidden;
-  background: #0f172a;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  background: #111318;
+  box-shadow: 0 12px 28px rgba(58, 30, 18, 0.2);
 }
 
 .cameraVideo {
@@ -475,7 +477,7 @@
 .faceTargetRing {
   position: absolute;
   inset: 15%;
-  border: 3px dashed rgba(255, 255, 255, 0.6);
+  border: 3px dashed #ff6b2b;
   border-radius: 50%;
   pointer-events: none;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
@@ -487,8 +489,8 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #ffffff, transparent);
-  box-shadow: 0 0 8px #ffffff;
+  background: linear-gradient(90deg, transparent, #ff6b2b, transparent);
+  box-shadow: 0 0 10px #ff6b2b;
   animation: scanBounce 2s infinite ease-in-out;
 }
 
@@ -502,13 +504,14 @@
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.9);
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
   color: #ffffff;
   padding: 6px 14px;
   border-radius: 99px;
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(255, 107, 43, 0.35);
 }
 
 .qualityBadge {
@@ -527,14 +530,14 @@
 }
 
 .qualityGood {
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(17, 19, 24, 0.85);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 .qualityPoor {
   background: rgba(234, 179, 8, 0.95);
-  color: #0f172a;
+  color: #111318;
 }
 
 /* Photo Preview Wrapper */
@@ -544,8 +547,8 @@
   aspect-ratio: 1 / 1;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  border: 3px solid #0f172a;
+  box-shadow: 0 10px 25px rgba(255, 107, 43, 0.2);
+  border: 3px solid #ff6b2b;
 }
 
 .capturedPhoto {
@@ -562,12 +565,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #0f172a;
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
   color: #ffffff;
   padding: 6px 14px;
   border-radius: 99px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 750;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
 }
 
 .cameraErrorNotice {
@@ -609,8 +613,8 @@
   border: 0;
   border-radius: 12px;
   color: #ffffff;
-  background: #0f172a;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
+  box-shadow: 0 6px 18px rgba(255, 107, 43, 0.32);
   font-size: 14px;
   font-weight: 750;
   cursor: pointer;
@@ -618,12 +622,12 @@
 }
 
 .primaryButton:hover:not(:disabled) {
-  background: #1e293b;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.25);
+  background: linear-gradient(135deg, #f05c1b 0%, #ee3a58 100%);
+  box-shadow: 0 8px 22px rgba(255, 107, 43, 0.4);
 }
 
 .primaryButton:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -635,9 +639,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1.5px solid #cbd5e1;
+  border: 1.5px solid #dcd5d0;
   border-radius: 12px;
-  color: #334155;
+  color: #111318;
   background: #ffffff;
   font-size: 13px;
   font-weight: 750;
@@ -646,7 +650,7 @@
 }
 
 .secondaryButton:hover {
-  background: #f8fafc;
+  background: #fffaf7;
 }
 
 /* Success Card */
@@ -666,12 +670,12 @@
   margin-bottom: 14px;
   border-radius: 50%;
   color: #ffffff;
-  background: #0f172a;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
+  box-shadow: 0 10px 25px rgba(255, 107, 43, 0.35);
 }
 
 .successEyebrow {
-  color: #64748b;
+  color: #e05318;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.15em;
@@ -683,14 +687,14 @@
   margin: 4px 0 0;
   font-size: 26px;
   font-weight: 800;
-  color: #0f172a;
+  color: #111318;
   letter-spacing: -0.03em;
 }
 
 .successSub {
   display: block;
   margin-top: 4px;
-  color: #64748b;
+  color: #73788a;
   font-size: 13px;
 }
 
@@ -702,8 +706,8 @@
 .selfieImage {
   border-radius: 18px;
   object-fit: cover;
-  border: 2px solid #e2e8f0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid #ffd5c2;
+  box-shadow: 0 6px 16px rgba(255, 107, 43, 0.15);
 }
 
 .photoVerifiedBadge {
@@ -714,23 +718,24 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: #0f172a;
+  background: linear-gradient(135deg, #ff6b2b 0%, #ff4765 100%);
   color: #ffffff;
   padding: 3px 10px;
   border-radius: 99px;
   font-size: 10px;
   font-weight: 750;
   white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .summaryList {
   width: 100%;
   margin: 20px 0 16px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #eee7e3;
   border-radius: 14px;
   text-align: left;
-  background: #f8fafc;
+  background: #fffaf7;
 }
 
 .summaryList div {
@@ -738,7 +743,7 @@
   grid-template-columns: 1fr 1.4fr;
   gap: 12px;
   padding: 12px 14px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #eee7e3;
   font-size: 12px;
 }
 
@@ -747,7 +752,7 @@
 }
 
 .summaryList dt {
-  color: #64748b;
+  color: #73788a;
   font-weight: 600;
 }
 
@@ -756,11 +761,11 @@
   overflow-wrap: anywhere;
   font-weight: 750;
   text-align: right;
-  color: #0f172a;
+  color: #111318;
 }
 
 .summaryList dd[data-status="PRESENT"] {
-  color: #0f172a;
+  color: #d94814;
 }
 
 .summaryList dd[data-status="LATE"] {
@@ -772,13 +777,13 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #64748b;
+  color: #73788a;
   font-size: 11px;
   margin: 12px 0 0;
 }
 
 .accountNotice svg {
-  color: #64748b;
+  color: #ff6b2b;
 }
 
 .optionalAccountLink {
@@ -788,7 +793,7 @@
   justify-content: center;
   gap: 7px;
   margin-top: 14px;
-  color: #0f172a;
+  color: #ff6b2b;
   font-size: 12px;
   font-weight: 750;
   text-decoration: none;
@@ -816,13 +821,13 @@
 }
 
 .unavailable strong {
-  color: #0f172a;
+  color: #111318;
   font-size: 18px;
   font-weight: 800;
 }
 
 .unavailable p {
-  color: #64748b;
+  color: #73788a;
   font-size: 13px;
   max-width: 360px;
   line-height: 1.5;
@@ -868,12 +873,12 @@
   margin: 4px 0 0;
   font-size: 24px;
   font-weight: 800;
-  color: #0f172a;
+  color: #111318;
 }
 
 .duplicateText, .errorText {
   margin: 8px 0 18px;
-  color: #64748b;
+  color: #73788a;
   font-size: 13px;
   line-height: 1.5;
   max-width: 360px;
@@ -896,15 +901,15 @@
   justify-content: center;
   gap: 7px;
   padding: 16px 20px;
-  color: #64748b;
+  color: #73788a;
   font-size: 11px;
-  border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border-top: 1px solid #eee7e3;
+  background: #fffaf7;
   text-align: center;
 }
 
 .flowFooter svg {
-  color: #64748b;
+  color: #ff6b2b;
 }
 
 .spinner {

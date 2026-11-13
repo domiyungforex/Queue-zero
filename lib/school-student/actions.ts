@@ -11,14 +11,14 @@ const resultSchema = z.object({
   ok: z.boolean(),
   status: z.string(),
   message: z.string(),
-  full_name: z.string().optional(),
-  matric_number: z.string().optional(),
-  course_code: z.string().optional(),
-  recorded_at: z.string().optional(),
-  needs_review: z.boolean().optional(),
-  photo_url: z.string().optional(),
-  identity_status: z.string().optional(),
-  location_verified: z.boolean().optional(),
+  full_name: z.string().nullable().optional(),
+  matric_number: z.string().nullable().optional(),
+  course_code: z.string().nullable().optional(),
+  recorded_at: z.string().nullable().optional(),
+  needs_review: z.boolean().nullable().optional(),
+  photo_url: z.string().nullable().optional(),
+  identity_status: z.string().nullable().optional(),
+  location_verified: z.boolean().nullable().optional(),
 });
 export type ScanResult = z.infer<typeof resultSchema> & { expired?: boolean };
 
@@ -61,7 +61,7 @@ export async function recordAttendance(input: unknown): Promise<ScanResult> {
   const parsed = attendanceScanSchema.safeParse(input);
   if (!parsed.success) return { ok: false, status: "INVALID", message: "Enter your full name and matric number." };
   try {
-    const token = validateAttendanceToken(parsed.data.token, attendanceSecret());
+    const token = validateAttendanceToken(parsed.data.token, attendanceSecret(), { allowExpiredReplay: true });
     const db = createJoinSupabaseClient();
     const [deviceHash, networkHash] = await Promise.all([attendanceDeviceHash(token.organization_id), attendanceNetworkHash(token.organization_id)]);
     
@@ -112,7 +112,11 @@ export async function recordAttendance(input: unknown): Promise<ScanResult> {
       return { ok: false, status: "UNAVAILABLE", message: "Attendance could not be recorded. Check your connection and try again." };
     }
     const result = resultSchema.safeParse(attendRes.data);
-    return result.success ? result.data : { ok: false, status: "UNAVAILABLE", message: "Attendance could not be confirmed. Retry this submission." };
+    if (result.success) return result.data;
+    const fallbackMessage = (attendRes.data && typeof attendRes.data === "object" && "message" in attendRes.data && typeof (attendRes.data as { message: unknown }).message === "string")
+      ? (attendRes.data as { message: string }).message
+      : "Attendance could not be confirmed. Retry this submission.";
+    return { ok: false, status: "UNAVAILABLE", message: fallbackMessage };
   } catch (error) {
     if (error instanceof ExpiredAttendanceQr) return { ok: false, status: "CLOSED", expired: true, message: "Attendance for this class is closed." };
     return { ok: false, status: "UNAVAILABLE", message: "Attendance could not be confirmed. Check your connection and try again." };
