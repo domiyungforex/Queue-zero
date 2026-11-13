@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Camera,
@@ -51,6 +51,22 @@ type LocationState = {
   message?: string;
 };
 
+function safeFormatTime(val?: string | null): string {
+  if (!val) return "Just now";
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return "Recorded";
+    return new Intl.DateTimeFormat(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      dateStyle: "medium",
+    }).format(d);
+  } catch {
+    return "Recorded";
+  }
+}
+
 function calculateDistanceMeters(
   lat1: number,
   lon1: number,
@@ -77,6 +93,7 @@ export function StudentScan({
   token: string;
   classInfo: PublicClass;
 }) {
+  const router = useRouter();
   const requestId = useRef<string | null>(null);
 
   // Stepper state: 1: Details, 2: Selfie, 3: Submit
@@ -443,6 +460,39 @@ export function StudentScan({
           ? ANALYTICS_EVENTS.attendanceQrCheckinSucceeded
           : ANALYTICS_EVENTS.attendanceQrCheckinFailed
       );
+
+      if (response.ok) {
+        try {
+          const successData = {
+            course_code: response.course_code || classInfo.course_code,
+            course_title: classInfo.course_title,
+            organization_name: classInfo.organization_name,
+            full_name: response.full_name || effectiveName,
+            matric_number: response.matric_number || effectiveMatric,
+            status: response.status || "PRESENT",
+            recorded_at: response.recorded_at || new Date().toISOString(),
+            photo_url: response.photo_url || capturedPhoto || null,
+            verification_mode: classInfo.verification_mode,
+            identity_status: response.identity_status,
+          };
+          sessionStorage.setItem("turnmark_attendance_success", JSON.stringify(successData));
+
+          const query = new URLSearchParams();
+          if (successData.course_code) query.set("course", successData.course_code);
+          if (successData.course_title) query.set("title", successData.course_title);
+          if (successData.organization_name) query.set("org", successData.organization_name);
+          if (successData.full_name) query.set("name", successData.full_name);
+          if (successData.matric_number) query.set("matric", successData.matric_number);
+          if (successData.status) query.set("status", successData.status);
+          if (successData.recorded_at) query.set("time", successData.recorded_at);
+          if (successData.verification_mode) query.set("mode", successData.verification_mode);
+
+          router.push(`/attend/success?${query.toString()}`);
+          return;
+        } catch {
+          // If navigation throws, fallback to inline success card
+        }
+      }
     } catch {
       setResult({
         ok: false,
@@ -468,18 +518,18 @@ export function StudentScan({
           <p className={styles.successEyebrow}>ATTENDANCE RECORDED</p>
           <h2 className={styles.successHeading}>Attendance recorded!</h2>
           <span className={styles.successSub}>
-            Your presence has been successfully confirmed for {result.course_code}.
+            Your presence has been successfully confirmed for {result.course_code || classInfo.course_code}.
           </span>
 
           {result.photo_url && (
             <div className={styles.selfieResultPreview}>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={result.photo_url}
                 alt="Captured attendance selfie"
                 width={120}
                 height={120}
                 className={styles.selfieImage}
-                unoptimized
               />
               <span className={styles.photoVerifiedBadge}>
                 <CheckCircle2 size={14} /> Verified Photo
@@ -490,28 +540,19 @@ export function StudentScan({
           <dl className={styles.summaryList}>
             <div>
               <dt>Full Name</dt>
-              <dd>{result.full_name}</dd>
+              <dd>{result.full_name || fullName}</dd>
             </div>
             <div>
               <dt>Matric Number</dt>
-              <dd>{result.matric_number}</dd>
+              <dd>{result.matric_number || matricNumber}</dd>
             </div>
             <div>
               <dt>Course</dt>
-              <dd>{result.course_code}</dd>
+              <dd>{result.course_code || classInfo.course_code}</dd>
             </div>
             <div>
               <dt>Time Recorded</dt>
-              <dd>
-                {result.recorded_at
-                  ? new Intl.DateTimeFormat(undefined, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                      dateStyle: "medium",
-                    }).format(new Date(result.recorded_at))
-                  : "Recorded"}
-              </dd>
+              <dd>{safeFormatTime(result.recorded_at)}</dd>
             </div>
             <div>
               <dt>Verification</dt>
@@ -528,9 +569,17 @@ export function StudentScan({
             No account required. Your verified check-in has been securely recorded.
           </p>
 
-          <Link className={styles.optionalAccountLink} href="/sign-up">
-            Create an optional account <ArrowRight size={16} aria-hidden="true" />
-          </Link>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
+            <Link
+              className={styles.primaryButton}
+              href={`/attend/success?course=${encodeURIComponent(result.course_code || classInfo.course_code)}&name=${encodeURIComponent(result.full_name || fullName)}&matric=${encodeURIComponent(result.matric_number || matricNumber)}&status=${encodeURIComponent(result.status || "PRESENT")}`}
+            >
+              View Full Attendance Receipt <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+            <Link className={styles.optionalAccountLink} href="/sign-up">
+              Create an optional account
+            </Link>
+          </div>
         </section>
       );
     }
@@ -846,13 +895,13 @@ export function StudentScan({
               </div>
             ) : (
               <div className={styles.photoPreviewWrapper}>
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={capturedPhoto}
                   alt="Captured Selfie"
                   width={320}
                   height={320}
                   className={styles.capturedPhoto}
-                  unoptimized
                 />
                 <span className={styles.capturedConfirmBadge}>
                   <CheckCircle2 size={16} /> Photo captured

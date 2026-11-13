@@ -111,10 +111,11 @@ export async function recordAttendance(input: unknown): Promise<ScanResult> {
       }
       return { ok: false, status: "UNAVAILABLE", message: "Attendance could not be recorded. Check your connection and try again." };
     }
-    const result = resultSchema.safeParse(attendRes.data);
+    const rawData = Array.isArray(attendRes.data) ? attendRes.data[0] : attendRes.data;
+    const result = resultSchema.safeParse(rawData);
     if (result.success) return result.data;
-    const fallbackMessage = (attendRes.data && typeof attendRes.data === "object" && "message" in attendRes.data && typeof (attendRes.data as { message: unknown }).message === "string")
-      ? (attendRes.data as { message: string }).message
+    const fallbackMessage = (rawData && typeof rawData === "object" && "message" in rawData && typeof (rawData as { message: unknown }).message === "string")
+      ? (rawData as { message: string }).message
       : "Attendance could not be confirmed. Retry this submission.";
     return { ok: false, status: "UNAVAILABLE", message: fallbackMessage };
   } catch (error) {
