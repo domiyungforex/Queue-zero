@@ -52,8 +52,19 @@ export async function onboardBusiness(_previous: OnboardingState, formData: Form
         p_location_name: input.locationName,
         p_location_address: input.locationAddress,
       };
+      // Map new organization types to the closest existing enum value the RPC currently accepts.
+      // After the 20261117000000 migration is applied, the enum accepts the new values directly.
+      const legacyTypeMap: Record<string, string> = {
+        BUSINESS: "COMPANY_OTHER", SCHOOL: "UNIVERSITY_SCHOOL", UNIVERSITY: "UNIVERSITY_SCHOOL",
+        HOSPITAL: "HOSPITAL_CLINIC", CLINIC: "HOSPITAL_CLINIC", GOVERNMENT: "GOVERNMENT_OFFICE",
+        CORPORATE: "COMPANY_OTHER", EVENT_ORGANIZER: "COMPANY_OTHER",
+        CONFERENCE_ORGANIZER: "COMPANY_OTHER", NONPROFIT: "COMPANY_OTHER", OTHER: "COMPANY_OTHER",
+      };
+      const rpcType = (legacyTypeMap[organizationType.value] ?? organizationType.value) as
+        "UNIVERSITY_SCHOOL" | "HOSPITAL_CLINIC" | "BANK_FINANCIAL" | "SALON_BARBERSHOP" | "GOVERNMENT_OFFICE" | "COMPANY_OTHER";
       result = await db.rpc("onboard_organization_workspace_v2", {
         ...parameters,
+        p_organization_type: rpcType,
         p_organization_subtype: input.organizationSubtype,
         p_legal_name: input.legalName,
         // The generated RPC type is non-null because PostgreSQL parameters do

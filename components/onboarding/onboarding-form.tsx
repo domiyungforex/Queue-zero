@@ -41,6 +41,10 @@ const professionIcons = {
 const organizationIcons = {
   UNIVERSITY_SCHOOL: University, HOSPITAL_CLINIC: HeartPulse, BANK_FINANCIAL: Landmark,
   SALON_BARBERSHOP: Scissors, GOVERNMENT_OFFICE: Building2, COMPANY_OTHER: BriefcaseBusiness,
+  BUSINESS: BriefcaseBusiness, SCHOOL: University, UNIVERSITY: University,
+  HOSPITAL: HeartPulse, CLINIC: HeartPulse, GOVERNMENT: Building2,
+  CORPORATE: BriefcaseBusiness, EVENT_ORGANIZER: UsersRound, CONFERENCE_ORGANIZER: UsersRound,
+  NONPROFIT: Building2, OTHER: Sparkles,
 } as const;
 const professionVisuals: Partial<Record<string, TurnmarkAsset>> = {
   LECTURER_TEACHER: TURNMARK_ASSETS.characters.student,
@@ -72,6 +76,17 @@ const descriptions: Record<string,string> = {
   HOSPITAL_CLINIC: "Reception and consultation service flow.", BANK_FINANCIAL: "Branch services with verification before activation.",
   SALON_BARBERSHOP: "Walk-ins, services and supported appointments.", GOVERNMENT_OFFICE: "Public service counters and queues.",
   COMPANY_OTHER: "Locations, custom services and team operations.",
+  BUSINESS: "Queues, bookings and customer attendance for your business.",
+  SCHOOL: "Classroom attendance, courses and campus queues.",
+  UNIVERSITY: "Courses, attendance and campus service queues.",
+  HOSPITAL: "Reception, consultation and staff session flow.",
+  CLINIC: "Appointment and walk-in service management.",
+  GOVERNMENT: "Public service counters and queues.",
+  CORPORATE: "Meetings, training and employee attendance.",
+  EVENT_ORGANIZER: "Event registration, check-in and participant attendance.",
+  CONFERENCE_ORGANIZER: "Summit and conference registration and check-in.",
+  NONPROFIT: "Community events and service queues.",
+  OTHER: "Configure a workspace for your organization.",
 };
 
 function stepForField(field: OnboardingField, individual: boolean): StepKey {

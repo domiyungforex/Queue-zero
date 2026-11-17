@@ -14,12 +14,18 @@ import {
 export async function getPublicBookingInfo(slug: string): Promise<PublicBookingInfo | null> {
   const db = createPublicSupabaseClient();
   const { data, error } = await db.rpc("get_public_booking_info", { p_slug: slug });
-  if (error || !data) return null;
+  if (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("get_public_booking_info failed", error.message, error.code);
+    }
+    return null;
+  }
+  if (!data) return null;
 
   const parsed = publicBookingInfoSchema.safeParse(data);
   if (!parsed.success) {
     if (process.env.NODE_ENV !== "production") {
-      console.warn("Invalid public booking info response", parsed.error);
+      console.warn("Invalid public booking info response", parsed.error.flatten());
     }
     return null;
   }

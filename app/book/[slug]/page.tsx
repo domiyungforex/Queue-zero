@@ -25,8 +25,11 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
       <main className={styles.container}>
         <article className={styles.card} style={{ maxWidth: 480, margin: "40px auto", padding: 32, textAlign: "center" }}>
           <h1 style={{ fontSize: 22, marginBottom: 12 }}>Booking not available</h1>
-          <p style={{ color: "#5e6d69", marginBottom: 24 }}>
-            This queue does not currently accept advance bookings. You can still join the live queue.
+          <p style={{ color: "#5e6d69", marginBottom: 12 }}>
+            This queue does not currently accept advance bookings, or booking information could not be loaded.
+          </p>
+          <p style={{ color: "#5e6d69", marginBottom: 24, fontSize: 13 }}>
+            Organization administrators can enable booking in Dashboard → Bookings → Settings.
           </p>
           <Link href={`/q/${slug}`} className="button-primary" style={{ display: "inline-flex" }}>
             Join the queue instead

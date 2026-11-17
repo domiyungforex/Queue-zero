@@ -26,7 +26,12 @@ export const PROFESSIONS = [
   { value: "OTHER_PROFESSIONAL", label: "Other professional", available: true },
 ] as const;
 export const SERVICE_PROFESSIONS = ["DOCTOR", "NURSE", "BANKER", "BARBER_STYLIST", "CONSULTANT", "OTHER_PROFESSIONAL"] as const;
-export const ORGANIZATION_TYPE_VALUES = ["UNIVERSITY_SCHOOL", "HOSPITAL_CLINIC", "BANK_FINANCIAL", "SALON_BARBERSHOP", "GOVERNMENT_OFFICE", "COMPANY_OTHER"] as const;
+export const ORGANIZATION_TYPE_VALUES = [
+  "UNIVERSITY_SCHOOL", "HOSPITAL_CLINIC", "BANK_FINANCIAL", "SALON_BARBERSHOP",
+  "GOVERNMENT_OFFICE", "COMPANY_OTHER", "BUSINESS", "SCHOOL", "UNIVERSITY",
+  "HOSPITAL", "CLINIC", "GOVERNMENT", "CORPORATE", "EVENT_ORGANIZER",
+  "CONFERENCE_ORGANIZER", "NONPROFIT", "OTHER",
+] as const;
 export const ORGANIZATION_TYPES = [
   { value: "UNIVERSITY_SCHOOL", label: "University / School", industry: "education", mode: "SCHOOL" },
   { value: "HOSPITAL_CLINIC", label: "Hospital / Clinic", industry: "healthcare", mode: "BUSINESS" },
@@ -34,6 +39,17 @@ export const ORGANIZATION_TYPES = [
   { value: "SALON_BARBERSHOP", label: "Salon / Barbershop", industry: "beauty_wellness", mode: "BUSINESS" },
   { value: "GOVERNMENT_OFFICE", label: "Government office", industry: "public_services", mode: "BUSINESS" },
   { value: "COMPANY_OTHER", label: "Company / Other", industry: "other", mode: "BUSINESS" },
+  { value: "BUSINESS", label: "Business", industry: "other", mode: "BUSINESS" },
+  { value: "SCHOOL", label: "School", industry: "education", mode: "SCHOOL" },
+  { value: "UNIVERSITY", label: "University", industry: "education", mode: "SCHOOL" },
+  { value: "HOSPITAL", label: "Hospital", industry: "healthcare", mode: "BUSINESS" },
+  { value: "CLINIC", label: "Clinic", industry: "healthcare", mode: "BUSINESS" },
+  { value: "GOVERNMENT", label: "Government", industry: "public_services", mode: "BUSINESS" },
+  { value: "CORPORATE", label: "Corporate", industry: "other", mode: "BUSINESS" },
+  { value: "EVENT_ORGANIZER", label: "Event organizer", industry: "events", mode: "BUSINESS" },
+  { value: "CONFERENCE_ORGANIZER", label: "Conference / Summit organizer", industry: "events", mode: "BUSINESS" },
+  { value: "NONPROFIT", label: "Nonprofit", industry: "other", mode: "BUSINESS" },
+  { value: "OTHER", label: "Other", industry: "other", mode: "BUSINESS" },
 ] as const;
 export const ORGANIZATION_SUBTYPES = {
   UNIVERSITY_SCHOOL: [
@@ -58,6 +74,17 @@ export const ORGANIZATION_SUBTYPES = {
   ],
   GOVERNMENT_OFFICE: [{ value: "GOVERNMENT_AGENCY", label: "Government agency" }, { value: "PUBLIC_OFFICE", label: "Public service office" }],
   COMPANY_OTHER: [{ value: "COMPANY", label: "Company" }, { value: "OTHER_ORGANIZATION", label: "Other organization" }],
+  BUSINESS: [{ value: "GENERAL_BUSINESS", label: "General business" }],
+  SCHOOL: [{ value: "SCHOOL", label: "School" }],
+  UNIVERSITY: [{ value: "UNIVERSITY", label: "University" }],
+  HOSPITAL: [{ value: "HOSPITAL", label: "Hospital" }],
+  CLINIC: [{ value: "CLINIC", label: "Clinic" }],
+  GOVERNMENT: [{ value: "GOVERNMENT_AGENCY", label: "Government agency" }],
+  CORPORATE: [{ value: "CORPORATE", label: "Corporate" }],
+  EVENT_ORGANIZER: [{ value: "EVENT", label: "Event organizer" }],
+  CONFERENCE_ORGANIZER: [{ value: "CONFERENCE", label: "Conference organizer" }],
+  NONPROFIT: [{ value: "NONPROFIT", label: "Nonprofit" }],
+  OTHER: [{ value: "OTHER", label: "Other" }],
 } as const;
 export const ORGANIZATION_SERVICE_TEMPLATES = {
   UNIVERSITY_SCHOOL: [
@@ -81,6 +108,17 @@ export const ORGANIZATION_SERVICE_TEMPLATES = {
     { value: "PAYMENTS", label: "Payments" }, { value: "COMPLAINTS", label: "Complaints" },
   ],
   COMPANY_OTHER: [{ value: "CUSTOM_SERVICE", label: "Custom service queue" }],
+  BUSINESS: [{ value: "CUSTOM_SERVICE", label: "Custom service queue" }],
+  SCHOOL: [{ value: "STUDENT_SERVICES", label: "Student services" }],
+  UNIVERSITY: [{ value: "STUDENT_SERVICES", label: "Student services" }],
+  HOSPITAL: [{ value: "RECEPTION", label: "Reception" }],
+  CLINIC: [{ value: "RECEPTION", label: "Reception" }],
+  GOVERNMENT: [{ value: "GENERAL_ENQUIRIES", label: "General enquiries" }],
+  CORPORATE: [{ value: "CUSTOM_SERVICE", label: "Custom service queue" }],
+  EVENT_ORGANIZER: [{ value: "CUSTOM_SERVICE", label: "Event registration" }],
+  CONFERENCE_ORGANIZER: [{ value: "CUSTOM_SERVICE", label: "Conference registration" }],
+  NONPROFIT: [{ value: "CUSTOM_SERVICE", label: "Community service" }],
+  OTHER: [{ value: "CUSTOM_SERVICE", label: "Custom service queue" }],
 } as const;
 export const ONBOARDING_FIELDS = ["onboardingRequestId", "accountType", "professionalCategory", "organizationType", "organizationSubtype", "workspaceName", "legalName", "representativeName", "serviceTemplates", "teachingLevel", "institutionName", "serviceName", "country", "timezone", "locationName", "locationAddress", "authorizationDeclaration"] as const;
 export type OnboardingField = (typeof ONBOARDING_FIELDS)[number];
