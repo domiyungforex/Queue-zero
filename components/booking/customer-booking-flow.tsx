@@ -106,6 +106,11 @@ export function CustomerBookingFlow({ info }: Props) {
         return;
       }
 
+      if (!result.managementToken) {
+        setErrorMsg("Booking was created but the confirmation link could not be generated. Please contact staff.");
+        return;
+      }
+
       router.push(`/booking/${result.managementToken}`);
     });
   };

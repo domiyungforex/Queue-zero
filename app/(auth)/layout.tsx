@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
         signIn: { start: { title: "Sign in to TuRnMaRk", titleCombined: "Sign in to TuRnMaRk" } },
         signUp: { start: { title: "Create your TuRnMaRk account", titleCombined: "Create your TuRnMaRk account" } },
       }}
-      appearance={{ variables: { colorPrimary: "#ff5c1a", borderRadius: "0.875rem", fontFamily: "Sora Variable, Sora, Arial, sans-serif" } }}
+      appearance={{ variables: { colorPrimary: "#0d4a3a", borderRadius: "0.875rem", fontFamily: "Sora Variable, Sora, Arial, sans-serif" } }}
     >
       <ClerkAnalyticsIdentity />
       {children}

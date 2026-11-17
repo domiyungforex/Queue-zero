@@ -11,6 +11,9 @@ import {
   RefreshCw,
   ScanLine,
   ShieldCheck,
+  Copy,
+  Download,
+  Printer,
 } from "lucide-react";
 import styles from "./attendance-qr.module.css";
 import { captureAnalytics } from "@/lib/analytics/client";
@@ -208,6 +211,52 @@ export function AttendanceQr({
                   <ShieldCheck size={15} aria-hidden="true" />
                   Accountless & secure
                 </p>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <button
+                  type="button"
+                  className="button-secondary text-sm"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(qr.url);
+                      alert("Attendance link copied");
+                    } catch {
+                      alert("Could not copy link. Long-press or select the URL manually.");
+                    }
+                  }}
+                >
+                  <Copy size={14} /> Copy link
+                </button>
+                <a
+                  className="button-secondary text-sm"
+                  href={qr.image}
+                  download={`attendance-${courseCode || classId}.png`}
+                >
+                  <Download size={14} /> Download QR
+                </a>
+                <button
+                  type="button"
+                  className="button-secondary text-sm"
+                  onClick={() => {
+                    const w = window.open("", "_blank");
+                    if (!w) return;
+                    w.document.write(`
+                      <html><head><title>Attendance QR</title>
+                      <style>body{font-family:sans-serif;text-align:center;padding:2rem}
+                      img{max-width:400px} .footer{margin-top:2rem;font-size:12px;color:#555}</style>
+                      </head><body>
+                      <h2>${courseCode || "Class"} Attendance</h2>
+                      <p>${sessionTitle || ""}</p>
+                      <img src="${qr.image}" alt="Attendance QR" />
+                      <p class="footer">Powered by TuRnMaRk · Attendance and Queue Management Platform</p>
+                      <script>window.onload=()=>window.print()</script>
+                      </body></html>
+                    `);
+                    w.document.close();
+                  }}
+                >
+                  <Printer size={14} /> Print QR
+                </button>
               </div>
             </div>
           </div>

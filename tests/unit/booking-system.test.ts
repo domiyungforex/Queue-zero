@@ -4,7 +4,6 @@ vi.mock("server-only", () => ({}));
 import {
   bookingSettingsSchema,
   bookTimeInputSchema,
-  publicBookingSchema,
   bookingAvailabilitySlotSchema,
 } from "@/lib/booking/types";
 import { getSelectableDates } from "@/lib/booking/availability";

@@ -171,8 +171,18 @@ export function StudentScan({
             classInfo.location_lng
           );
           const maxRadius = classInfo.geofence_radius_meters ?? 100;
+          const accuracyOk = accuracy <= Math.max(maxRadius / 2, 50);
 
-          if (dist <= maxRadius) {
+          if (!accuracyOk) {
+            setLocationState({
+              status: "error",
+              latitude: studentLat,
+              longitude: studentLng,
+              accuracy,
+              distanceMeters: dist,
+              message: `Location accuracy is too low (±${accuracy}m). Please move to an open area and retry.`,
+            });
+          } else if (dist <= maxRadius) {
             setLocationState({
               status: "verified",
               latitude: studentLat,

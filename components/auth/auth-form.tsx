@@ -10,13 +10,15 @@ import { publicEnv } from "@/lib/env";
 import { safeAuthReturn } from "@/lib/school-student/return-url";
 import styles from "./auth-form.module.css";
 
-function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+function AuthFormInner({ mode }: { mode: "sign-in" | "sign-up" }) {
   const { isSignedIn } = useAuth();
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
   const search = useSearchParams();
   const returnTo = safeAuthReturn(search.get("redirect_url"), mode === "sign-up" ? "/onboarding" : "/dashboard", publicEnv.NEXT_PUBLIC_APP_URL);
   const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [method, setMethod] = useState<"password" | "code">("password");
   const [channel, setChannel] = useState<"email" | "phone">("email");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
@@ -24,10 +26,43 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const [error, setError] = useState("");
   const [advanced, setAdvanced] = useState(search.get("oauth") === "continue");
   const [socialBusy, setSocialBusy] = useState<"google" | "apple" | null>(null);
+  const [forgotMode, setForgotMode] = useState(false);
   const other = mode === "sign-in" ? "sign-up" : "sign-in";
   const isWelcomeBack = mode === "sign-in";
 
-  async function send() {
+  async function handlePasswordAuth() {
+    const email = normalizeAuthEmail(identifier);
+    if (!isValidAuthEmail(email)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (!password || password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setIdentifier(email);
+    if (mode === "sign-in") {
+      const result = await signIn.create({ identifier: email, password });
+      if (result.error) throw result.error;
+      if (signIn.status === "complete") {
+        await signIn.finalize({
+          navigate: ({ decorateUrl }) => window.location.assign(decorateUrl(returnTo)),
+        });
+      } else {
+        setAdvanced(true);
+      }
+    } else {
+      const result = await signUp.create({ emailAddress: email, password });
+      if (result.error) throw result.error;
+      // Trigger verification using existing verifications API
+      await signUp.verifications.sendEmailCode();
+      setSent(true);
+      setMethod("code");
+    }
+  }
+
+  async function sendCode() {
     const value = channel === "email" ? normalizeAuthEmail(identifier) : identifier.trim();
     if (channel === "email" && !isValidAuthEmail(value)) {
       setError("Enter a valid email address.");
@@ -56,35 +91,53 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     return true;
   }
 
+  async function verifyCode() {
+    const flow = mode === "sign-in" ? signIn : signUp;
+    const result = mode === "sign-in"
+      ? channel === "phone" ? await signIn.phoneCode.verifyCode({ code }) : await signIn.emailCode.verifyCode({ code })
+      : channel === "phone" ? await signUp.verifications.verifyPhoneCode({ code }) : await signUp.verifications.verifyEmailCode({ code });
+    if (result.error) throw result.error;
+    if (flow.status === "complete") {
+      const finalized = await flow.finalize({
+        navigate: ({ session, decorateUrl }) => {
+          if (session.currentTask) {
+            setAdvanced(true);
+            return;
+          }
+          window.location.assign(decorateUrl(returnTo));
+        },
+      });
+      if (finalized.error) throw finalized.error;
+    } else {
+      setAdvanced(true);
+    }
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
     setBusy(true);
     setError("");
     try {
-      if (!sent) {
-        await send();
+      if (forgotMode) {
+        // Fall back to code-based recovery (existing supported path) or advanced Clerk UI
+        setForgotMode(false);
+        setMethod("code");
+        setError("Enter your email and continue to receive a verification code, or use a different method for password reset.");
         return;
       }
-      const flow = mode === "sign-in" ? signIn : signUp;
-      const result = mode === "sign-in"
-        ? channel === "phone" ? await signIn.phoneCode.verifyCode({ code }) : await signIn.emailCode.verifyCode({ code })
-        : channel === "phone" ? await signUp.verifications.verifyPhoneCode({ code }) : await signUp.verifications.verifyEmailCode({ code });
-      if (result.error) throw result.error;
-      if (flow.status === "complete") {
-        const finalized = await flow.finalize({
-          navigate: ({ session, decorateUrl }) => {
-            if (session.currentTask) {
-              setAdvanced(true);
-              return;
-            }
-            window.location.assign(decorateUrl(returnTo));
-          },
-        });
-        if (finalized.error) throw finalized.error;
-      } else {
-        setAdvanced(true);
+
+      if (method === "password" && !sent) {
+        await handlePasswordAuth();
+        return;
       }
+
+      if (!sent) {
+        await sendCode();
+        return;
+      }
+
+      await verifyCode();
     } catch (cause) {
       setError(authErrorMessage(cause, sent ? "verify" : mode));
     } finally {
@@ -97,7 +150,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     setBusy(true);
     setError("");
     try {
-      await send();
+      if (method === "code") await sendCode();
     } catch (cause) {
       setError(authErrorMessage(cause, "resend"));
     } finally {
@@ -109,13 +162,12 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     if (busy) return;
     setSent(false);
     setCode("");
+    setPassword("");
     setError("");
+    setForgotMode(false);
+    setMethod("password");
   }
 
-  // Clerk treats social sign-in and sign-up as one transferable flow. Keep Google available on the sign-up page too;
-  // new users are created by Clerk after Google verifies their identity.
-  // OAuth availability is configured in Clerk Dashboard, not returned as a first factor
-  // until an identifier-based sign-in attempt exists. Keep Google visible on both entry points.
   const supportsGoogle = true;
   const supportsApple = mode === "sign-in" && Boolean(signIn.supportedFirstFactors?.some((factor) => factor.strategy === "oauth_apple"));
 
@@ -141,21 +193,19 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       : <div className="flex w-full items-start"><Link className="button-primary" href={returnTo}>Continue to TuRnMaRk</Link></div>;
   }
 
-  // Clerk remains responsible for configured MFA, recovery and additional methods.
   if (advanced) {
     return mode === "sign-in"
       ? <SignIn routing="path" path="/sign-in" forceRedirectUrl={returnTo} />
       : <SignUp routing="path" path="/sign-up" forceRedirectUrl={returnTo} />;
   }
 
-  const submitLabel = sent ? "Verify and continue" : "Continue";
-  const submitAriaLabel = sent ? submitLabel : mode === "sign-up" ? channel === "phone" ? "Text me a code" : "Email me a code" : submitLabel;
+  const submitLabel = sent ? "Verify and continue" : forgotMode ? "Send reset code" : "Continue";
   const fieldId = mode === "sign-in" ? "sign-in-identifier" : "sign-up-identifier";
 
   return (
     <div className={`${styles.formWrap} ${styles.welcomeBack}`}>
       <form onSubmit={submit} noValidate className={styles.form}>
-        {process.env.NEXT_PUBLIC_CLERK_PHONE_AUTH_ENABLED === "true" && !sent ? (
+        {process.env.NEXT_PUBLIC_CLERK_PHONE_AUTH_ENABLED === "true" && method === "code" && !sent ? (
           <label className={styles.methodLabel}>
             Sign in using
             <select
@@ -174,18 +224,19 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
           </label>
         ) : null}
 
-        <label className={styles.label} htmlFor={fieldId}>{channel === "phone" ? "Phone number" : isWelcomeBack ? "Email" : "Email address"}</label>
+        <label className={styles.label} htmlFor={fieldId}>
+          {channel === "phone" && method === "code" ? "Phone number" : "Email address"}
+        </label>
         <div className={styles.inputShell} data-invalid={Boolean(error) && !sent ? "true" : undefined}>
-          {channel === "email" ? <Mail size={19} aria-hidden="true" /> : null}
-          {channel === "email" ? <span className={styles.mobilePlaceholder} aria-hidden="true">Email</span> : null}
+          {channel === "email" || method === "password" ? <Mail size={19} aria-hidden="true" /> : null}
           <input
             id={fieldId}
-            aria-label={channel === "phone" ? "Phone number (with country code)" : "Email address"}
+            aria-label={channel === "phone" && method === "code" ? "Phone number (with country code)" : "Email address"}
             aria-describedby={error ? "auth-error" : undefined}
             aria-invalid={Boolean(error) && !sent}
-            type={channel === "phone" ? "tel" : "email"}
-            inputMode={channel === "phone" ? "tel" : "email"}
-            autoComplete={channel === "phone" ? "tel" : "email"}
+            type={channel === "phone" && method === "code" ? "tel" : "email"}
+            inputMode={channel === "phone" && method === "code" ? "tel" : "email"}
+            autoComplete={channel === "phone" && method === "code" ? "tel" : "email"}
             required
             autoFocus={isWelcomeBack}
             disabled={sent || busy}
@@ -194,9 +245,36 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
               setIdentifier(event.target.value);
               if (error) setError("");
             }}
-            placeholder={channel === "phone" ? "+234…" : "you@youremail.com"}
+            placeholder={channel === "phone" && method === "code" ? "+234…" : "you@youremail.com"}
           />
         </div>
+
+        {method === "password" && !sent && !forgotMode ? (
+          <>
+            <label className={styles.label} htmlFor="auth-password">Password</label>
+            <div className={styles.inputShell} data-invalid={Boolean(error) ? "true" : undefined}>
+              <input
+                id="auth-password"
+                aria-label="Password"
+                type="password"
+                autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+                required
+                disabled={busy}
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  if (error) setError("");
+                }}
+                placeholder="••••••••"
+              />
+            </div>
+            {mode === "sign-in" ? (
+              <button type="button" className={styles.differentMethod} onClick={() => setForgotMode(true)} disabled={busy}>
+                Forgot password?
+              </button>
+            ) : null}
+          </>
+        ) : null}
 
         {sent ? (
           <div className={styles.codeBlock}>
@@ -224,8 +302,8 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
 
         <div id="auth-error" className={styles.error} role={error ? "alert" : undefined} aria-live="polite">{error}</div>
 
-        <button aria-label={submitAriaLabel} disabled={busy} className={styles.primaryButton} type="submit">
-          {busy ? sent ? "Checking code…" : "Sending code…" : submitLabel}
+        <button aria-label={submitLabel} disabled={busy} className={styles.primaryButton} type="submit">
+          {busy ? (sent ? "Checking code…" : "Continuing…") : submitLabel}
           {!busy ? <ArrowRight size={18} aria-hidden="true" /> : null}
         </button>
         <div id="clerk-captcha" />
@@ -252,8 +330,14 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       {sent ? (
         <div className={styles.inlineActions}>
           <button type="button" disabled={busy} onClick={resend}>Resend code</button>
-          <button type="button" disabled={busy} onClick={restart}>Use another {channel}</button>
+          <button type="button" disabled={busy} onClick={restart}>Start over</button>
         </div>
+      ) : null}
+
+      {!sent && !forgotMode ? (
+        <button type="button" className={styles.differentMethod} onClick={() => setMethod(method === "password" ? "code" : "password")}>
+          {method === "password" ? "Use email code instead" : "Use password instead"} <ChevronDown size={16} aria-hidden="true" />
+        </button>
       ) : null}
 
       {!sent ? (
@@ -264,7 +348,7 @@ function CodeForm({ mode }: { mode: "sign-in" | "sign-up" }) {
 
       <p className={styles.accountPrompt}>
         {mode === "sign-in" ? "Don’t have an account?" : "Already have an account?"}{" "}
-        <Link href={`/${other}?redirect_url=${encodeURIComponent(returnTo)}`}>{mode === "sign-in" ? "Get started" : "Sign in instead"}</Link>
+        <Link href={`/${other}?redirect_url=${encodeURIComponent(returnTo)}`}>{mode === "sign-in" ? "Create account" : "Sign in instead"}</Link>
       </p>
 
       {mode === "sign-in" && !sent ? (
@@ -317,7 +401,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         </div>
       </ClerkFailed>
       <ClerkLoaded>
-        <Suspense fallback={<AuthFormLoading />}><CodeForm mode={mode} /></Suspense>
+        <Suspense fallback={<AuthFormLoading />}><AuthFormInner mode={mode} /></Suspense>
       </ClerkLoaded>
     </div>
   );

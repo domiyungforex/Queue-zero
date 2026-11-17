@@ -78,9 +78,9 @@ export async function POST(
       return NextResponse.json({ error: "Photo must be under 450 KB." }, { status: 413, headers });
     }
 
-    // Build a stable file path scoped by org and class
+    // Tenant-aware private path: attendance/org/class/nonce.ext
     const fileExt = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
-    const fileName = `${orgId}/${classId}/${parsed.data.nonce}.${fileExt}`;
+    const fileName = `attendance/${orgId}/${classId}/${parsed.data.nonce}.${fileExt}`;
 
     const db = createJoinSupabaseClient();
 
