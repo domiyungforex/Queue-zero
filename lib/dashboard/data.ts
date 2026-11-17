@@ -10,7 +10,10 @@ export const getDashboardQueues = cache(async () => {
   const { data, error } = await db.from("queues")
     .select("id,name,description,status,average_service_seconds,locations!queues_location_id_business_id_fkey(name)")
     .eq("business_id", membership.businessId).order("created_at", { ascending: true });
-  if (error) throw new Error("We couldn’t load your queues. Please try again.");
+  if (error) {
+    console.error("getDashboardQueues failed", { code: error.code, message: error.message });
+    return [];
+  }
   return data ?? [];
 });
 
@@ -20,7 +23,10 @@ export const getBusinessCustomerCount = cache(async () => {
   const { count, error } = await db.from("tickets")
     .select("id,queues!inner(business_id)", { count: "exact", head: true })
     .eq("queues.business_id", membership.businessId);
-  if (error) throw new Error("We couldn’t load your customer total. Please try again.");
+  if (error) {
+    console.error("getBusinessCustomerCount failed", { code: error.code, message: error.message });
+    return 0;
+  }
   return count ?? 0;
 });
 
@@ -30,7 +36,10 @@ export const getDashboardLocations = cache(async () => {
   const db = await createUserSupabaseClient();
   const { data, error } = await db.from("locations").select("id,name,address,timezone,is_active")
     .eq("business_id", membership.businessId).order("created_at", { ascending: true });
-  if (error) throw new Error("We couldn’t load your locations. Please try again.");
+  if (error) {
+    console.error("getDashboardLocations failed", { code: error.code, message: error.message });
+    return [];
+  }
   return data ?? [];
 });
 

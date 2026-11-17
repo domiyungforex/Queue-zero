@@ -43,7 +43,17 @@ export default async function Page({ searchParams }: DashboardPageProps = {}) {
       <StatCard label="Average wait" value={duration(metrics.average_wait_seconds)} icon={<Clock3 size={20} />} note="Last 7 days · until called" />
     </div>
     <div className="section-toolbar"><h2>Your queues</h2><Link href="/dashboard/queues">View all<ArrowUpRight size={16} /></Link></div>
-    <QueueSummary queues={queues} staff={membership.role === "staff"} />
+    {queues.length === 0 ? (
+      <section className="workspace-tip" style={{ textAlign: "center", padding: 32 }}>
+        <h2>No queues yet</h2>
+        <p>Create your first queue to start managing arrivals.</p>
+        <Link href="/dashboard/queues/new" className="button-primary" style={{ display: "inline-flex", marginTop: 16 }}>
+          Create a queue <Plus size={16} />
+        </Link>
+      </section>
+    ) : (
+      <QueueSummary queues={queues} staff={membership.role === "staff"} />
+    )}
     <section className="workspace-tip"><span className="tip-symbol">✳</span><div><h2>One small QR. A better waiting experience.</h2><p>Print a queue QR code and place it where customers arrive. Their first scan is all it takes.</p></div><Link href="/dashboard/queues" className="button-secondary">Get a queue QR<ArrowUpRight size={17} /></Link></section>
   </>;
 }
