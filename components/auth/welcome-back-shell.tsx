@@ -87,7 +87,8 @@ export function WelcomeBackShell({ children, mode = "sign-in" }: { children: Rea
           <div className={styles.responsiveLayout}>
             <div className={styles.authContent}>
               <p className={styles.authEyebrow}>Secure access</p>
-              <h1 id="welcome-back-title">{mode === "sign-in" ? "Welcome back." : "Create your account"}</h1>
+              <h1 id="welcome-back-title">{mode === "sign-in" ? "Welcome to TuRnMaRk." : "Create your account"}</h1>
+              <p>Manage queues, bookings, attendance and your organization in one place.</p>
               <p className={styles.authDescription}>
                 {mode === "sign-in"
                   ? "Manage queues, attendance and bookings from one workspace."

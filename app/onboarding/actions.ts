@@ -77,7 +77,11 @@ export async function onboardBusiness(_previous: OnboardingState, formData: Form
     const { data, error } = result;
     const workspaceId = z.uuid().safeParse(data);
     if (error || !workspaceId.success) {
-      return { status: "error", message: "We couldn’t finish setting up your workspace. Please try again.", values: retainedValues };
+      console.error("Onboarding RPC failed", { error, data });
+      const detail = error && typeof error === "object" && "message" in error && typeof (error as { message: unknown }).message === "string"
+        ? (error as { message: string }).message
+        : null;
+      return { status: "error", message: detail && detail.length < 200 ? detail : "We couldn’t finish setting up your workspace. Please try again.", values: retainedValues };
     }
     const { data: membership, error: membershipError } = await db.from("business_members")
       .select("business_id")
