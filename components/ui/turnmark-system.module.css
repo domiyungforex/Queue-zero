@@ -24,4 +24,18 @@
  .navigation{width:min(1680px,calc(100% - 80px))}
  .welcomeCopy h2{font-size:58px}
 }
+
+@media (min-width: 768px) and (max-width: 1099px) {
+ .navigation{width:calc(100% - 28px)}
+ .welcomeBanner{min-height:240px;grid-template-columns:minmax(0,1fr) 200px;border-radius:24px;background:#14281f}
+ .welcomeCopy>p{color:#d6f26b}
+ .welcomeCopy h2,.welcomeCopy>span{color:#f4f7f2}
+ .welcomeCopy h2{font-size:36px}
+}
+@media (min-width: 1100px) {
+ .welcomeBanner{border-radius:28px;background:radial-gradient(420px 220px at 100% 120%,rgba(214,242,107,.28),transparent 62%),#14281f}
+ .welcomeCopy>p{color:#d6f26b}
+ .welcomeCopy h2{color:#f7faf6}
+ .welcomeCopy>span{color:#d5e4da}
+}
 .welcomeBanner{margin-bottom:30px}

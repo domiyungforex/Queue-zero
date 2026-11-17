@@ -338,3 +338,25 @@ body:before{background:radial-gradient(circle at 92% -8%,rgba(255,107,43,.14),tr
 @media(max-width:640px){.skeleton-card-grid{grid-template-columns:1fr}.qr-loader{min-height:180px}.loading-screen{margin:5vh 16px}.qr-loader-mark{width:82px;height:82px}@keyframes qr-scan{0%,100%{top:12px}50%{top:66px}}}
 @media(max-width:700px){.auth-simple-header{padding:18px 20px}.auth-simple-main{width:min(100% - 28px,520px);grid-template-columns:1fr;border-radius:22px}.auth-simple-main>section{padding:28px 22px}.auth-simple-main>aside{display:none}.auth-simple-main h1{font-size:38px}.auth-simple-footer{padding-bottom:max(20px,env(safe-area-inset-bottom))}.setup-heading{margin-bottom:14px}.setup-shell>main{padding-top:24px}.onboarding-card{min-height:auto}}
 @media(prefers-reduced-motion:reduce){.qr-loader-grid i.filled,.qr-loader-scan,.skeleton-card span,.skeleton-line{animation:none}.qr-loader-scan{top:50%}}
+
+@media (min-width: 768px) and (max-width: 1099px) {
+ .metrics-grid,.queue-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+ .console-grid{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}
+ .page-heading h1{font-size:40px}
+ .customer-shell>header,.customer-shell>main{max-width:760px}
+ .auth-simple-main{width:min(100% - 36px,860px);grid-template-columns:minmax(0,1fr) 220px}
+ .settings-layout{grid-template-columns:220px minmax(0,1fr)}
+}
+@media (min-width: 1100px) {
+ .metrics-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+ .queue-card-grid,.locations-grid,.business-card-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+ .console-grid{grid-template-columns:minmax(360px,.82fr) minmax(460px,1.18fr);gap:28px}
+ .page-heading h1{font-size:52px}
+ .stat-card,.queue-card,.panel{border-radius:22px}
+ .customer-shell{background:radial-gradient(700px 280px at 100% -10%,rgba(214,242,107,.35),transparent 60%),#efeae2}
+ .customer-shell>header,.customer-shell>main{max-width:920px}
+ .customer-ticket>p:nth-child(2){font-size:120px}
+ .auth-shell{min-height:100dvh}
+ .auth-simple-main{width:min(100% - 80px,1080px);grid-template-columns:minmax(0,1.15fr) 320px}
+ .workspace-main{max-width:none}
+}

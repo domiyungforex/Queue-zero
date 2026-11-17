@@ -28,3 +28,21 @@
  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
  .heading h1{font-size:64px}
 }
+
+@media (min-width: 768px) and (max-width: 1099px) {
+ .page{max-width:none;gap:16px}
+ .heading{align-items:flex-end;flex-direction:row}
+ .heading h1{font-size:42px}
+ .description{max-width:640px;font-size:14px}
+ .toolbar{grid-template-columns:minmax(220px,1fr) auto}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .twoColumn,.settingsGrid{grid-template-columns:minmax(0,1.2fr) minmax(240px,.8fr)}
+}
+@media (min-width: 1100px) {
+ .page{max-width:none}
+ .eyebrow{color:#1f7a45}
+ .primary{background:#14281f;color:#d6f26b;box-shadow:none}
+ .panel,.card,.metric{border-color:rgba(20,40,31,.08)}
+ .chartBar,.progress i{background:linear-gradient(180deg,#1f7a45,#d6f26b)}
+}
