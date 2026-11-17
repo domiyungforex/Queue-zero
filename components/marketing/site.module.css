@@ -38,3 +38,25 @@
 .tmProductScene img{display:block;width:100%;height:auto;object-fit:contain}
 .tmProductScene figcaption{padding:13px 16px;background:#fff;color:#626975;font-size:9px;line-height:1.55}
 @media(max-width:560px){.tmMobileHiddenPrimary{display:none}.tmHeroVisual{min-height:320px;max-height:380px}.tmHeroPhoto img{object-position:48% center}}
+
+@media(min-width:1280px){
+ .header{max-width:1520px}
+ .tmHero,.tmFeatureStrip,.tmSteps,.tmSolutions,.footer,.promiseStrip,.closing,.subpage{width:min(1520px,calc(100% - 72px));max-width:1520px}
+ .tmHero{gap:80px;min-height:680px;padding:64px 64px 8px}
+ .tmHero h1{max-width:820px;font-size:92px}
+ .tmHeroCopy>p:not(.tmPill,.tmAssurance){max-width:560px;font-size:18px}
+ .tmFeatureGrid,.tmSolutionGrid{gap:20px}
+ .tmFeatureGrid>article{min-height:220px;padding:24px}
+ .tmSectionHeading h2,.tmQueueCopy h2{font-size:64px}
+ .tmQueueProduct{width:min(1520px,calc(100% - 72px));margin-inline:auto;gap:72px;padding-inline:8px}
+ .tmEducationCallout,.tmPricingPreview,.tmCaseStudy{width:min(1400px,calc(100% - 72px))}
+ .steps,.places{gap:22px}
+ .hero{max-width:1520px;padding-inline:72px}
+ .stepsSection,.placesSection{max-width:1520px}
+}
+@media(min-width:1680px){
+ .header,.tmHero,.tmFeatureStrip,.tmSteps,.tmSolutions,.footer,.promiseStrip,.closing,.subpage,.hero,.stepsSection,.placesSection{max-width:1680px}
+ .tmHero,.tmFeatureStrip,.tmSteps,.tmSolutions,.footer,.promiseStrip,.closing,.subpage,.tmQueueProduct{width:min(1680px,calc(100% - 96px))}
+ .tmHero h1{font-size:104px}
+ .tmSolutionGrid article>img{height:210px}
+}

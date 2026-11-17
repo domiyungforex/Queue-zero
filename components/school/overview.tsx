@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { unstable_rethrow } from "next/navigation";
 import { DashboardEmptyState, DashboardKpiCard, DashboardStatusBadge, WorkspaceCharacter } from "@/components/dashboard/dashboard-primitives";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { EmptyState, PageHeading, StatCard } from "@/components/ui/workspace";
@@ -150,17 +151,34 @@ export function EducationHome({ data, dashboard, individual = false, userName = 
 }
 
 export async function SchoolOverview({ individual = false }: { individual?: boolean }) {
-  const [{ snapshot: data }, identity] = await Promise.all([getSchoolSnapshot(), currentUser().catch(() => null)]);
-  const dashboard = buildEducationDashboard(data, new Date().toISOString().slice(0, 10));
-  const userName = identity?.firstName ?? identity?.fullName ?? "Lecturer";
-  return <>
-    <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
-    <EducationHome data={data} dashboard={dashboard} individual={individual} userName={userName} />
-  </>;
+  try {
+    const [{ snapshot: data }, identity] = await Promise.all([getSchoolSnapshot(), currentUser().catch(() => null)]);
+    const dashboard = buildEducationDashboard(data, new Date().toISOString().slice(0, 10));
+    const userName = identity?.firstName ?? identity?.fullName ?? "Lecturer";
+    return <>
+      <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
+      <EducationHome data={data} dashboard={dashboard} individual={individual} userName={userName} />
+    </>;
+  } catch (error) {
+    unstable_rethrow(error);
+    console.error("School overview failed", error);
+    return <section className={styles.panel} role="alert">
+      <header className={styles.panelHeader}><h2>Attendance could not be loaded</h2></header>
+      <p style={{ margin: 0, padding: "22px 20px 8px", color: "#5c6570", lineHeight: 1.6 }}>Your workspace is open, but class records could not be read. Nothing here is sample data.</p>
+      <p style={{ margin: 0, padding: "0 20px 24px" }}><Link href="/dashboard">Try again</Link></p>
+    </section>;
+  }
 }
 
 export async function SchoolAnalytics() {
-  const { snapshot: data } = await getSchoolSnapshot();
+  let data: SchoolSnapshot;
+  try {
+    ({ snapshot: data } = await getSchoolSnapshot());
+  } catch (error) {
+    unstable_rethrow(error);
+    console.error("School analytics failed", error);
+    return <PageHeading eyebrow="SCHOOL ANALYTICS" title="Attendance could not be loaded." description="Class records could not be read. Refresh to try again. No sample rates are shown." />;
+  }
   const completed = data.classes.filter((item) => item.status === "COMPLETED");
   const ids = new Set(completed.map((item) => item.id));
   const rows = data.attendance.filter((item) => ids.has(item.class_session_id));

@@ -28,7 +28,14 @@ export default async function Page({ searchParams }: DashboardPageProps = {}) {
   if (membership.institutionType) return <>{success}{organizationStatus}<InstitutionOverview /></>;
   if (membership.workspaceOwnership === "INDIVIDUAL" && membership.professionalCategory && membership.professionalCategory !== "LECTURER_TEACHER") return <>{success}<ProfessionalOverview category={membership.professionalCategory} canManage={membership.role === "owner" || membership.role === "admin"} /></>;
 
-  const [queues, metrics] = await Promise.all([getDashboardQueues(), getBusinessMetrics()]);
+  const [queues, metricsResult] = await Promise.all([
+    getDashboardQueues(),
+    getBusinessMetrics().then((metrics) => ({ metrics, failed: false })).catch((error) => {
+      console.error("Dashboard metrics failed", error);
+      return { metrics: null, failed: true };
+    }),
+  ]);
+  const metrics = metricsResult.metrics;
   const openQueues = queues.filter((queue) => queue.status === "open").length;
 
   return <>
@@ -36,12 +43,12 @@ export default async function Page({ searchParams }: DashboardPageProps = {}) {
     {organizationStatus}
     <PageHeading eyebrow="LET’S MAKE TODAY FLOW" title="Your day, at a glance." description="A little less queue chaos. A little more personal service." action={(membership.role === "owner" || membership.role === "admin") && <Link className="button-primary" href="/dashboard/queues/new"><Plus size={18} />Create queue</Link>} />
     <DashboardWelcomeBanner eyebrow={`${openQueues} OPEN ${openQueues === 1 ? "QUEUE" : "QUEUES"}`} title="People arrive. Your team keeps moving." description="The illustration supports the workspace while every number below stays connected to actual queue activity." character="businessProfessional" />
-    <div className="metrics-grid">
+    {metrics ? <div className="metrics-grid">
       <StatCard label="Waiting now" value={metrics.waiting} icon={<Users size={20} />} note="Across your accessible queues" />
       <StatCard label="Serving now" value={metrics.serving} icon={<UserRound size={20} />} note="One person at a time" />
       <StatCard label="Served today" value={metrics.completed_today} icon={<CheckCheck size={20} />} note="Completed customer visits" />
       <StatCard label="Average wait" value={duration(metrics.average_wait_seconds)} icon={<Clock3 size={20} />} note="Last 7 days · until called" />
-    </div>
+    </div> : <section className="workspace-tip" role="alert"><div><h2>Live totals could not be loaded</h2><p>Queues below are still your real queues. Refresh to try the totals again. No sample numbers are shown.</p></div></section>}
     <div className="section-toolbar"><h2>Your queues</h2><Link href="/dashboard/queues">View all<ArrowUpRight size={16} /></Link></div>
     {queues.length === 0 ? (
       <section className="workspace-tip" style={{ textAlign: "center", padding: 32 }}>

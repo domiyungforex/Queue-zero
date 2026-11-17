@@ -47,3 +47,10 @@
 @media(max-width:560px){.header{width:calc(100% - 28px);min-height:70px}.header nav a:not(:first-child),.header nav button{display:none}.main{width:calc(100% - 20px);padding:16px 0 max(36px,env(safe-area-inset-bottom))}.frame{border-radius:22px}.mobileProgress{padding:18px 18px 0}.content{padding:28px 18px 24px}.screen h1{font-size:36px;letter-spacing:-1.7px}.lead{font-size:13px}.choiceGrid,.choiceGridCompact{grid-template-columns:1fr;gap:9px;margin-top:23px}.choice{min-height:84px;padding:13px}.choiceIcon{width:38px;height:38px}.choiceDescription{font-size:10px}.formGrid,.setupGrid,.serviceGrid{grid-template-columns:1fr}.formGrid{gap:16px}.full{grid-column:auto}.reviewRow{grid-template-columns:105px minmax(0,1fr) auto;gap:8px;padding-inline:12px}.actions{position:sticky;z-index:5;bottom:0;padding:12px 18px calc(12px + env(safe-area-inset-bottom));background:rgba(255,250,247,.96);backdrop-filter:blur(14px)}.back,.primary{flex:1;min-width:0}.footer{display:none}.shapeOne{width:170px;height:170px;top:-105px;right:-55px}.shapeTwo{width:150px;height:150px}.result{margin:2vh 10px;padding:44px 20px;border-radius:23px}.resultActions{display:grid}.nextList{grid-template-columns:1fr}}
 @media(max-width:560px){.choiceVisual{width:52px;height:52px}}
 @media(prefers-reduced-motion:reduce){.choice,.primary,.progressTrack span{transition:none}.choice:hover,.primary:hover{transform:none}.loadingDot{animation:none}}
+@media(min-width:1280px){
+ .main{width:min(1320px,calc(100% - 80px))}
+ .frame{grid-template-columns:300px minmax(0,1fr);min-height:760px}
+ .contentInner{max-width:920px}
+ .choiceGrid,.choiceGridCompact{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+ .screen h1{font-size:58px}
+}

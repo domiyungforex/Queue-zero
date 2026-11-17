@@ -13,9 +13,15 @@ export async function getSchoolSnapshot(courseId?: string, classId?: string) {
   const db = await createUserSupabaseClient();
   const { data, error } = await db.rpc("school_snapshot", { p_organization_id: membership.businessId, p_course_id: courseId ?? undefined, p_class_id: classId ?? undefined });
   if (error?.code === "42501" || error?.code === "P0002") notFound();
-  if (error) throw new Error("School records could not be loaded. Please try again.");
+  if (error) {
+    console.error("school_snapshot failed", { code: error.code, message: error.message });
+    throw new Error("School records could not be loaded. Please try again.");
+  }
   const parsed = schoolSnapshotSchema.safeParse(data);
-  if (!parsed.success) throw new Error("School records are temporarily unavailable.");
+  if (!parsed.success) {
+    console.error("school_snapshot schema mismatch", parsed.error.issues.slice(0, 8));
+    throw new Error("School records are temporarily unavailable.");
+  }
   if (parsed.data.organization.id !== membership.businessId || parsed.data.organization.mode === "BUSINESS") notFound();
   if (courseId && !parsed.data.courses.some(course => course.id === courseId)) notFound();
   if (classId && !parsed.data.classes.some(session => session.id === classId)) notFound();

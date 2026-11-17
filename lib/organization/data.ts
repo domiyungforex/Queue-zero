@@ -11,6 +11,9 @@ export const getOrganizationWorkspaceProfile = cache(async () => {
     .select("organization_type,organization_subtype,legal_name,service_templates,verification_status,setup_completed_at")
     .eq("business_id", membership.businessId)
     .maybeSingle();
-  if (error) throw new Error("We couldn’t load your organization setup. Please try again.");
+  if (error) {
+    console.error("organization profile failed", { code: error.code, message: error.message });
+    return null;
+  }
   return data;
 });

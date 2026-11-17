@@ -14,3 +14,29 @@
 @media(max-width:950px){.heroCopy{width:62%}.heroCopy h1{font-size:31px}}
 @media(max-width:390px){.heroCopy{width:65%}.heroCopy h1{font-size:29px}}
 @media(max-width:360px){.heroCopy{width:65%}.heroCopy h1{font-size:27px}}
+
+@media(min-width:1280px){
+ .dashboard{max-width:none;grid-template-columns:minmax(0,1.5fr) minmax(340px,.78fr);align-items:start;gap:22px}
+ .hero,.kpis{grid-column:1 / -1}
+ .hero{min-height:360px}
+ .heroCopy{width:min(680px,58%);padding:56px 64px}
+ .heroCopy h1{font-size:68px}
+ .heroDescription{max-width:460px;font-size:16px}
+ .kpis{gap:18px}
+ .dashboard>.panel:nth-child(3){grid-column:2;grid-row:3}
+ .dashboard>.panel:nth-child(4){grid-column:1;grid-row:3}
+ .lowerGrid{grid-column:1 / -1;grid-row:4;grid-template-columns:minmax(0,1.4fr) minmax(340px,.8fr);gap:22px}
+ .quickGrid{grid-template-columns:1fr 1fr;gap:14px;padding:18px}
+ .quickAction{min-height:108px}
+ .classRow,.attendanceRow{min-height:78px;padding:14px 22px}
+ .rowMain strong{font-size:15px}
+ .panelHeader h2{font-size:18px}
+ .trend{height:240px}
+}
+@media(min-width:1680px){
+ .dashboard{gap:28px}
+ .hero{min-height:400px}
+ .heroCopy h1{font-size:76px}
+ .kpis{gap:22px}
+ .classRow{grid-template-columns:44px minmax(180px,1fr) minmax(160px,auto) auto 18px}
+}

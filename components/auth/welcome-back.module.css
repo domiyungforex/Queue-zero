@@ -269,3 +269,9 @@
 @media (prefers-reduced-motion: reduce) {
   .page *, .page *::before, .page *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+@media (min-width: 1600px) {
+  .frame { width: min(1720px, calc(100% - 64px)); min-height: min(960px, calc(100dvh - 48px)); }
+  .story { padding: 64px 72px 48px; }
+  .authContent h1 { font-size: 64px; }
+}

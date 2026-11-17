@@ -19,7 +19,10 @@ function display(value: string) {
 
 export function OrganizationSetupStatus({ profile }: { profile: Profile }) {
   const bankPending = profile.organization_type === "BANK_FINANCIAL" && profile.verification_status !== "VERIFIED";
-  const action = nextActions[profile.organization_type];
+  const action = nextActions[profile.organization_type as keyof typeof nextActions] ?? {
+    href: "/dashboard/queues/new",
+    label: "Create a service queue",
+  };
   return <section className={`mb-6 rounded-2xl border p-5 ${bankPending ? "border-amber-300 bg-amber-50 text-amber-950" : "border-emerald-200 bg-emerald-50 text-emerald-950"}`} aria-label="Organization setup status">
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>

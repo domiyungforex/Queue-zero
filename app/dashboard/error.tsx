@@ -4,11 +4,11 @@ import Link from "next/link";
 export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const isServerError = error.message?.includes("Minified React error") || error.message?.includes("Server Components");
   const message = isServerError
-    ? "We couldn’t load this workspace. Your session may have expired or the workspace data is unavailable."
+    ? "This page failed while reading your workspace. You are still signed in. Refresh, or open workspace setup if this organization was never finished."
     : error.message || "We couldn’t load this workspace.";
 
   return (
-    <div role="alert" style={{ maxWidth: 480, margin: "80px auto", padding: 32, textAlign: "center" }}>
+    <div role="alert" className="workspace-error">
       <h1 className="text-2xl font-semibold">We couldn’t load this workspace</h1>
       <p className="my-4 text-muted">{message}</p>
       {error.digest ? <p className="my-2 text-xs text-muted">Reference: {error.digest}</p> : null}
