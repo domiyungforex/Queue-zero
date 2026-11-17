@@ -101,3 +101,52 @@
  .header{margin:20px 24px 0;padding-inline:28px}
 }
 
+.sidebarTools{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 8px 14px}
+.collapseToggle,.drawerClose,.menuButton,.backdrop{font:inherit}
+.collapseToggle,.drawerClose,.menuButton{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;border:1px solid rgba(214,242,107,.4);border-radius:12px;background:transparent;color:#d6f26b;cursor:pointer}
+.collapseToggle{padding:0 10px}
+.collapseToggle span{font-size:11px;font-weight:750}
+.drawerClose,.backdrop{display:none}
+.menuButton{display:none;width:40px;padding:0;border-color:#e3ebe4;background:#fff;color:#14281f}
+.menuButton span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.desktopNav a{position:relative}
+.desktopNav a:focus-visible,.collapseToggle:focus-visible,.drawerClose:focus-visible,.menuButton:focus-visible{outline:3px solid #d6f26b;outline-offset:2px}
+
+@media (min-width: 1024px) {
+ .shell[data-collapsed="true"]{grid-template-columns:84px minmax(0,1fr)}
+ .shell[data-collapsed="true"] .collapseToggle svg{transform:rotate(180deg)}
+ .shell[data-collapsed="true"] .collapseToggle span,.shell[data-collapsed="true"] .navCaption,.shell[data-collapsed="true"] .sidebarFoot{display:none}
+ .shell[data-collapsed="true"] .brand{display:grid;width:44px;height:44px;margin:0 auto 16px;place-items:center}
+ .shell[data-collapsed="true"] .brand img{display:none}
+ .shell[data-collapsed="true"] .brand::before{content:"T";display:grid;width:44px;height:44px;place-items:center;border-radius:14px;background:#d6f26b;color:#14281f;font-size:20px;font-weight:800}
+ .shell[data-collapsed="true"] .desktopNav a{justify-content:center;gap:0;padding-inline:0;font-size:0}
+ .shell[data-collapsed="true"] .desktopNav a svg{width:20px;height:20px}
+ .shell[data-collapsed="true"] .desktopNav a:hover::after,.shell[data-collapsed="true"] .desktopNav a:focus-visible::after{content:attr(data-label);position:absolute;left:calc(100% + 12px);z-index:40;padding:7px 9px;border-radius:8px;background:#14281f;color:#f4f7f2;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 10px 24px rgba(16,24,20,.2)}
+}
+@media (max-width: 1023px) {
+ .collapseToggle span{display:none}
+ .shell[data-drawer="open"] .backdrop{display:block;position:fixed;z-index:70;inset:0;border:0;background:rgba(16,24,20,.46);cursor:pointer}
+ .shell[data-drawer="open"] .sidebar{position:fixed;z-index:80;top:0;left:0;width:min(320px,88vw);height:100dvh;background:#14281f;box-shadow:18px 0 48px rgba(16,24,20,.28)}
+ .shell[data-drawer="open"] .desktopNav a{justify-content:flex-start;gap:11px;padding:10px 12px;font-size:14px}
+ .shell[data-drawer="open"] .navCaption,.shell[data-drawer="open"] .sidebarFoot{display:block;color:#8eae9a}
+ .shell[data-drawer="open"] .brand{display:block;width:150px;height:auto;margin:2px 8px 18px}
+ .shell[data-drawer="open"] .brand img{display:block;filter:brightness(0) invert(1)}
+ .shell[data-drawer="open"] .brand::before{content:none}
+ .shell[data-drawer="open"] .drawerClose{display:inline-flex}
+ .shell[data-drawer="open"] .collapseToggle span{display:none}
+}
+@media (max-width: 767px) {
+ .sidebar{display:flex;position:fixed;z-index:80;top:0;bottom:0;left:0;width:min(320px,88vw);height:100dvh;transform:translateX(-110%);background:#14281f;color:#e7f3ea;transition:transform .2s ease}
+ .shell[data-drawer="open"] .sidebar{transform:translateX(0)}
+ .brand img{filter:brightness(0) invert(1)}
+ .navCaption{color:#8eae9a}
+ .desktopNav a{color:#d7e7dc}
+ .desktopNav a[aria-current=page]{background:#d6f26b;color:#14281f}
+ .sidebarFoot{color:#8eae9a}
+ .mobileHeader{grid-template-columns:40px minmax(84px,108px) minmax(0,1fr) 36px 38px}
+ .menuButton{display:inline-flex}
+}
+@media (prefers-reduced-motion: reduce) {
+ .sidebar{transition:none}
+}
+

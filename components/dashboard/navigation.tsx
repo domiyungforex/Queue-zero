@@ -117,7 +117,7 @@ export function DashboardNavigation({
   const moreRoutes = ["/dashboard/more", "/dashboard/team", "/dashboard/settings", "/dashboard/exports", "/dashboard/billing"];
   const active = (href: string) => href === "/dashboard" ? pathname === href : href === "/dashboard/more" ? moreRoutes.some((route) => pathname.startsWith(route)) : pathname.startsWith(href);
   if (variant === "desktop") return <nav aria-label="Workspace navigation" className={styles.desktopNav}>
-    {links.map((link) => <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}><link.icon size={18} />{link.label}</Link>)}
+    {links.map((link) => <Link href={link.href} key={link.href} title={link.label} data-label={link.label} aria-current={active(link.href) ? "page" : undefined}><link.icon size={18} aria-hidden="true" />{link.label}</Link>)}
   </nav>;
 
   if (education) {

@@ -106,7 +106,11 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="school-form school-create-class-form">
-      <h2>Create class attendance session</h2>
+      <header className="school-create-head">
+        <p>ATTENDANCE</p>
+        <h2>Create a class session</h2>
+        <p>Choose when this class meets, how students are checked, and whether they must be at the location.</p>
+      </header>
 
       {errorMessage && (
         <div className="school-form-error" role="alert">
@@ -118,160 +122,112 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
       {isSuccess && (
         <div className="school-form-success" role="status">
           <RefreshCw size={18} className="animate-spin" aria-hidden="true" />
-          <span>Session created! Opening attendance dashboard…</span>
+          <span>Session created. Opening attendance…</span>
         </div>
       )}
 
-      <label>
-        Session title (optional)
-        <input
-          name="title"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Lecture 4: Database Indexing"
-          maxLength={200}
-        />
-      </label>
-
-      <div className="school-form-row">
-        <label>
-          Class start (UTC)
-          <input
-            name="starts_at"
-            type="datetime-local"
-            value={startsAt}
-            onChange={(e) => setStartsAt(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Attendance closes (UTC)
-          <input
-            name="attendance_closes_at"
-            type="datetime-local"
-            value={attendanceClosesAt}
-            onChange={(e) => setAttendanceClosesAt(e.target.value)}
-            required
-          />
-        </label>
-      </div>
-
-      <div className="school-form-row">
-        <label>
-          Class end (UTC, optional)
-          <input
-            name="planned_ends_at"
-            type="datetime-local"
-            value={plannedEndsAt}
-            onChange={(e) => setPlannedEndsAt(e.target.value)}
-          />
-        </label>
-        <label>
-          Late after (minutes)
-          <input
-            type="number"
-            name="late_after_minutes"
-            min="0"
-            max="120"
-            value={lateAfterMinutes}
-            onChange={(e) => setLateAfterMinutes(e.target.value)}
-            required
-          />
-        </label>
-      </div>
-
-      <label>
-        Attendance verification mode
-        <select
-          name="verification_mode"
-          value={verificationMode}
-          onChange={(e) => setVerificationMode(e.target.value as "STANDARD" | "VERIFIED")}
-        >
-          <option value="STANDARD">Standard mode (Default) — instant scanning, no advance CSV needed</option>
-          <option value="VERIFIED">Verified mode — validate against uploaded course roster</option>
-        </select>
-      </label>
-      <p className="text-sm text-muted">
-        Standard mode allows students to sign in immediately without prior student upload. Verified mode checks each student against the official roster.
-      </p>
-
-      {/* Geofence section */}
-      <div className="school-geofence-card">
-        <label className="school-geofence-toggle">
-          <input
-            type="checkbox"
-            checked={useGeofence}
-            onChange={(e) => setUseGeofence(e.target.checked)}
-          />
-          <span>Enable classroom location verification (Geofencing)</span>
-        </label>
-        {useGeofence && (
-          <div className="school-geofence-fields">
-            <p className="text-sm text-muted">
-              Require students to be physically within the classroom or lecture hall radius to mark attendance.
-            </p>
-            <div className="school-geofence-inputs">
-              <label>
-                Latitude
-                <input
-                  type="number"
-                  step="any"
-                  name="location_lat"
-                  value={lat}
-                  onChange={(e) => setLat(e.target.value)}
-                  placeholder="e.g. 6.524379"
-                  required={useGeofence}
-                />
-              </label>
-              <label>
-                Longitude
-                <input
-                  type="number"
-                  step="any"
-                  name="location_lng"
-                  value={lng}
-                  onChange={(e) => setLng(e.target.value)}
-                  placeholder="e.g. 3.379206"
-                  required={useGeofence}
-                />
-              </label>
-            </div>
-            <button
-              type="button"
-              className="button-secondary school-location-btn"
-              onClick={handleCaptureCurrentLocation}
-              disabled={detectingLocation}
-            >
-              <MapPin size={16} aria-hidden="true" />
-              {detectingLocation ? "Detecting location…" : "Use current device location"}
-            </button>
+      <div className="school-create-layout">
+        <div className="school-create-fields">
+          <fieldset>
+            <legend>Session</legend>
             <label>
-              Permitted radius (meters)
+              Session title (optional)
               <input
-                type="number"
-                name="geofence_radius_meters"
-                min="10"
-                max="5000"
-                value={geofenceRadius}
-                onChange={(e) => setGeofenceRadius(e.target.value)}
-                required={useGeofence}
+                name="title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Lecture 4: Database Indexing"
+                maxLength={200}
               />
             </label>
-          </div>
-        )}
-      </div>
+          </fieldset>
 
-      <button disabled={isPending || isSuccess} className="button-primary" type="submit">
-        {isPending ? (
-          <>
-            <RefreshCw size={16} className="animate-spin" aria-hidden="true" />
-            <span>Creating class session…</span>
-          </>
-        ) : (
-          "Create class & open attendance"
-        )}
-      </button>
+          <fieldset>
+            <legend>Schedule</legend>
+            <div className="school-form-row">
+              <label>
+                Class start (UTC)
+                <input name="starts_at" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} required />
+              </label>
+              <label>
+                Attendance closes (UTC)
+                <input name="attendance_closes_at" type="datetime-local" value={attendanceClosesAt} onChange={(e) => setAttendanceClosesAt(e.target.value)} required />
+              </label>
+            </div>
+            <div className="school-form-row">
+              <label>
+                Class end (UTC, optional)
+                <input name="planned_ends_at" type="datetime-local" value={plannedEndsAt} onChange={(e) => setPlannedEndsAt(e.target.value)} />
+              </label>
+              <label>
+                Late after (minutes)
+                <input type="number" name="late_after_minutes" min="0" max="120" value={lateAfterMinutes} onChange={(e) => setLateAfterMinutes(e.target.value)} required />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Verification</legend>
+            <label>
+              Attendance verification mode
+              <select name="verification_mode" value={verificationMode} onChange={(e) => setVerificationMode(e.target.value as "STANDARD" | "VERIFIED")}>
+                <option value="STANDARD">Standard mode (Default) — instant scanning, no advance CSV needed</option>
+                <option value="VERIFIED">Verified mode — validate against uploaded course roster</option>
+              </select>
+            </label>
+            <p className="text-sm text-muted">Standard mode lets students sign in without a prior roster. Verified mode checks each student against the official roster.</p>
+            <div className="school-geofence-card">
+              <label className="school-geofence-toggle">
+                <input type="checkbox" checked={useGeofence} onChange={(e) => setUseGeofence(e.target.checked)} />
+                <span>Enable classroom location verification (Geofencing)</span>
+              </label>
+              {useGeofence && (
+                <div className="school-geofence-fields">
+                  <p className="text-sm text-muted">Students must be inside this radius to mark attendance.</p>
+                  <div className="school-geofence-inputs">
+                    <label>
+                      Latitude
+                      <input type="number" step="any" name="location_lat" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="e.g. 6.524379" required={useGeofence} />
+                    </label>
+                    <label>
+                      Longitude
+                      <input type="number" step="any" name="location_lng" value={lng} onChange={(e) => setLng(e.target.value)} placeholder="e.g. 3.379206" required={useGeofence} />
+                    </label>
+                  </div>
+                  <button type="button" className="button-secondary school-location-btn" onClick={handleCaptureCurrentLocation} disabled={detectingLocation}>
+                    <MapPin size={16} aria-hidden="true" />
+                    {detectingLocation ? "Detecting location…" : "Use current device location"}
+                  </button>
+                  <label>
+                    Permitted radius (meters)
+                    <input type="number" name="geofence_radius_meters" min="10" max="5000" value={geofenceRadius} onChange={(e) => setGeofenceRadius(e.target.value)} required={useGeofence} />
+                  </label>
+                </div>
+              )}
+            </div>
+          </fieldset>
+
+          <div className="school-create-actions">
+            <button disabled={isPending || isSuccess} className="button-primary" type="submit">
+              {isPending ? <><RefreshCw size={16} className="animate-spin" aria-hidden="true" /><span>Creating class session…</span></> : "Create class & open attendance"}
+            </button>
+          </div>
+        </div>
+
+        <aside className="school-create-summary" aria-label="Session summary">
+          <h3>This session</h3>
+          <dl>
+            <div><dt>Title</dt><dd>{title.trim() || "Untitled session"}</dd></div>
+            <div><dt>Starts</dt><dd>{startsAt || "Not set"}</dd></div>
+            <div><dt>Closes</dt><dd>{attendanceClosesAt || "Not set"}</dd></div>
+            <div><dt>Ends</dt><dd>{plannedEndsAt || "Not set"}</dd></div>
+            <div><dt>Late after</dt><dd>{lateAfterMinutes || "0"} minutes</dd></div>
+            <div><dt>Check</dt><dd>{verificationMode === "VERIFIED" ? "Roster required" : "Standard scan"}</dd></div>
+            <div><dt>Location</dt><dd>{useGeofence ? (lat && lng ? `${geofenceRadius} m radius` : "Waiting for coordinates") : "Not required"}</dd></div>
+          </dl>
+        </aside>
+      </div>
     </form>
   );
 }
