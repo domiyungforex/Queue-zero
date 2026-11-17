@@ -129,7 +129,7 @@ export function BookingSettingsForm({ initial }: Props) {
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
-            style={{ width: 18, height: 18, accentColor: "#ff6b2b" }}
+            style={{ width: 18, height: 18, accentColor: "#14281f" }}
           />
           Online Booking Enabled
         </label>
@@ -163,11 +163,12 @@ export function BookingSettingsForm({ initial }: Props) {
               style={{
                 padding: "8px 14px",
                 borderRadius: 8,
-                border: operatingDays.includes(day.value) ? "2px solid #ff6b2b" : "1.5px solid #dcd5d0",
-                background: operatingDays.includes(day.value) ? "#fff2eb" : "#fff",
-                color: operatingDays.includes(day.value) ? "#e05318" : "#111318",
+                border: operatingDays.includes(day.value) ? "2px solid #14281f" : "1.5px solid #d5e0d8",
+                background: operatingDays.includes(day.value) ? "#eef6d8" : "#fff",
+                color: operatingDays.includes(day.value) ? "#14281f" : "#121816",
                 fontWeight: 700,
-                fontSize: 12,
+                fontSize: 13,
+                minHeight: 44,
                 cursor: "pointer",
               }}
             >
@@ -178,7 +179,7 @@ export function BookingSettingsForm({ initial }: Props) {
       </div>
 
       {/* Hours */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, marginBottom: 20 }}>
         <div style={fieldStyle}>
           <label style={labelStyle}>Opening Time</label>
           <input type="time" value={openingTime} onChange={(e) => setOpeningTime(e.target.value)} style={inputStyle} />
@@ -244,11 +245,11 @@ export function BookingSettingsForm({ initial }: Props) {
       {/* Cancellation & Rescheduling */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
         <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-          <input type="checkbox" checked={cancellationAllowed} onChange={(e) => setCancellationAllowed(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#ff6b2b" }} />
+          <input type="checkbox" checked={cancellationAllowed} onChange={(e) => setCancellationAllowed(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#14281f" }} />
           Allow Cancellation
         </label>
         <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-          <input type="checkbox" checked={reschedulingAllowed} onChange={(e) => setReschedulingAllowed(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#ff6b2b" }} />
+          <input type="checkbox" checked={reschedulingAllowed} onChange={(e) => setReschedulingAllowed(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#14281f" }} />
           Allow Rescheduling
         </label>
       </div>

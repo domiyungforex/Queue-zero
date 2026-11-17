@@ -1,11 +1,11 @@
 .shell {
-  --onboard-orange: #ff6b2b;
-  --onboard-coral: #ff4765;
-  --onboard-purple: #7c3aed;
-  --onboard-warm: #fffaf7;
-  --onboard-ink: #111318;
-  --onboard-muted: #6b7280;
-  --onboard-line: #eee7e3;
+  --onboard-orange: #14281f;
+  --onboard-coral: #1f7a45;
+  --onboard-purple: #0f3d32;
+  --onboard-warm: #f4f7f4;
+  --onboard-ink: #121816;
+  --onboard-muted: #4d5c55;
+  --onboard-line: #e3ebe4;
   position: relative;
   min-height: 100dvh;
   overflow: hidden;

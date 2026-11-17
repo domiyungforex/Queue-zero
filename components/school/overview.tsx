@@ -127,10 +127,10 @@ export function EducationHome({ data, dashboard, individual = false, userName = 
     </section>
 
     <section className={styles.kpis} aria-label="Education workspace summary">
-      <DashboardKpiCard icon={GraduationCap} value={dashboard.metrics.totalStudents} label="Total Students" color="#ff6b2b" soft="#fff0e8" />
-      <DashboardKpiCard icon={UserCheck} value={dashboard.metrics.presentToday} label="Present Today" color="#18a66c" soft="#e6f8ef" />
-      <DashboardKpiCard icon={UserX} value={dashboard.metrics.absentToday} label="Absent Today" color="#ff4765" soft="#ffeaf0" />
-      <DashboardKpiCard icon={CalendarDays} value={dashboard.metrics.classesToday} label="Classes Today" color="#7c3aed" soft="#f1eaff" />
+      <DashboardKpiCard icon={GraduationCap} value={dashboard.metrics.totalStudents} label="Total Students" color="#14281f" soft="#eef6d8" />
+      <DashboardKpiCard icon={UserCheck} value={dashboard.metrics.presentToday} label="Present Today" color="#16855b" soft="#e6f8ef" />
+      <DashboardKpiCard icon={UserX} value={dashboard.metrics.absentToday} label="Absent Today" color="#c62847" soft="#ffeaf0" />
+      <DashboardKpiCard icon={CalendarDays} value={dashboard.metrics.classesToday} label="Classes Today" color="#0f3d32" soft="#d6f26b" />
     </section>
 
     <QuickActions />

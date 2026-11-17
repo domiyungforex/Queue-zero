@@ -112,7 +112,10 @@
 .desktopNav a{position:relative}
 .desktopNav a:focus-visible,.collapseToggle:focus-visible,.drawerClose:focus-visible,.menuButton:focus-visible{outline:3px solid #d6f26b;outline-offset:2px}
 
+.shell,.body,.main{min-width:0}
+.main{overflow-x:clip}
 @media (min-width: 1024px) {
+ .shell{transition:grid-template-columns .22s ease}
  .shell[data-collapsed="true"]{grid-template-columns:84px minmax(0,1fr)}
  .shell[data-collapsed="true"] .collapseToggle svg{transform:rotate(180deg)}
  .shell[data-collapsed="true"] .collapseToggle span,.shell[data-collapsed="true"] .navCaption,.shell[data-collapsed="true"] .sidebarFoot{display:none}
@@ -147,6 +150,6 @@
  .menuButton{display:inline-flex}
 }
 @media (prefers-reduced-motion: reduce) {
- .sidebar{transition:none}
+ .sidebar,.shell{transition:none}
 }
 

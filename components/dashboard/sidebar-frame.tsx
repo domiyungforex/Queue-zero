@@ -1,11 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, Menu, X } from "lucide-react";
 import styles from "./workspace-shell.module.css";
 
 const STORAGE_KEY = "turnmark-sidebar";
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function collapsedSnapshot() {
+  return window.localStorage.getItem(STORAGE_KEY) === "collapsed";
+}
+
+function collapsedServerSnapshot() {
+  return false;
+}
+
+function writeCollapsed(collapsed: boolean) {
+  window.localStorage.setItem(STORAGE_KEY, collapsed ? "collapsed" : "expanded");
+  listeners.forEach((listener) => listener());
+}
 
 type SidebarFrameProps = {
   sidebar: React.ReactNode;
@@ -18,23 +37,14 @@ type SidebarFrameProps = {
 
 export function SidebarFrame({ sidebar, header, mobileHeader, footer, mobileNav, children }: SidebarFrameProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
-  const [ready, setReady] = useState(false);
+  const collapsed = useSyncExternalStore(subscribe, collapsedSnapshot, collapsedServerSnapshot);
   const [drawer, setDrawer] = useState(false);
+  const [drawerPath, setDrawerPath] = useState(pathname);
 
-  useEffect(() => {
-    setCollapsed(window.localStorage.getItem(STORAGE_KEY) === "collapsed");
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
-    window.localStorage.setItem(STORAGE_KEY, collapsed ? "collapsed" : "expanded");
-  }, [collapsed, ready]);
-
-  useEffect(() => {
+  if (drawerPath !== pathname) {
+    setDrawerPath(pathname);
     setDrawer(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (!drawer) return;
@@ -54,7 +64,7 @@ export function SidebarFrame({ sidebar, header, mobileHeader, footer, mobileNav,
       setDrawer((open) => !open);
       return;
     }
-    setCollapsed((value) => !value);
+    writeCollapsed(!collapsed);
   }
 
   return (
