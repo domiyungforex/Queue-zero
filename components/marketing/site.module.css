@@ -65,14 +65,14 @@
 @media (min-width: 768px) and (max-width: 1099px) {
  .site{background:linear-gradient(180deg,#f7f3ea 0%,#f3f6f1 42%,#f7f3ea 100%)}
  .header{width:calc(100% - 28px);max-width:none;margin-top:14px}
- .tmHero{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.9fr);gap:24px;width:calc(100% - 28px);min-height:560px;padding:36px 28px 0;border:0;border-radius:28px;background:linear-gradient(160deg,#14281f 0%,#1b3b2e 100%);color:#f4f7f2;box-shadow:0 24px 60px rgba(20,40,31,.18)}
+ .tmHero{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.9fr);gap:24px;width:calc(100% - 28px);min-height:560px;padding:36px 28px 0;border:0;border-radius:28px;background:linear-gradient(160deg,#111318 0%,#1b3b2e 100%);color:#f4f7f2;box-shadow:0 24px 60px rgba(17,19,24,.18)}
  .tmHero h1{max-width:none;color:#f7faf6;font-size:56px;letter-spacing:-3px}
- .tmHero h1 em{color:#d6f26b;font-style:normal}
+ .tmHero h1 em{color:#ff6b2b;font-style:normal}
  .tmHeroCopy{padding-bottom:36px}
  .tmHeroCopy>p:not(.tmPill,.tmAssurance){color:#c9d9cf;font-size:15px}
  .tmPill{border-color:transparent;background:rgba(255,255,255,.08);color:#d7e7dc}
- .tmAssurance{color:#d6f26b}
- .tmPrimaryAction{background:#d6f26b;color:#14281f}
+ .tmAssurance{color:#ff6b2b}
+ .tmPrimaryAction{background:#ff6b2b;color:#111318}
  .tmSecondaryAction{color:#f4f7f2}
  .tmFeatureStrip,.tmSteps,.tmSolutions{width:calc(100% - 28px);padding:72px 0}
  .tmFeatureGrid,.tmSolutionGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
@@ -83,30 +83,30 @@
  .planCards{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (min-width: 1100px) {
- .site{background:radial-gradient(900px 420px at 100% -10%,rgba(214,242,107,.35),transparent 60%),linear-gradient(180deg,#f6f1e7,#f3f7f1 48%,#f6f1e7)}
+ .site{background:radial-gradient(900px 420px at 100% -10%,rgba(255,107,43,.35),transparent 60%),linear-gradient(180deg,#f6f1e7,#f3f7f1 48%,#f6f1e7)}
  .stickyCta{display:none}
  .header{width:min(1680px,calc(100% - 48px));max-width:none;margin-top:18px;border-radius:22px;background:rgba(255,252,247,.92)}
- .tmHero{grid-template-columns:minmax(420px,.92fr) minmax(460px,1.08fr);gap:64px;width:min(1680px,calc(100% - 48px));max-width:none;min-height:700px;padding:72px 64px 28px;border:0;border-radius:36px;background:radial-gradient(520px 280px at 18% 0%,rgba(214,242,107,.16),transparent 70%),linear-gradient(115deg,#14281f 0%,#14281f 48%,#123027 48.15%,#123027 100%);color:#f4f7f2;box-shadow:0 36px 90px rgba(20,40,31,.2)}
+ .tmHero{grid-template-columns:minmax(420px,.92fr) minmax(460px,1.08fr);gap:64px;width:min(1680px,calc(100% - 48px));max-width:none;min-height:700px;padding:72px 64px 28px;border:0;border-radius:36px;background:radial-gradient(520px 280px at 18% 0%,rgba(255,107,43,.16),transparent 70%),linear-gradient(115deg,#111318 0%,#111318 48%,#123027 48.15%,#123027 100%);color:#f4f7f2;box-shadow:0 36px 90px rgba(17,19,24,.2)}
  .tmHero h1{max-width:740px;color:#f7faf6;font-size:84px;letter-spacing:-4.5px}
- .tmHero h1 em{color:#d6f26b;font-style:normal}
+ .tmHero h1 em{color:#ff6b2b;font-style:normal}
  .tmHeroCopy>p:not(.tmPill,.tmAssurance){max-width:520px;color:#c9d9cf;font-size:18px}
  .tmPill{border-color:transparent;background:rgba(255,255,255,.08);color:#d7e7dc}
- .tmAssurance{color:#d6f26b}
- .tmPrimaryAction{background:#d6f26b;color:#14281f;box-shadow:none}
+ .tmAssurance{color:#ff6b2b}
+ .tmPrimaryAction{background:#ff6b2b;color:#111318;box-shadow:none}
  .tmSecondaryAction{color:#f4f7f2}
  .tmFeatureStrip,.tmSteps,.tmSolutions,.footer{width:min(1680px,calc(100% - 48px));max-width:none}
  .tmFeatureGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
- .tmFeatureGrid>article,.tmSolutionGrid article,.tmStepGrid article{border:1px solid rgba(20,40,31,.08);border-radius:26px;background:#fff;box-shadow:0 18px 40px rgba(20,40,31,.05)}
+ .tmFeatureGrid>article,.tmSolutionGrid article,.tmStepGrid article{border:1px solid rgba(17,19,24,.08);border-radius:26px;background:#fff;box-shadow:0 18px 40px rgba(17,19,24,.05)}
  .tmFeatureGrid>article{min-height:230px;padding:26px}
  .tmSolutionGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
  .tmSectionHeading h2,.tmQueueCopy h2{font-size:64px}
  .tmQueueProduct{width:min(1680px,calc(100% - 48px));gap:80px}
- .tmEducationCallout{width:min(1680px,calc(100% - 48px));background:radial-gradient(circle at 85% 10%,rgba(214,242,107,.28),transparent 16rem),#14281f}
+ .tmEducationCallout{width:min(1680px,calc(100% - 48px));background:radial-gradient(circle at 85% 10%,rgba(255,107,43,.28),transparent 16rem),#111318}
  .subpage{width:min(1440px,calc(100% - 64px));max-width:none}
  .planCards{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
- .closing{width:min(1680px,calc(100% - 48px));max-width:none;background:#14281f;color:#f4f7f2}
+ .closing{width:min(1680px,calc(100% - 48px));max-width:none;background:#111318;color:#f4f7f2}
  .closing h2,.closing h2 em{color:#f7faf6}
- .closing h2 em{color:#d6f26b}
+ .closing h2 em{color:#ff6b2b}
 }
 @media (min-width: 1600px) {
  .tmHero h1{font-size:96px}

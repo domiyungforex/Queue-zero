@@ -33,16 +33,16 @@
  .school-table th,.school-table td{padding:10px}
 }
 
-.school-create-class-form{grid-column:1 / -1;gap:0;padding:0;overflow:hidden;border:1px solid #e3ebe4;border-radius:22px;background:#fff;box-shadow:0 16px 40px rgba(20,40,31,.05)}
+.school-create-class-form{grid-column:1 / -1;gap:0;padding:0;overflow:hidden;border:1px solid #e3ebe4;border-radius:22px;background:#fff;box-shadow:0 16px 40px rgba(17,19,24,.05)}
 .school-create-head{padding:22px 22px 0}
-.school-create-head p:first-child{margin:0 0 8px;color:#1f7a45;font-size:11px;font-weight:800;letter-spacing:.16em}
+.school-create-head p:first-child{margin:0 0 8px;color:#e25516;font-size:11px;font-weight:800;letter-spacing:.16em}
 .school-create-head h2{margin:0;color:#121816;font-size:clamp(26px,3vw,34px);letter-spacing:-.04em}
 .school-create-head p:last-child{max-width:62ch;margin:8px 0 0;color:#5d6b63;font-size:14px;line-height:1.55}
 .school-form-error,.school-form-success{margin:16px 22px 0}
 .school-create-layout{display:grid}
 .school-create-fields{display:flex;min-width:0;flex-direction:column;gap:18px;padding:18px 22px 22px}
 .school-create-fields fieldset{display:flex;min-width:0;flex-direction:column;gap:12px;margin:0;padding:0;border:0}
-.school-create-fields legend{margin-bottom:2px;color:#0f3d32;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.school-create-fields legend{margin-bottom:2px;color:#d94b14;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
 .school-create-actions{position:sticky;bottom:0;display:flex;padding-top:4px;background:linear-gradient(180deg,rgba(255,255,255,0),#fff 28%)}
 .school-create-actions .button-primary{width:100%;min-height:48px}
 .school-create-summary{min-width:0;padding:18px 22px 22px;border-top:1px solid #e3ebe4;background:#f4f7f4}
@@ -51,22 +51,20 @@
 .school-create-summary div{display:grid;gap:2px}
 .school-create-summary dt{color:#5d6b63;font-size:11px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
 .school-create-summary dd{margin:0;overflow-wrap:anywhere;color:#121816;font-size:14px;font-weight:700}
-.school-form input:focus-visible,.school-form select:focus-visible,.school-form textarea:focus-visible{outline:3px solid rgba(15,61,50,.28);outline-offset:1px;border-color:#0f3d32}
+.school-form input:focus-visible,.school-form select:focus-visible,.school-form textarea:focus-visible{outline:3px solid rgba(255,107,43,.35);outline-offset:1px;border-color:#ff6b2b}
 @media (min-width: 768px) {
  .school-form-row,.school-geofence-inputs{grid-template-columns:1fr 1fr}
- .school-create-actions .button-primary{width:auto;min-width:240px}
+ .school-create-actions .button-primary{width:auto;min-width:220px}
 }
-@media (min-width: 900px) and (max-width: 1279px), (min-width: 1440px) {
- .school-create-layout{grid-template-columns:minmax(0,1fr) minmax(220px,280px);align-items:start}
- .school-create-summary{position:sticky;top:96px;border-top:0;border-left:1px solid #e3ebe4}
-}
-@media (min-width: 1280px) {
- .school-grid:has(.school-create-class-form){grid-template-columns:minmax(0,1.35fr) minmax(300px,.7fr);align-items:start}
- .school-create-class-form{grid-column:auto}
+@media (min-width: 1024px) {
+ .school-grid:has(.school-create-class-form){grid-template-columns:minmax(0,1fr)}
+ .school-create-layout{grid-template-columns:minmax(0,1.4fr) minmax(240px,320px);align-items:start}
+ .school-create-summary{position:sticky;top:96px;border-top:0;border-left:1px solid #eee7e3;background:#fffaf7}
 }
 @media (max-width: 767px) {
  .school-form-row,.school-geofence-inputs{grid-template-columns:1fr}
  .school-create-head,.school-create-fields,.school-create-summary{padding-inline:16px}
  .school-form-error,.school-form-success{margin-inline:16px}
- .school-location-btn,.school-create-actions .button-primary{min-height:48px}
+ .school-location-btn,.school-create-actions .button-primary,.school-form .button-primary,.school-form .button-secondary{width:100%;min-height:48px}
+ .school-create-summary{background:#fffaf7}
 }

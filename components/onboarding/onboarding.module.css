@@ -1,8 +1,8 @@
 .shell {
-  --onboard-orange: #14281f;
-  --onboard-coral: #1f7a45;
-  --onboard-purple: #0f3d32;
-  --onboard-warm: #f4f7f4;
+  --onboard-orange: #ff6b2b;
+  --onboard-coral: #ff4765;
+  --onboard-purple: #d94b14;
+  --onboard-warm: #fffaf7;
   --onboard-ink: #121816;
   --onboard-muted: #4d5c55;
   --onboard-line: #e3ebe4;
@@ -64,8 +64,8 @@
  .choiceGrid,.choiceGridCompact{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (min-width: 1100px) {
- .rail{background:linear-gradient(180deg,#14281f,#1c3a2e)}
- .railEyebrow{color:#d6f26b}
- .stepCurrent .stepDot{background:#d6f26b;color:#14281f;box-shadow:none}
- .primary{background:#14281f;color:#d6f26b}
+ .rail{background:linear-gradient(180deg,#111318,#2a211c)}
+ .railEyebrow{color:#ff6b2b}
+ .stepCurrent .stepDot{background:#ff6b2b;color:#111318;box-shadow:none}
+ .primary{background:#ff6b2b;color:#fff}
 }

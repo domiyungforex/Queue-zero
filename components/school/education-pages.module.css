@@ -41,22 +41,22 @@
 }
 @media (min-width: 1100px) {
  .page{max-width:none}
- .eyebrow{color:#1f7a45}
- .primary{background:#14281f;color:#d6f26b;box-shadow:none}
- .panel,.card,.metric{border-color:rgba(20,40,31,.08)}
- .chartBar,.progress i{background:linear-gradient(180deg,#1f7a45,#d6f26b)}
+ .eyebrow{color:#e25516}
+ .primary{background:#ff6b2b;color:#fff;box-shadow:none}
+ .panel,.card,.metric{border-color:rgba(17,19,24,.08)}
+ .chartBar,.progress i{background:linear-gradient(180deg,#e25516,#ff6b2b)}
 }
 .page{max-width:none;color:#121816}
-.eyebrow{color:#1f7a45}
-.primary{background:#14281f;color:#f4f7f2;box-shadow:none}
-.secondary{border:1px solid #d5e0d8;background:#fff;color:#14281f}
-.primary:focus-visible,.secondary:focus-visible,.tab:focus-visible,.card:focus-visible,.rowLink:focus-visible,.menuLink:focus-visible{outline:3px solid #14281f;outline-offset:3px}
-.tab[data-active=true]{border-color:#c9de9a;background:#eef6d8;color:#14281f}
+.eyebrow{color:#e25516}
+.primary{background:#ff6b2b;color:#fff;box-shadow:none}
+.secondary{border:1px solid #d5e0d8;background:#fff;color:#111318}
+.primary:focus-visible,.secondary:focus-visible,.tab:focus-visible,.card:focus-visible,.rowLink:focus-visible,.menuLink:focus-visible{outline:3px solid #111318;outline-offset:3px}
+.tab[data-active=true]{border-color:#c9de9a;background:#fff0e8;color:#111318}
 .search,.card,.metric,.panel,.menuCard,.summaryCard,.settingsDisclosure{border-color:#e3ebe4}
-.card:hover{border-color:#c5d9b0}
-.icon,.emptyIcon,.menuLink .icon,.workspaceCard .icon,.settingsDisclosure summary>.icon,.settingsRow>.icon{background:#eef6d8;color:#0f3d32}
-.chartBar,.progress i{background:linear-gradient(180deg,#1f7a45,#d6f26b)}
-.formWrap :global(.button-primary){background:#14281f!important;color:#f4f7f2!important;box-shadow:none!important}
+.card:hover{border-color:#ffd3c2}
+.icon,.emptyIcon,.menuLink .icon,.workspaceCard .icon,.settingsDisclosure summary>.icon,.settingsRow>.icon{background:#fff0e8;color:#d94b14}
+.chartBar,.progress i{background:linear-gradient(180deg,#e25516,#ff6b2b)}
+.formWrap :global(.button-primary){background:#ff6b2b!important;color:#fff!important;box-shadow:none!important}
 .empty{border-color:#d5e0d8}
 @media (max-width: 767px) {
  .page{max-width:none}

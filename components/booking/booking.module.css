@@ -446,15 +446,15 @@
   margin: 4px 0;
 }
 .cardHeader{background:#f7faf4;border-bottom-color:#e3ebe4}
-.badge,.ticketBadge{color:#0f3d32;background:#eef6d8;border-color:#d5e3c8}
-.stepNumberActive,.dateTileSelected,.slotButtonSelected,.primaryButton{background:#14281f;color:#f4f7f2;box-shadow:none;border-color:#14281f}
-.primaryButton:hover:not(:disabled){background:#1d3b2e;box-shadow:none}
+.badge,.ticketBadge{color:#d94b14;background:#fff0e8;border-color:#d5e3c8}
+.stepNumberActive,.dateTileSelected,.slotButtonSelected,.primaryButton{background:#ff6b2b;color:#fff;box-shadow:none;border-color:#ff6b2b}
+.primaryButton:hover:not(:disabled){background:#e25516;box-shadow:none}
 .dateTileSelected .dateDay,.dateTileSelected .dateLabel,.slotButtonSelected{color:#f4f7f2}
-.ticketCard{border-color:#14281f;background:#fff;box-shadow:none}
-.input:focus{border-color:#14281f;box-shadow:0 0 0 4px rgba(20,40,31,.12)}
+.ticketCard{border-color:#111318;background:#fff;box-shadow:none}
+.input:focus{border-color:#111318;box-shadow:0 0 0 4px rgba(17,19,24,.12)}
 .dateScroll,.slotGrid{max-width:100%}
 .modalContent{width:min(100%,460px);max-height:min(90dvh,720px)}
-.primaryButton:focus-visible,.secondaryButton:focus-visible,.slotButton:focus-visible,.dateTile:focus-visible{outline:3px solid #14281f;outline-offset:2px}
+.primaryButton:focus-visible,.secondaryButton:focus-visible,.slotButton:focus-visible,.dateTile:focus-visible{outline:3px solid #111318;outline-offset:2px}
 @media (max-width: 420px) {
  .container{padding-inline:12px}
  .cardHeader,.body,.modalContent{padding:16px}

@@ -129,7 +129,7 @@ export function BookingSettingsForm({ initial }: Props) {
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
-            style={{ width: 18, height: 18, accentColor: "#14281f" }}
+            style={{ width: 18, height: 18, accentColor: "#ff6b2b" }}
           />
           Online Booking Enabled
         </label>
@@ -163,9 +163,9 @@ export function BookingSettingsForm({ initial }: Props) {
               style={{
                 padding: "8px 14px",
                 borderRadius: 8,
-                border: operatingDays.includes(day.value) ? "2px solid #14281f" : "1.5px solid #d5e0d8",
-                background: operatingDays.includes(day.value) ? "#eef6d8" : "#fff",
-                color: operatingDays.includes(day.value) ? "#14281f" : "#121816",
+                border: operatingDays.includes(day.value) ? "2px solid #ff6b2b" : "1.5px solid #d5e0d8",
+                background: operatingDays.includes(day.value) ? "#fff0e8" : "#fff",
+                color: operatingDays.includes(day.value) ? "#d94b14" : "#121816",
                 fontWeight: 700,
                 fontSize: 13,
                 minHeight: 44,
@@ -245,11 +245,11 @@ export function BookingSettingsForm({ initial }: Props) {
       {/* Cancellation & Rescheduling */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
         <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-          <input type="checkbox" checked={cancellationAllowed} onChange={(e) => setCancellationAllowed(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#14281f" }} />
+          <input type="checkbox" checked={cancellationAllowed} onChange={(e) => setCancellationAllowed(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#ff6b2b" }} />
           Allow Cancellation
         </label>
         <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-          <input type="checkbox" checked={reschedulingAllowed} onChange={(e) => setReschedulingAllowed(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#14281f" }} />
+          <input type="checkbox" checked={reschedulingAllowed} onChange={(e) => setReschedulingAllowed(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#ff6b2b" }} />
           Allow Rescheduling
         </label>
       </div>

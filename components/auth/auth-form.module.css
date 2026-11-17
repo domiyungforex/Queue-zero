@@ -125,9 +125,9 @@
 }
 
 @keyframes connectionPulse { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
-.primaryButton,.welcomeBack .primaryButton{background:#14281f;color:#f4f7f2;box-shadow:none}
-.primaryButton:hover:not(:disabled),.welcomeBack .primaryButton:hover:not(:disabled){background:#1d3b2e;filter:none;box-shadow:none}
-.accountPrompt a,.retryButton{color:#0f3d32}
-.primaryButton:focus-visible,.providerButton:focus-visible,.differentMethod:focus-visible,.inlineActions button:focus-visible,.accountPrompt a:focus-visible,.retryButton:focus-visible,.welcomeBack .primaryButton:focus-visible{outline:3px solid #14281f;outline-offset:3px}
-.codeInput:focus{border-color:#14281f;box-shadow:0 0 0 4px rgba(20,40,31,.12)}
-.connectionStatus::before{background:#1f7a45}
+.primaryButton,.welcomeBack .primaryButton{background:#ff6b2b;color:#fff;box-shadow:none}
+.primaryButton:hover:not(:disabled),.welcomeBack .primaryButton:hover:not(:disabled){background:#e25516;filter:none;box-shadow:none}
+.accountPrompt a,.retryButton{color:#d94b14}
+.primaryButton:focus-visible,.providerButton:focus-visible,.differentMethod:focus-visible,.inlineActions button:focus-visible,.accountPrompt a:focus-visible,.retryButton:focus-visible,.welcomeBack .primaryButton:focus-visible{outline:3px solid #111318;outline-offset:3px}
+.codeInput:focus{border-color:#111318;box-shadow:0 0 0 4px rgba(17,19,24,.12)}
+.connectionStatus::before{background:#e25516}

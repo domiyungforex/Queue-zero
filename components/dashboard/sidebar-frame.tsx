@@ -47,6 +47,16 @@ export function SidebarFrame({ sidebar, header, mobileHeader, footer, mobileNav,
   }
 
   useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const closeIfDesktop = () => {
+      if (desktop.matches) setDrawer(false);
+    };
+    closeIfDesktop();
+    desktop.addEventListener("change", closeIfDesktop);
+    return () => desktop.removeEventListener("change", closeIfDesktop);
+  }, []);
+
+  useEffect(() => {
     if (!drawer) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDrawer(false);

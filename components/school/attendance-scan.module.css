@@ -34,7 +34,7 @@
 }
 
 .siteHeader > span svg {
-  color: #0f3d32;
+  color: #d94b14;
 }
 
 .card {
@@ -61,7 +61,7 @@
   margin-bottom: 14px;
   border-radius: 12px;
   color: #ffffff;
-  background: #14281f;
+  background: #111318;
   box-shadow: 0 6px 16px rgba(255, 107, 43, 0.3);
 }
 
@@ -127,7 +127,7 @@
 }
 
 .stepActive .stepNumber {
-  background: #14281f;
+  background: #111318;
   color: #ffffff;
   box-shadow: 0 3px 10px rgba(255, 107, 43, 0.35);
 }
@@ -147,7 +147,7 @@
 }
 
 .connectorActive {
-  background: #1f7a45;
+  background: #e25516;
 }
 
 /* Class Info Bar */
@@ -167,7 +167,7 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 10px;
-  color: #0f3d32;
+  color: #d94b14;
   background: #f4f7f4;
   border: 1px solid #ffd5c2;
 }
@@ -267,7 +267,7 @@
 }
 
 .textInput:focus {
-  border-color: #0f3d32;
+  border-color: #d94b14;
   box-shadow: 0 0 0 3px rgba(255, 107, 43, 0.2);
 }
 
@@ -287,7 +287,7 @@
   justify-content: center;
   border: 0;
   border-radius: 12px;
-  background: #14281f;
+  background: #111318;
   color: #ffffff;
   font-size: 13px;
   font-weight: 750;
@@ -365,7 +365,7 @@
 }
 
 .locationIcon {
-  color: #0f3d32;
+  color: #d94b14;
   margin-top: 2px;
 }
 
@@ -477,7 +477,7 @@
 .faceTargetRing {
   position: absolute;
   inset: 15%;
-  border: 3px dashed #0f3d32;
+  border: 3px dashed #d94b14;
   border-radius: 50%;
   pointer-events: none;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
@@ -489,8 +489,8 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #d6f26b, transparent);
-  box-shadow: 0 0 10px #d6f26b;
+  background: linear-gradient(90deg, transparent, #ff6b2b, transparent);
+  box-shadow: 0 0 10px #ff6b2b;
   animation: scanBounce 2s infinite ease-in-out;
 }
 
@@ -504,7 +504,7 @@
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
-  background: #14281f;
+  background: #111318;
   color: #ffffff;
   padding: 6px 14px;
   border-radius: 99px;
@@ -548,7 +548,7 @@
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(255, 107, 43, 0.2);
-  border: 3px solid #0f3d32;
+  border: 3px solid #d94b14;
 }
 
 .capturedPhoto {
@@ -565,7 +565,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #14281f;
+  background: #111318;
   color: #ffffff;
   padding: 6px 14px;
   border-radius: 99px;
@@ -613,7 +613,7 @@
   border: 0;
   border-radius: 12px;
   color: #ffffff;
-  background: #14281f;
+  background: #111318;
   box-shadow: 0 6px 18px rgba(255, 107, 43, 0.32);
   font-size: 14px;
   font-weight: 750;
@@ -670,7 +670,7 @@
   margin-bottom: 14px;
   border-radius: 50%;
   color: #ffffff;
-  background: #14281f;
+  background: #111318;
   box-shadow: 0 10px 25px rgba(255, 107, 43, 0.35);
 }
 
@@ -718,7 +718,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: #14281f;
+  background: #111318;
   color: #ffffff;
   padding: 3px 10px;
   border-radius: 99px;
@@ -783,7 +783,7 @@
 }
 
 .accountNotice svg {
-  color: #0f3d32;
+  color: #d94b14;
 }
 
 .optionalAccountLink {
@@ -793,7 +793,7 @@
   justify-content: center;
   gap: 7px;
   margin-top: 14px;
-  color: #0f3d32;
+  color: #d94b14;
   font-size: 12px;
   font-weight: 750;
   text-decoration: none;
@@ -909,7 +909,7 @@
 }
 
 .flowFooter svg {
-  color: #0f3d32;
+  color: #d94b14;
 }
 
 .spinner {

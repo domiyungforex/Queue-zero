@@ -271,20 +271,20 @@
 }
 
 @media (min-width: 901px) {
- .page{background:radial-gradient(circle at 0% 100%,rgba(214,242,107,.4),transparent 34%),#efeae2}
- .frame{border-color:rgba(20,40,31,.12);background:#fff}
- .story{background:radial-gradient(circle at 80% 18%,rgba(214,242,107,.2),transparent 32%),#14281f;color:#f4f7f2}
- .story::after{background:#d6f26b;opacity:.28;filter:none}
- .pill{border-color:transparent;background:rgba(255,255,255,.08);color:#d6f26b}
+ .page{background:radial-gradient(circle at 0% 100%,rgba(255,107,43,.4),transparent 34%),#efeae2}
+ .frame{border-color:rgba(17,19,24,.12);background:#fff}
+ .story{background:radial-gradient(circle at 80% 18%,rgba(255,107,43,.2),transparent 32%),#111318;color:#f4f7f2}
+ .story::after{background:#ff6b2b;opacity:.28;filter:none}
+ .pill{border-color:transparent;background:rgba(255,255,255,.08);color:#ff6b2b}
  .pill span{color:#f4f7f2}
  .storyCopy h2{color:#f7faf6}
- .storyCopy h2 span{background:none;color:#d6f26b;-webkit-text-fill-color:#d6f26b}
+ .storyCopy h2 span{background:none;color:#ff6b2b;-webkit-text-fill-color:#ff6b2b}
  .storyDescription,.benefits small,.trust p{color:#c5d5cb}
- .benefitIcon,.benefits li:nth-child(2) .benefitIcon,.benefits li:nth-child(3) .benefitIcon{background:#d6f26b;color:#14281f;box-shadow:none}
+ .benefitIcon,.benefits li:nth-child(2) .benefitIcon,.benefits li:nth-child(3) .benefitIcon{background:#ff6b2b;color:#111318;box-shadow:none}
  .quote{border-color:transparent;background:rgba(255,255,255,.08);color:#f4f7f2}
- .quote>span{background:#d6f26b;color:#14281f}
+ .quote>span{background:#ff6b2b;color:#111318}
  .quote figcaption{color:#c5d5cb}
- .authEyebrow{color:#1f7a45}
+ .authEyebrow{color:#e25516}
 }
 
 @media (min-width: 1600px) {
