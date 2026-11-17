@@ -14,11 +14,11 @@ export const getMemberships = cache(async () => {
     .order("created_at", { ascending: true }).order("id", { ascending: true });
   if (error) {
     console.error("getMemberships failed", { code: error.code, message: error.message });
-    throw new Error("We couldn’t load your business. Please try again.");
+    return [];
   }
-  return (data ?? []).map((membership) => {
-    if (!membership.businesses) throw new Error("Your business is temporarily unavailable.");
-    return {
+  return (data ?? []).flatMap((membership) => {
+    if (!membership.businesses) return [];
+    return [{
       businessId: membership.business_id,
       role: membership.role,
       businessName: membership.businesses.name,
@@ -28,7 +28,7 @@ export const getMemberships = cache(async () => {
       ...(membership.businesses.professional_category ? { professionalCategory: membership.businesses.professional_category } : {}),
       ...(membership.businesses.organization_type ? { organizationType: membership.businesses.organization_type } : {}),
       ...(membership.businesses.onboarding_completed_at ? { onboardingCompletedAt: membership.businesses.onboarding_completed_at } : {}),
-    };
+    }];
   });
 });
 
