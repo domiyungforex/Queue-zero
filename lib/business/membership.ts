@@ -3,6 +3,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireUserId } from "@/lib/auth/server";
+import { WorkspaceUnavailable } from "@/lib/business/workspace-access";
 import { createUserSupabaseClient } from "@/lib/db/server";
 
 export const getMemberships = cache(async () => {
@@ -14,7 +15,7 @@ export const getMemberships = cache(async () => {
     .order("created_at", { ascending: true }).order("id", { ascending: true });
   if (error) {
     console.error("getMemberships failed", { code: error.code, message: error.message });
-    return [];
+    throw new WorkspaceUnavailable();
   }
   return (data ?? []).flatMap((membership) => {
     if (!membership.businesses) return [];

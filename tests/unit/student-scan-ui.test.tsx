@@ -1,17 +1,72 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ record: vi.fn() }));
-vi.mock("@/lib/school-student/actions", () => ({ recordAttendance: mocks.record }));
+
+const mocks = vi.hoisted(() => ({ record: vi.fn(), lookup: vi.fn(), directory: vi.fn(), register: vi.fn(), push: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
+vi.mock("@/lib/school-student/actions", () => ({
+  recordAttendance: mocks.record,
+  lookupVerifiedStudent: mocks.lookup,
+  loadAttendanceDirectory: mocks.directory,
+  registerForAttendanceSession: mocks.register,
+}));
 import { StudentScan } from "@/components/school/student-scan";
+
 const classInfo = { verification_mode: "STANDARD" as const, organization_name: "Test School", course_code: "PHY 101", course_title: "Mechanics", starts_at: null, planned_ends_at: null, attendance_closes_at: null, open: true };
-function submit() { fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Akinyele Dominion" } }); fireEvent.change(screen.getByLabelText("Matric number"), { target: { value: "PHY/2026/0142" } }); fireEvent.click(screen.getByRole("button", { name: "Mark Attendance" })); }
-beforeEach(() => { sessionStorage.clear(); mocks.record.mockResolvedValue({ ok: true, status: "PRESENT", message: "Attendance marked ✓", full_name: "Akinyele Dominion", matric_number: "PHY/2026/0142", course_code: "PHY 101", recorded_at: "2026-10-04T10:04:00Z" }); });
+
+beforeEach(() => {
+  sessionStorage.clear();
+  mocks.lookup.mockResolvedValue({ ok: true, found: true, full_name: "Akinyele Dominion", matric_number: "PHY/2026/0142", department: "Physics", level: "100" });
+  mocks.directory.mockResolvedValue({ ok: true, faculties: [], departments: [] });
+});
 afterEach(cleanup);
+
 describe("accountless student attendance", () => {
-  it("submits name and matric only after explicit confirmation", async () => { render(<StudentScan token="signed-token" classInfo={classInfo} />); expect(mocks.record).not.toHaveBeenCalled(); submit(); await screen.findByText("Attendance marked ✓"); expect(mocks.record).toHaveBeenCalledWith({ token: "signed-token", requestId: expect.any(String), fullName: "Akinyele Dominion", matricNumber: "PHY/2026/0142" }); expect(screen.getByText(/No account was created/)).toBeTruthy(); });
-  it("reuses its request ID after a lost response and reload", async () => { mocks.record.mockRejectedValueOnce(new Error("connection")); const view = render(<StudentScan token="signed-token" classInfo={classInfo} />); submit(); await screen.findByRole("alert"); const first = mocks.record.mock.calls[0][0]; view.unmount(); render(<StudentScan token="signed-token" classInfo={classInfo} />); submit(); await screen.findByText("Attendance marked ✓"); expect(mocks.record.mock.calls[1][0]).toEqual(first); });
-  it("blocks a double submit while the server response is pending", async () => { let finish!: (value: unknown) => void; mocks.record.mockReturnValueOnce(new Promise(resolve => { finish = resolve; })); render(<StudentScan token="signed-token" classInfo={classInfo} />); fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Akinyele Dominion" } }); fireEvent.change(screen.getByLabelText("Matric number"), { target: { value: "PHY/2026/0142" } }); const button=screen.getByRole("button", { name: "Mark Attendance" }); fireEvent.click(button); fireEvent.click(button); expect(mocks.record).toHaveBeenCalledTimes(1); finish({ ok: true, status: "PRESENT", message: "Attendance marked ✓", full_name: "Akinyele Dominion", matric_number: "PHY/2026/0142", course_code: "PHY 101" }); await waitFor(() => expect(screen.getByText("Attendance marked ✓")).toBeTruthy()); });
-  it("shows authoritative roster errors and keeps the form available", async () => { mocks.record.mockResolvedValueOnce({ ok: false, status: "NAME_MISMATCH", message: "The name entered does not match the class record." }); render(<StudentScan token="signed-token" classInfo={classInfo} />); submit(); expect((await screen.findByRole("alert")).textContent).toContain("does not match"); expect(screen.getByRole("button", { name: "Mark Attendance" })).toBeTruthy(); });
-  it("does not offer submission when attendance is closed", () => { render(<StudentScan token="signed-token" classInfo={{ ...classInfo, open: false }} />); expect(screen.getByRole<HTMLButtonElement>("button", { name: "Mark Attendance" }).disabled).toBe(true); expect(screen.getByRole("alert").textContent).toContain("closed"); });
+  it("looks up a matric number without asking for a name or a login", async () => {
+    render(<StudentScan token="signed-token" classInfo={classInfo} />);
+    expect(screen.queryByLabelText("Full name")).toBeNull();
+    expect(screen.queryByRole("link", { name: /sign in|create account|create an optional account/i })).toBeNull();
+    expect(screen.getByText(/No account or sign-in is required/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Matriculation number"), { target: { value: "phy/2026/0142" } });
+    fireEvent.click(screen.getByRole("button", { name: "Find me" }));
+    expect(await screen.findByText("Akinyele Dominion")).toBeTruthy();
+    expect(mocks.lookup).toHaveBeenCalledWith("signed-token", "PHY/2026/0142");
+    expect(mocks.record).not.toHaveBeenCalled();
+    expect((screen.getByRole("button", { name: /Continue to Selfie/ }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("does not continue until the matric number is found", () => {
+    render(<StudentScan token="signed-token" classInfo={classInfo} />);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: /Continue to Selfie/ }).disabled).toBe(true);
+  });
+
+  it("offers first-time registration without a sign-up link when the class allows it", async () => {
+    mocks.lookup.mockResolvedValueOnce({ ok: true, found: false, selfRegistration: true, message: "Register once for this class." });
+    mocks.directory.mockResolvedValueOnce({
+      ok: true,
+      faculties: [{ id: "11111111-1111-4111-8111-111111111111", name: "Science" }],
+      departments: [{ id: "22222222-2222-4222-8222-222222222222", faculty_id: "11111111-1111-4111-8111-111111111111", name: "Physics" }],
+    });
+    render(<StudentScan token="signed-token" classInfo={classInfo} />);
+    fireEvent.change(screen.getByLabelText("Matriculation number"), { target: { value: "NEW/1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Find me" }));
+    expect(await screen.findByLabelText("Full name")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save registration" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /sign in|sign up|create account/i })).toBeNull();
+  });
+
+  it("tells an unknown verified student to contact the lecturer", async () => {
+    mocks.lookup.mockResolvedValueOnce({ ok: true, found: false, selfRegistration: false, message: "Ask your lecturer to add you. No account is required." });
+    render(<StudentScan token="signed-token" classInfo={{ ...classInfo, verification_mode: "VERIFIED" }} />);
+    fireEvent.change(screen.getByLabelText("Matriculation number"), { target: { value: "MISSING" } });
+    fireEvent.click(screen.getByRole("button", { name: "Find me" }));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/lecturer/);
+    expect(screen.queryByLabelText("Full name")).toBeNull();
+    expect(screen.queryByRole("link", { name: /sign/i })).toBeNull();
+  });
+
+  it("does not offer attendance when the class is closed", () => {
+    render(<StudentScan token="signed-token" classInfo={{ ...classInfo, open: false }} />);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: /Continue to Selfie/ }).disabled).toBe(true);
+  });
 });

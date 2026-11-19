@@ -7,12 +7,12 @@ import { safeAuthReturn } from "@/lib/school-student/return-url";
 const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", session = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", secret = "a".repeat(64);
 const token = newAttendanceToken(org, session, 1000);
 describe("signed attendance QR", () => {
-  it("round trips opaque domain payload and expires after 30 seconds", () => {
-    expect(token.expires_at).toBe(1030);
+  it("round trips opaque domain payload and expires after the class window", () => {
+    expect(token.expires_at).toBe(8200);
     expect(validateAttendanceToken(signAttendanceToken(token, secret), secret, { now: 1001 })).toEqual(token);
     expect(Object.keys(token)).not.toContain("student_id");
   });
-  it("rejects expired codes at the exact boundary", () => expect(() => validateAttendanceToken(signAttendanceToken(token, secret), secret, { now: 1030 })).toThrow(ExpiredAttendanceQr));
+  it("rejects expired codes at the exact boundary", () => expect(() => validateAttendanceToken(signAttendanceToken(token, secret), secret, { now: 8200 })).toThrow(ExpiredAttendanceQr));
   it("rejects modified payloads and signatures", () => {
     const signed = signAttendanceToken(token, secret);
     const [payload, sig] = signed.split(".");

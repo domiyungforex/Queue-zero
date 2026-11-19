@@ -18,10 +18,13 @@ import {
   UserCheck,
 } from "lucide-react";
 import {
+  loadAttendanceDirectory,
   lookupVerifiedStudent,
   recordAttendance,
+  registerForAttendanceSession,
   type ScanResult,
 } from "@/lib/school-student/actions";
+import { FaceCapture } from "./face-capture";
 import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import { assessAttendanceLocation, geolocationFailureMessage } from "@/lib/school/location";
@@ -93,6 +96,12 @@ export function StudentScan({
   } | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState("");
+  const [selfRegistration, setSelfRegistration] = useState(false);
+  const [directory, setDirectory] = useState<{ faculties: { id: string; name: string }[]; departments: { id: string; faculty_id: string; name: string }[] } | null>(null);
+  const [facultyId, setFacultyId] = useState("");
+  const [referencePhoto, setReferencePhoto] = useState<string | null>(null);
+  const [registering, setRegistering] = useState(false);
+  const [firstRegistration, setFirstRegistration] = useState(false);
 
   // Location
   const isLocationRequired = Boolean(
@@ -196,13 +205,28 @@ export function StudentScan({
         setVerifiedStudent({
           full_name: res.full_name || "",
           matric_number: res.matric_number || matric,
-          programme: res.programme,
+          programme: res.department || res.programme,
           level: res.level,
         });
         setFullName(res.full_name || "");
+        setSelfRegistration(false);
+      } else if (res.selfRegistration) {
+        setVerifiedStudent(null);
+        setSelfRegistration(true);
+        setLookupError(res.message || "Register once to continue. No account is required.");
+        const directoryResult = await loadAttendanceDirectory(token);
+        if (directoryResult.ok) {
+          setDirectory({ faculties: directoryResult.faculties, departments: directoryResult.departments });
+          setFacultyId(directoryResult.faculties[0]?.id ?? "");
+        } else {
+          setDirectory(null);
+          setLookupError(directoryResult.message);
+        }
       } else {
         setVerifiedStudent(null);
-        setLookupError(res.message || "Student not found in this course roster. Please contact your lecturer.");
+        setSelfRegistration(false);
+        setDirectory(null);
+        setLookupError(res.message || "Student not found. Ask your lecturer to add you.");
       }
     } catch {
       setLookupError("Unable to verify student roster at this moment.");
@@ -212,17 +236,38 @@ export function StudentScan({
   };
 
   // Step 1 Validation & Proceed to Step 2
+  const registerFirstTime = async (formData: FormData) => {
+    if (!referencePhoto) {
+      setLookupError("Capture and confirm a reference photograph before registering.");
+      return;
+    }
+    setRegistering(true);
+    setLookupError("");
+    formData.set("photo", referencePhoto);
+    formData.set("matricNumber", matricNumber.trim().toUpperCase());
+    try {
+      const result = await registerForAttendanceSession(token, formData);
+      if (!result.ok) {
+        setLookupError(result.message);
+        return;
+      }
+      const registeredName = String(formData.get("fullName") ?? "").trim();
+      setFullName(registeredName);
+      setVerifiedStudent({ full_name: registeredName, matric_number: matricNumber.trim().toUpperCase() });
+      setFirstRegistration(true);
+      setSelfRegistration(false);
+      setLookupError("");
+    } catch {
+      setLookupError("Registration could not be saved. Your details are still on this page — try again.");
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   const handleProceedToSelfie = () => {
-    if (classInfo.verification_mode === "VERIFIED") {
-      if (!verifiedStudent) {
-        setLookupError("Please verify your matriculation number before continuing.");
-        return;
-      }
-    } else {
-      if (!fullName.trim() || !matricNumber.trim()) {
-        setLookupError("Please provide both your full name and matriculation number.");
-        return;
-      }
+    if (!verifiedStudent) {
+      setLookupError(selfRegistration ? "Finish registration before continuing." : "Find your matriculation number before continuing.");
+      return;
     }
 
     if (isLocationRequired && locationState.status !== "verified") {
@@ -375,14 +420,8 @@ export function StudentScan({
         sessionStorage.setItem(storageKey, requestId.current);
       } catch {}
 
-      const effectiveName =
-        classInfo.verification_mode === "VERIFIED"
-          ? verifiedStudent?.full_name ?? fullName
-          : fullName;
-      const effectiveMatric =
-        classInfo.verification_mode === "VERIFIED"
-          ? verifiedStudent?.matric_number ?? matricNumber
-          : matricNumber;
+      const effectiveName = verifiedStudent?.full_name || fullName;
+      const effectiveMatric = verifiedStudent?.matric_number || matricNumber;
 
       // Extract classId and nonce from token (they are base64-encoded JSON parts)
       let photoToSubmit = capturedPhoto;
@@ -529,8 +568,9 @@ export function StudentScan({
 
           <p className={styles.accountNotice}>
             <ShieldCheck size={16} aria-hidden="true" />
-            No account required. Your verified check-in has been securely recorded.
+            No account was created. Your check-in is recorded without a TuRnMaRk login.
           </p>
+          {firstRegistration ? <p>This is a first registration. Your lecturer can review it before treating it as a confirmed roster identity.</p> : null}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
             <Link
@@ -538,9 +578,6 @@ export function StudentScan({
               href={`/attend/success?course=${encodeURIComponent(result.course_code || classInfo.course_code)}&name=${encodeURIComponent(result.full_name || fullName)}&matric=${encodeURIComponent(result.matric_number || matricNumber)}&status=${encodeURIComponent(result.status || "PRESENT")}`}
             >
               View Full Attendance Receipt <ArrowRight size={16} aria-hidden="true" />
-            </Link>
-            <Link className={styles.optionalAccountLink} href="/sign-up">
-              Create an optional account
             </Link>
           </div>
         </section>
@@ -633,8 +670,8 @@ export function StudentScan({
           </span>
           <span className={styles.modePill}>
             {classInfo.verification_mode === "VERIFIED"
-              ? "Verified Attendance · Course Roster Check"
-              : "Standard Attendance · Instant Check-In"}
+              ? "Roster check · no account"
+              : "Matric check-in · no account"}
           </span>
         </div>
       </div>
@@ -643,13 +680,11 @@ export function StudentScan({
       {step === 1 && (
         <div className={styles.stepContainer}>
           <div className={styles.stepHeader}>
-            <h3 className={styles.stepHeading}>Sign your attendance</h3>
-            <p className={styles.stepDescription}>Complete all steps to record your presence.</p>
+            <h3 className={styles.stepHeading}>Enter your matric number</h3>
+            <p className={styles.stepDescription}>No account or sign-in is required. We look up the details already registered for you.</p>
           </div>
 
           <div className={styles.formFields}>
-            {classInfo.verification_mode === "VERIFIED" ? (
-              <>
                 <div className={styles.fieldGroup}>
                   <label htmlFor="matricInput" className={styles.fieldLabel}>
                     Matriculation number
@@ -665,6 +700,8 @@ export function StudentScan({
                         const val = e.target.value.toUpperCase();
                         setMatricNumber(val);
                         setVerifiedStudent(null);
+                        setSelfRegistration(false);
+                        setDirectory(null);
                         setLookupError("");
                       }}
                       placeholder="e.g. CSC/2022/045"
@@ -681,7 +718,7 @@ export function StudentScan({
                       {lookupLoading ? (
                         <RefreshCw size={15} className={styles.spinner} />
                       ) : (
-                        "Verify"
+                        "Find me"
                       )}
                     </button>
                   </div>
@@ -703,45 +740,46 @@ export function StudentScan({
                     </div>
                   </div>
                 )}
-              </>
-            ) : (
-              <>
-                <div className={styles.fieldGroup}>
-                  <label htmlFor="fullNameInput" className={styles.fieldLabel}>
-                    Full name
-                  </label>
-                  <input
-                    id="fullNameInput"
-                    name="fullName"
-                    type="text"
-                    className={styles.textInput}
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Enter your full name"
-                    autoComplete="name"
-                    required
-                  />
-                </div>
 
-                <div className={styles.fieldGroup}>
-                  <label htmlFor="matricInputStd" className={styles.fieldLabel}>
-                    Matriculation number
-                  </label>
-                  <input
-                    id="matricInputStd"
-                    name="matricNumber"
-                    type="text"
-                    className={styles.textInput}
-                    value={matricNumber}
-                    onChange={(e) => setMatricNumber(e.target.value.toUpperCase())}
-                    placeholder="Enter your matric number"
-                    autoCapitalize="characters"
-                    autoComplete="off"
-                    required
-                  />
-                </div>
-              </>
-            )}
+                {selfRegistration && !verifiedStudent && directory && directory.faculties.length > 0 && (
+                  <form action={registerFirstTime} className={styles.formFields}>
+                    <p>First visit for this institution. Your lecturer can review this registration. It does not create a login.</p>
+                    <div className={styles.fieldGroup}>
+                      <label htmlFor="registerName" className={styles.fieldLabel}>Full name</label>
+                      <input id="registerName" name="fullName" className={styles.textInput} required maxLength={160} autoComplete="name" />
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label htmlFor="registerFaculty" className={styles.fieldLabel}>Faculty</label>
+                      <select id="registerFaculty" name="facultyId" className={styles.textInput} value={facultyId} onChange={(event) => setFacultyId(event.target.value)}>
+                        {directory.faculties.map((faculty) => <option key={faculty.id} value={faculty.id}>{faculty.name}</option>)}
+                      </select>
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label htmlFor="registerDepartment" className={styles.fieldLabel}>Department</label>
+                      <select id="registerDepartment" name="departmentId" className={styles.textInput} required>
+                        {directory.departments.filter((department) => department.faculty_id === facultyId).map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+                      </select>
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label htmlFor="registerLevel" className={styles.fieldLabel}>Academic level</label>
+                      <input id="registerLevel" name="level" className={styles.textInput} required maxLength={40} placeholder="e.g. 300" />
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label htmlFor="registerEmail" className={styles.fieldLabel}>Email</label>
+                      <input id="registerEmail" name="email" type="email" className={styles.textInput} maxLength={254} autoComplete="email" />
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label htmlFor="registerPhone" className={styles.fieldLabel}>Phone</label>
+                      <input id="registerPhone" name="phone" type="tel" className={styles.textInput} maxLength={20} autoComplete="tel" />
+                    </div>
+                    <p>Provide an email or a phone number. The photograph is a reference, not biometric proof.</p>
+                    <label className={styles.fieldLabel}>
+                      <input type="checkbox" name="consent" value="yes" required /> I agree this photograph may be stored privately for attendance reference.
+                    </label>
+                    <FaceCapture onAccept={setReferencePhoto} busy={registering} />
+                    <button type="submit" className={styles.secondaryButton} disabled={registering || !referencePhoto}>{registering ? "Saving registration…" : "Save registration"}</button>
+                  </form>
+                )}
 
             {/* Geofence Location Verification */}
             {isLocationRequired && (
@@ -799,13 +837,7 @@ export function StudentScan({
             <button
               type="button"
               className={styles.primaryButton}
-              disabled={
-                !classInfo.open ||
-                (classInfo.verification_mode === "VERIFIED" && !verifiedStudent) ||
-                (classInfo.verification_mode === "STANDARD" &&
-                  (!fullName.trim() || !matricNumber.trim())) ||
-                (isLocationRequired && locationState.status !== "verified")
-              }
+              disabled={!classInfo.open || !verifiedStudent || (isLocationRequired && locationState.status !== "verified")}
               onClick={handleProceedToSelfie}
             >
               Continue to Selfie <ArrowRight size={18} aria-hidden="true" />

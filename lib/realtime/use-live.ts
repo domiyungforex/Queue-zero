@@ -34,10 +34,18 @@ export function getRealtimeClient(authenticated: boolean) {
 }
 
 /** Broadcast invalidates; HTTP always supplies authoritative state. */
-export function useLive(topic: string, onChange: () => void, authenticated = false, enabled = true) {
+export function useLive(
+  topic: string,
+  onChange: () => void,
+  authenticated = false,
+  enabled = true,
+  cadence: { debounceMs?: number; pollMs?: number } = {},
+) {
   const callback = useRef(onChange);
   useEffect(() => { callback.current = onChange; }, [onChange]);
   const [connected, setConnected] = useState(false);
+  const debounceMs = cadence.debounceMs ?? 180;
+  const pollMs = cadence.pollMs ?? 15_000;
 
   useEffect(() => {
     if (!enabled) return;
@@ -47,7 +55,7 @@ export function useLive(topic: string, onChange: () => void, authenticated = fal
     const refresh = () => {
       if (stopped) return;
       clearTimeout(debounce);
-      debounce = setTimeout(() => callback.current(), 180);
+      debounce = setTimeout(() => callback.current(), debounceMs);
     };
     const client = getRealtimeClient(authenticated);
 
@@ -70,7 +78,7 @@ export function useLive(topic: string, onChange: () => void, authenticated = fal
     }
     void connect();
     // Reconnect, tab focus and bounded polling recover lost events or initial auth failure.
-    const interval = setInterval(() => { refresh(); void connect(); }, 15_000);
+    const interval = setInterval(() => { refresh(); void connect(); }, pollMs);
     const visibility = () => { if (document.visibilityState === "visible") refresh(); };
     window.addEventListener("online", refresh);
     document.addEventListener("visibilitychange", visibility);
@@ -86,6 +94,6 @@ export function useLive(topic: string, onChange: () => void, authenticated = fal
       document.removeEventListener("visibilitychange", visibility);
       if (client && channel) void client.removeChannel(channel);
     };
-  }, [topic, authenticated, enabled]);
+  }, [topic, authenticated, enabled, debounceMs, pollMs]);
   return connected;
 }

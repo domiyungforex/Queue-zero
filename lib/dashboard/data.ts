@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { requireBusinessMembership, requireBusinessManager, requireBusinessOwner } from "@/lib/business/membership";
+import { WorkspaceUnavailable } from "@/lib/business/workspace-access";
 import { createUserSupabaseClient } from "@/lib/db/server";
 
 export const getDashboardQueues = cache(async () => {
@@ -12,7 +13,7 @@ export const getDashboardQueues = cache(async () => {
     .eq("business_id", membership.businessId).order("created_at", { ascending: true });
   if (error) {
     console.error("getDashboardQueues failed", { code: error.code, message: error.message });
-    return [];
+    throw new WorkspaceUnavailable("Your queues could not be loaded. Please try again.");
   }
   return data ?? [];
 });
@@ -25,7 +26,7 @@ export const getBusinessCustomerCount = cache(async () => {
     .eq("queues.business_id", membership.businessId);
   if (error) {
     console.error("getBusinessCustomerCount failed", { code: error.code, message: error.message });
-    return 0;
+    throw new WorkspaceUnavailable("Customer totals could not be loaded. Please try again.");
   }
   return count ?? 0;
 });
@@ -38,7 +39,7 @@ export const getDashboardLocations = cache(async () => {
     .eq("business_id", membership.businessId).order("created_at", { ascending: true });
   if (error) {
     console.error("getDashboardLocations failed", { code: error.code, message: error.message });
-    return [];
+    throw new WorkspaceUnavailable("Locations could not be loaded. Please try again.");
   }
   return data ?? [];
 });

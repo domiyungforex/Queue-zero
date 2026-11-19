@@ -21,7 +21,8 @@ it("uses exactly five route-aware primary destinations for a personal mobile wor
 });
 it("limits staff navigation and explains an empty assignment list", () => {
   render(<><DashboardNavigation role="staff" workspaceOwnership="ORGANIZATION" /><QueueSummary queues={[]} staff /></>);
-  expect(screen.getAllByRole("link")).toHaveLength(2);
+  expect(screen.getAllByRole("link")).toHaveLength(3);
+  expect(screen.getByRole("link", { name: "Bookings" })).toBeTruthy();
   expect(screen.getByText("No queues assigned")).toBeTruthy();
 });
 it("hides owner-only navigation for admins", () => {

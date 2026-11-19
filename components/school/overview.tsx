@@ -151,14 +151,15 @@ export function EducationHome({ data, dashboard, individual = false, userName = 
 }
 
 export async function SchoolOverview({ individual = false }: { individual?: boolean }) {
+  let data: SchoolSnapshot;
+  let dashboard: EducationDashboard;
+  let userName = "Lecturer";
   try {
-    const [{ snapshot: data }, identity] = await Promise.all([getSchoolSnapshot(), currentUser().catch(() => null)]);
-    const dashboard = buildEducationDashboard(data, new Date().toISOString().slice(0, 10));
-    const userName = identity?.firstName ?? identity?.fullName ?? "Lecturer";
-    return <>
-      <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
-      <EducationHome data={data} dashboard={dashboard} individual={individual} userName={userName} />
-    </>;
+    const loaded = await Promise.all([getSchoolSnapshot(), currentUser().catch(() => null)]);
+    data = loaded[0].snapshot;
+    const identity = loaded[1];
+    dashboard = buildEducationDashboard(data, new Date().toISOString().slice(0, 10));
+    userName = identity?.firstName ?? identity?.fullName ?? "Lecturer";
   } catch (error) {
     unstable_rethrow(error);
     console.error("School overview failed", error);
@@ -168,6 +169,10 @@ export async function SchoolOverview({ individual = false }: { individual?: bool
       <p style={{ margin: 0, padding: "0 20px 24px" }}><Link href="/dashboard">Try again</Link></p>
     </section>;
   }
+  return <>
+    <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
+    <EducationHome data={data} dashboard={dashboard} individual={individual} userName={userName} />
+  </>;
 }
 
 export async function SchoolAnalytics() {

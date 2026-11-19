@@ -5,10 +5,15 @@ import { publicEnv } from "@/lib/env";
 export default clerkMiddleware(
   async (auth, request) => {
     const { pathname } = request.nextUrl;
-    if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")
-      || pathname === "/onboarding" || pathname.startsWith("/onboarding/")) {
-      await auth.protect();
-    }
+    // Staff workspaces stay behind Clerk. Student attendance, queue tickets and
+    // public displays must remain reachable with no account.
+    const staffOnly = pathname === "/dashboard" || pathname.startsWith("/dashboard/")
+      || pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+    const studentPath = pathname === "/attend" || pathname.startsWith("/attend/")
+      || pathname.startsWith("/q/") || pathname.startsWith("/ticket/")
+      || pathname.startsWith("/book/") || pathname.startsWith("/booking/")
+      || pathname.startsWith("/display/");
+    if (staffOnly && !studentPath) await auth.protect();
   },
   () => {
     // Clerk reads the secret directly from the server environment. Passing it

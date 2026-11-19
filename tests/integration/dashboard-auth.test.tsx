@@ -120,8 +120,9 @@ describe("authenticated membership routing with mocked Clerk and database transp
 
   it("does not interpret a database failure as missing membership", async () => {
     responseStatus = 503;
-    await expect(DashboardPage()).rejects.toThrow("couldn’t load your business");
-    await expect(OnboardingPage()).rejects.toThrow("couldn’t load your business");
+    await expect(DashboardPage()).rejects.toThrow("could not be loaded");
+    expect(renderToStaticMarkup(await DashboardLayout({ children: "private" }))).toContain("could not be loaded");
+    await expect(OnboardingPage()).rejects.toThrow("could not be loaded");
     expect(redirect).not.toHaveBeenCalled();
   });
 

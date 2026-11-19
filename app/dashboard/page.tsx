@@ -28,13 +28,17 @@ export default async function Page({ searchParams }: DashboardPageProps = {}) {
   if (membership.institutionType) return <>{success}{organizationStatus}<InstitutionOverview /></>;
   if (membership.workspaceOwnership === "INDIVIDUAL" && membership.professionalCategory && membership.professionalCategory !== "LECTURER_TEACHER") return <>{success}<ProfessionalOverview category={membership.professionalCategory} canManage={membership.role === "owner" || membership.role === "admin"} /></>;
 
-  const [queues, metricsResult] = await Promise.all([
-    getDashboardQueues(),
-    getBusinessMetrics().then((metrics) => ({ metrics, failed: false })).catch((error) => {
+  const [queuesResult, metricsResult] = await Promise.all([
+    getDashboardQueues().then((queues) => ({ queues, failed: false as const })).catch((error) => {
+      console.error("Dashboard queues failed", error);
+      return { queues: [], failed: true as const };
+    }),
+    getBusinessMetrics().then((metrics) => ({ metrics, failed: false as const })).catch((error) => {
       console.error("Dashboard metrics failed", error);
-      return { metrics: null, failed: true };
+      return { metrics: null, failed: true as const };
     }),
   ]);
+  const queues = queuesResult.queues;
   const metrics = metricsResult.metrics;
   const openQueues = queues.filter((queue) => queue.status === "open").length;
 
@@ -50,7 +54,9 @@ export default async function Page({ searchParams }: DashboardPageProps = {}) {
       <StatCard label="Average wait" value={duration(metrics.average_wait_seconds)} icon={<Clock3 size={20} />} note="Last 7 days · until called" />
     </div> : <section className="workspace-tip" role="alert"><div><h2>Live totals could not be loaded</h2><p>Queues below are still your real queues. Refresh to try the totals again. No sample numbers are shown.</p></div></section>}
     <div className="section-toolbar"><h2>Your queues</h2><Link href="/dashboard/queues">View all<ArrowUpRight size={16} /></Link></div>
-    {queues.length === 0 ? (
+    {queuesResult.failed ? (
+      <section className="workspace-tip" role="alert"><div><h2>Queues could not be loaded</h2><p>Refresh to try again. This is not an empty workspace, and no sample queues are shown.</p></div></section>
+    ) : queues.length === 0 ? (
       <section className="workspace-tip" style={{ textAlign: "center", padding: 32 }}>
         <h2>No queues yet</h2>
         <p>Create your first queue to start managing arrivals.</p>

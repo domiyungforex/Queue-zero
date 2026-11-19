@@ -172,11 +172,12 @@ export default async function AttendancePage({
           )}
         </article>
         <footer>
+          No account or sign-in is required.
           {classInfo?.verification_mode === "VERIFIED"
-            ? "Your details are checked against the official course roster."
+            ? " Your matriculation number is checked against the class roster."
             : classInfo?.verification_mode === "STANDARD"
-              ? "No advance registration is needed. Enter your details to record attendance."
-              : "Scan your lecturer’s QR code to continue."}
+              ? " Enter your matriculation number. First-time students can register for this class only."
+              : " Scan your lecturer’s QR code to continue."}
         </footer>
       </div>
     </main>

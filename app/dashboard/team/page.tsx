@@ -10,9 +10,16 @@ import styles from "@/components/school/education-pages.module.css";
 export default async function TeamPage() {
   const membership = await requireBusinessManager();
   const db = await createUserSupabaseClient();
-  const [{ data: members, error }, queues] = await Promise.all([
+  let queues: Awaited<ReturnType<typeof getDashboardQueues>> = [];
+  let queuesFailed = false;
+  try {
+    queues = await getDashboardQueues();
+  } catch (error) {
+    console.error("Team queue list failed", error);
+    queuesFailed = true;
+  }
+  const [{ data: members, error }] = await Promise.all([
     db.from("business_members").select("id,clerk_user_id,role").eq("business_id", membership.businessId).order("created_at"),
-    getDashboardQueues(),
   ]);
   if (error) throw new Error("Team could not be loaded.");
   const names = new Map<string, string>();
@@ -32,7 +39,7 @@ export default async function TeamPage() {
         const name = names.get(member.clerk_user_id) ?? "Team member";
         return <li key={member.id}><span className={styles.avatar}>{initials(name)}</span><span className={styles.rowMain}><strong>{name}</strong><span>{member.role === "owner" ? "Workspace owner" : "Education workspace member"}</span></span><span className={styles.rowEnd}><EducationStatus tone={member.role === "owner" ? "success" : "info"}>{member.role}</EducationStatus></span>{(member.role === "admin" || member.role === "staff") && (membership.role === "owner" || member.role === "staff") ? <RemoveMember userId={member.clerk_user_id} role={member.role} /> : <span />}</li>;
       })}</ul> : <EducationEmpty title="No teammates yet" description="Add a verified TuRnMaRk user when you are ready to collaborate." icon={UsersRound} />}</div>
-      <section id="invite-member" className={`${styles.panel} ${styles.formWrap}`}><TeamForm queues={queues} owner={membership.role === "owner"} /></section>
+      <section id="invite-member" className={`${styles.panel} ${styles.formWrap}`}>{queuesFailed ? <p role="alert">Queues could not be loaded, so a new member cannot be assigned yet. Try again in a moment.</p> : <TeamForm queues={queues} owner={membership.role === "owner"} />}</section>
     </section>
   </main>;
 }

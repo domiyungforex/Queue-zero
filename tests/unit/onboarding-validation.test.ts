@@ -101,7 +101,7 @@ describe("unified onboarding validation", () => {
   });
 
   it("keeps the complete category list stable", () => {
-    expect(ORGANIZATION_TYPE_VALUES).toHaveLength(6);
+    expect(ORGANIZATION_TYPE_VALUES).toHaveLength(17);
   });
 
   it("requires an explicit account type", () => {
