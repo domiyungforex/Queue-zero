@@ -69,6 +69,27 @@
  .school-create-summary{background:#fffaf7}
 }
 
+.register-bar{display:grid;gap:14px;margin:22px 0;padding:18px;border:1px solid #f0e4dc;border-radius:22px;background:linear-gradient(180deg,#fffaf7 0%,#fff 48%);box-shadow:0 12px 32px rgba(94,45,23,.05)}
+.register-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.register-intro h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.03em}
+.register-intro p{max-width:68ch;margin:6px 0 0;color:#73707a;font-size:13px;line-height:1.5}
+.register-count{flex:0 0 auto;border-radius:999px;background:#fff0e8;padding:8px 12px;color:#c2410c;font-size:12px;font-weight:800}
+.register-fields{display:grid;grid-template-columns:minmax(220px,1.6fr) minmax(180px,.8fr) auto;gap:10px;align-items:end}
+.register-field{display:grid;gap:6px;min-width:0}
+.register-field>span{color:#8a847e;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.register-search{display:flex;min-height:48px;align-items:center;border:1px solid #eadfd8;border-radius:14px;background:#fff;padding:0 12px}
+.register-search input,.register-field select{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#111318;font:inherit;font-size:15px}
+.register-field select{min-height:48px;border:1px solid #eadfd8;border-radius:14px;background:#fff;padding:0 12px}
+.register-search input:focus-visible,.register-field select:focus-visible{outline:3px solid rgba(255,107,43,.35);outline-offset:2px}
+.register-actions{display:flex;gap:8px;align-items:center}
+.register-actions .button-primary,.register-actions .button-secondary{min-height:48px}
+@media (max-width:800px){
+ .register-intro{flex-direction:column;align-items:flex-start}
+ .register-fields{grid-template-columns:1fr}
+ .register-actions{display:grid;grid-template-columns:1fr 1fr}
+ .register-actions .button-primary,.register-actions .button-secondary{width:100%;justify-content:center}
+}
+
 .school-public-flow{width:min(720px,calc(100% - 32px));margin:24px auto 48px}
 .school-public-flow h1{margin:18px 0}
 .school-face-capture video,.school-face-capture img{width:min(100%,360px);aspect-ratio:1;object-fit:cover;border-radius:18px;background:#111318}

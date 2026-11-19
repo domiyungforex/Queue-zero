@@ -8,6 +8,9 @@ import { requireBusinessMembership } from "@/lib/business/membership";
 import { attendanceSecret } from "@/lib/qr/secret";
 import { issueIdentityTicket, readIdentityTicket } from "@/lib/school/identity-ticket";
 import { decodeAttendancePhoto } from "@/lib/school/photo-quality";
+import { profileObjectKey } from "@/lib/storage/keys";
+import { deletePrivateImage, storePrivateImage } from "@/lib/storage/store-image";
+import { r2SignedGet, readR2Settings } from "@/lib/storage/r2";
 
 const orgId = z.uuid();
 
@@ -70,9 +73,9 @@ export async function registerStudent(form: FormData) {
   if (!photo.ok) return { ok: false as const, message: photo.message };
   const db = createJoinSupabaseClient();
   const fileId = randomUUID();
-  const path = `reference/${parsed.data.organizationId}/${fileId}.${photo.ext}`;
-  const uploaded = await db.storage.from("attendance-photos").upload(path, photo.buffer, { contentType: photo.mime, upsert: false });
-  if (uploaded.error) return { ok: false as const, message: "The photograph could not be stored. Registration was not saved." };
+  const path = profileObjectKey(parsed.data.organizationId, fileId, photo.ext);
+  const stored = await storePrivateImage(db, { key: path, body: photo.buffer, type: photo.mime });
+  if (!stored.ok) return { ok: false as const, message: "The photograph could not be stored. Registration was not saved." };
   const result = await asRpc(db)("school_register_student", {
     p_organization_id: parsed.data.organizationId,
     p_full_name: parsed.data.fullName,
@@ -85,12 +88,12 @@ export async function registerStudent(form: FormData) {
     p_consent: true,
     p_photo_path: path,
   });
-  const body = z.object({ ok: z.boolean(), message: z.string() }).safeParse(result.data);
+  const body = z.object({ ok: z.boolean(), message: z.string(), matric_number: z.string().optional(), code: z.string().optional() }).safeParse(result.data);
   if (result.error || !body.success || !body.data.ok) {
-    await db.storage.from("attendance-photos").remove([path]);
-    return { ok: false as const, message: body.success ? body.data.message : "Registration could not be saved." };
+    await deletePrivateImage(db, path, stored.provider);
+    return { ok: false as const, message: body.success ? body.data.message : "Registration could not be saved.", matricNumber: body.success ? body.data.matric_number : undefined };
   }
-  return { ok: true as const, message: body.data.message };
+  return { ok: true as const, message: body.data.message, matricNumber: body.data.matric_number };
 }
 
 export async function identifyStudent(organizationId: string, matricNumber: string, deviceId: string) {
@@ -133,6 +136,7 @@ export async function identifyStudent(organizationId: string, matricNumber: stri
   if (body.data.photo_path) {
     const signed = await db.storage.from("attendance-photos").createSignedUrl(body.data.photo_path, 300);
     photoUrl = signed.data?.signedUrl ?? null;
+    if (!photoUrl && readR2Settings()) photoUrl = await r2SignedGet(body.data.photo_path, 300);
   }
   return {
     ok: true as const,
@@ -180,13 +184,15 @@ export async function recordIdentifiedAttendance(input: {
   }
   const db = createJoinSupabaseClient();
   let photoPath: string | null = null;
+  let photoProvider: "r2" | "supabase" | null = null;
   if (input.method === "LIVE_PHOTO") {
     const photo = decodeAttendancePhoto(input.photo ?? "");
     if (!photo.ok) return { ok: false as const, message: photo.message };
     const fileId = randomUUID();
     photoPath = `checks/${ticket.org}/${classId.data}/${fileId}.${photo.ext}`;
-    const uploaded = await db.storage.from("attendance-photos").upload(photoPath, photo.buffer, { contentType: photo.mime, upsert: false });
-    if (uploaded.error) return { ok: false as const, message: "The live photograph could not be stored. Attendance was not recorded." };
+    const stored = await storePrivateImage(db, { key: photoPath, body: photo.buffer, type: photo.mime });
+    if (!stored.ok) return { ok: false as const, message: "The live photograph could not be stored. Attendance was not recorded." };
+    photoProvider = stored.provider;
   }
   const result = await asRpc(db)("school_record_identified_attendance", {
     p_organization_id: ticket.org,
@@ -209,7 +215,7 @@ export async function recordIdentifiedAttendance(input: {
     verification_status: z.string().optional(),
   }).safeParse(result.data);
   if (result.error || !body.success || !body.data.ok) {
-    if (photoPath) await db.storage.from("attendance-photos").remove([photoPath]);
+    if (photoPath && photoProvider) await deletePrivateImage(db, photoPath, photoProvider);
     return { ok: false as const, message: body.success ? body.data.message : "Attendance was not recorded." };
   }
   return { ok: true as const, message: body.data.message, status: body.data.status ?? "PRESENT", courseCode: body.data.course_code ?? "", courseTitle: body.data.course_title ?? "", verificationStatus: body.data.verification_status ?? "" };

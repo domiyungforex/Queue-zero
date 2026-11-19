@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { getSchoolSnapshot } from "@/lib/school/data";
 import { attendancePhotoSrc } from "@/lib/school/photo-src";
 import { schoolTime, attendanceIsLate } from "@/lib/school/contracts";
@@ -36,11 +35,17 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
   const search = query.q?.trim().toLocaleLowerCase() ?? "";
   const departmentFilter = query.department ?? "";
   const departmentName = (departmentId?: string) => data.departments.find((department) => department.id === departmentId)?.name ?? "—";
-  const visible = (name: string, matric: string, departmentId?: string) => (!search || `${name} ${matric}`.toLocaleLowerCase().includes(search)) && (!departmentFilter || departmentId === departmentFilter);
+  const matchesRegister = (name: string, identifiers: Array<string | null | undefined>, departmentId?: string) => {
+    const haystack = `${name} ${identifiers.filter(Boolean).join(" ")}`.toLocaleLowerCase();
+    return (!search || haystack.includes(search)) && (!departmentFilter || departmentId === departmentFilter);
+  };
   const visibleStandard = standardRows.filter((row) => {
     const student = data.students.find((item) => item.id === row.record.student_id);
-    return visible(row.displayName, row.displayMatric, student?.department_id);
+    return matchesRegister(row.displayName, [row.displayMatric, student?.matric_number], student?.department_id);
   });
+  const visibleRoster = roster.filter((student) => matchesRegister(student.full_name, [student.matric_number], student.department_id));
+  const shown = isStandard ? visibleStandard.length : visibleRoster.length;
+  const registerTotal = isStandard ? standardRows.length : roster.length;
   const present = records.filter(row => row.check_in_at).length;
   const percentLabel = isStandard
     ? null
@@ -108,12 +113,34 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
 
       <ClassControls session={session} />
 
-      <h2 className="school-subheading">Student register</h2>
-      <form className="school-actions" role="search">
-        <label>Name or matric<input name="q" defaultValue={query.q ?? ""} placeholder="Search" /></label>
-        <label>Department<select name="department" defaultValue={departmentFilter}><option value="">All departments</option>{data.departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
-        <button className="button-secondary" type="submit">Filter</button>
-      </form>
+      <section className="register-bar" aria-labelledby="student-register-heading">
+        <div className="register-intro">
+          <div>
+            <h2 id="student-register-heading">Student register</h2>
+            <p>Search by name, matriculation number, or JAMB number. For a 100-level student the JAMB number is the correct institution identifier and is left unchanged.</p>
+          </div>
+          <span className="register-count">{shown} of {registerTotal}</span>
+        </div>
+        <form className="register-fields" role="search" method="get">
+          <label className="register-field">
+            <span>Search</span>
+            <span className="register-search">
+              <input name="q" type="search" defaultValue={query.q ?? ""} placeholder="Name, matric or JAMB number" autoComplete="off" />
+            </span>
+          </label>
+          <label className="register-field">
+            <span>Department</span>
+            <select name="department" defaultValue={departmentFilter}>
+              <option value="">All departments</option>
+              {data.departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+            </select>
+          </label>
+          <div className="register-actions">
+            <button className="button-primary" type="submit">Search register</button>
+            {query.q || departmentFilter ? <Link className="button-secondary" href={`/dashboard/attendance/${classId}`}>Clear</Link> : null}
+          </div>
+        </form>
+      </section>
 
       {isStandard ? (
         // STANDARD MODE: show all attendance submissions
@@ -128,7 +155,7 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
                   <th>Photo</th>
                   <th>Name</th>
                   <th>Department</th>
-                  <th>Matric</th>
+                  <th>Matric / JAMB</th>
                   <th>Arrival</th>
                   <th>Status</th>
                   <th>Location</th>
@@ -140,12 +167,13 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
                   <tr key={record.id}>
                     <td>
                       {attendancePhotoSrc(record.photo_url) ? (
-                        <Image
-                          src={attendancePhotoSrc(record.photo_url)!}
+                        <img
+                          src={`${attendancePhotoSrc(record.photo_url)!}?variant=thumb`}
                           alt={`Selfie for ${displayName}`}
                           width={40}
                           height={40}
-                          unoptimized
+                          loading="lazy"
+                          decoding="async"
                           style={{ borderRadius: "50%", objectFit: "cover", width: 40, height: 40 }}
                         />
                       ) : (
@@ -181,26 +209,27 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
                   <th>Photo</th>
                   <th>Name</th>
                   <th>Department</th>
-                  <th>Matric</th>
+                  <th>Matric / JAMB</th>
                   <th>Arrival</th>
                   <th>Status</th>
                   <th>Verification</th>
                 </tr>
               </thead>
               <tbody>
-                {roster.filter((student) => visible(student.full_name, student.matric_number, student.department_id)).map(student => {
+                {visibleRoster.map(student => {
                   const row = records.find(r => r.student_id === student.id);
                   const flagged = unresolved.some(flag => flag.student_id === student.id);
                   return (
                     <tr key={student.id}>
                       <td>
                         {attendancePhotoSrc(row?.photo_url) ? (
-                          <Image
-                            src={attendancePhotoSrc(row?.photo_url)!}
+                          <img
+                            src={`${attendancePhotoSrc(row?.photo_url)!}?variant=thumb`}
                             alt={`Selfie for ${student.full_name}`}
                             width={40}
                             height={40}
-                            unoptimized
+                            loading="lazy"
+                            decoding="async"
                             style={{ borderRadius: "50%", objectFit: "cover", width: 40, height: 40 }}
                           />
                         ) : (

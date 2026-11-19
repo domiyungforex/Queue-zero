@@ -192,7 +192,7 @@ export function StudentScan({
 
   // Verified mode lookup handler
   const handleLookup = async (inputMatric?: string) => {
-    const matric = (inputMatric ?? matricNumber).trim().toUpperCase();
+    const matric = (inputMatric ?? matricNumber).trim();
     if (!matric) {
       setLookupError("Enter your matriculation number.");
       return;
@@ -244,7 +244,7 @@ export function StudentScan({
     setRegistering(true);
     setLookupError("");
     formData.set("photo", referencePhoto);
-    formData.set("matricNumber", matricNumber.trim().toUpperCase());
+    formData.set("matricNumber", matricNumber.trim());
     try {
       const result = await registerForAttendanceSession(token, formData);
       if (!result.ok) {
@@ -252,8 +252,9 @@ export function StudentScan({
         return;
       }
       const registeredName = String(formData.get("fullName") ?? "").trim();
+      const registeredMatric = result.matricNumber || matricNumber.trim();
       setFullName(registeredName);
-      setVerifiedStudent({ full_name: registeredName, matric_number: matricNumber.trim().toUpperCase() });
+      setVerifiedStudent({ full_name: registeredName, matric_number: registeredMatric });
       setFirstRegistration(true);
       setSelfRegistration(false);
       setLookupError("");
@@ -397,7 +398,8 @@ export function StudentScan({
         body: JSON.stringify({ token, nonce, photo: photoDataUrl }),
       });
       if (!res.ok) return null;
-      const json = (await res.json()) as { url?: string };
+      const json = (await res.json()) as { path?: string; url?: string };
+      if (json.path && !json.path.startsWith("data:") && !json.path.includes("..")) return json.path;
       return json.url && !json.url.startsWith("data:") ? json.url : null;
     } catch {
       return null;
@@ -473,7 +475,7 @@ export function StudentScan({
             matric_number: response.matric_number || effectiveMatric,
             status: response.status || "PRESENT",
             recorded_at: response.recorded_at || new Date().toISOString(),
-            photo_url: response.photo_url || capturedPhoto || null,
+            photo_url: capturedPhoto || (response.photo_url?.startsWith("data:") || response.photo_url?.startsWith("http") ? response.photo_url : null),
             verification_mode: classInfo.verification_mode,
             identity_status: response.identity_status,
           };
@@ -523,7 +525,7 @@ export function StudentScan({
             Your presence has been successfully confirmed for {result.course_code || classInfo.course_code}.
           </span>
 
-          {result.photo_url && (
+          {result.photo_url && (result.photo_url.startsWith("data:image/") || result.photo_url.startsWith("https://")) && (
             <div className={styles.selfieResultPreview}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -697,8 +699,7 @@ export function StudentScan({
                       className={styles.textInput}
                       value={matricNumber}
                       onChange={(e) => {
-                        const val = e.target.value.toUpperCase();
-                        setMatricNumber(val);
+                        setMatricNumber(e.target.value);
                         setVerifiedStudent(null);
                         setSelfRegistration(false);
                         setDirectory(null);

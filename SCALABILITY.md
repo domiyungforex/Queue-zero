@@ -1,5 +1,9 @@
 # TuRnMaRk scalability assessment
 
+The phased plan and what is actually running are in [docs/architecture/SCALING_ROADMAP.md](docs/architecture/SCALING_ROADMAP.md). Phases that need Redis, replicas, workers, or shards are documented there as not built. `GET /api/health` is a liveness check only.
+
+Photographs are not a database scaling feature. New uploads go to a private Cloudflare R2 bucket when `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` and `R2_BUCKET_NAME` are set, and otherwise stay in the private Supabase bucket. Postgres stores the object key. No production photographs were copied or deleted, and no browser timing was measured. See `docs/storage/CLOUDFLARE_R2.md`.
+
 Status: two safe changes are in the repository and are not applied to production. This is not a claim that TuRnMaRk supports 10 million users or the attendance burst targets below.
 
 Nothing in this change was applied to production. The migrations must not be run against production without explicit authorization. Load tests must not target `turnmark.conchportal.com` or the hosted database. `EXPLAIN` was not executed: this workspace has no database.

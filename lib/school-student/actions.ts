@@ -77,7 +77,7 @@ function verificationMode(value: string | undefined): "STANDARD" | "VERIFIED" | 
 export async function lookupVerifiedStudent(tokenString: string, matricNumber: string): Promise<LookupResult> {
   try {
     const token = validateAttendanceToken(tokenString, attendanceSecret());
-    const matric = matricNumber.trim().toUpperCase();
+    const matric = matricNumber.trim();
     if (!matric) return { ok: false, found: false, message: "Enter your matriculation number." };
     const db = createJoinSupabaseClient() as unknown as RpcClient;
     const roster = await db.rpc("school_student_lookup", {

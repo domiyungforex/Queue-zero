@@ -11,7 +11,10 @@ describe("student registration safeguards", () => {
   it("rejects photographs that are too small or the wrong type", () => {
     expect(decodeAttendancePhoto("data:text/plain;base64,aGVsbG8=").ok).toBe(false);
     expect(decodeAttendancePhoto(`data:image/jpeg;base64,${Buffer.from("tiny").toString("base64")}`).ok).toBe(false);
-    const photo = decodeAttendancePhoto(`data:image/jpeg;base64,${Buffer.alloc(13_000, 7).toString("base64")}`);
+    const jpeg = Buffer.alloc(13_000);
+    jpeg[0] = 0xff; jpeg[1] = 0xd8; jpeg[2] = 0xff;
+    expect(decodeAttendancePhoto(`data:image/jpeg;base64,${Buffer.alloc(13_000, 7).toString("base64")}`).ok).toBe(false);
+    const photo = decodeAttendancePhoto(`data:image/jpeg;base64,${jpeg.toString("base64")}`);
     expect(photo.ok).toBe(true);
   });
 

@@ -30,7 +30,7 @@ describe("accountless student attendance", () => {
     fireEvent.change(screen.getByLabelText("Matriculation number"), { target: { value: "phy/2026/0142" } });
     fireEvent.click(screen.getByRole("button", { name: "Find me" }));
     expect(await screen.findByText("Akinyele Dominion")).toBeTruthy();
-    expect(mocks.lookup).toHaveBeenCalledWith("signed-token", "PHY/2026/0142");
+    expect(mocks.lookup).toHaveBeenCalledWith("signed-token", "phy/2026/0142");
     expect(mocks.record).not.toHaveBeenCalled();
     expect((screen.getByRole("button", { name: /Continue to Selfie/ }) as HTMLButtonElement).disabled).toBe(false);
   });

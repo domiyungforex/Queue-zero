@@ -73,3 +73,29 @@
  .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
  .twoColumn,.settingsGrid{grid-template-columns:minmax(0,1.45fr) minmax(300px,.7fr)}
 }
+
+.registerBar{display:grid;gap:14px;padding:18px;border:1px solid #f0e4dc;border-radius:22px;background:linear-gradient(180deg,#fffaf7 0%,#fff 48%);box-shadow:0 12px 32px rgba(94,45,23,.05)}
+.registerIntro{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.registerIntro h2{margin:0;color:#111318;font-size:20px;font-weight:850;letter-spacing:-.03em}
+.registerIntro p{max-width:68ch;margin:6px 0 0;color:#73707a;font-size:13px;line-height:1.5}
+.registerCount{flex:0 0 auto;border-radius:999px;background:#fff0e8;padding:8px 12px;color:#c2410c;font-size:12px;font-weight:800}
+.registerFields{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:end}
+.registerFieldSearch{grid-column:1 / -1}
+.registerField{display:grid;gap:6px;min-width:0}
+.registerField>span{color:#8a847e;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.registerSearch{display:flex;min-height:48px;align-items:center;gap:8px;border:1px solid #eadfd8;border-radius:14px;background:#fff;padding:0 12px;color:#ff6b2b}
+.registerSearch input,.registerField select{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#111318;font:inherit;font-size:14px}
+.registerField select{min-height:48px;border:1px solid #eadfd8;border-radius:14px;background:#fff;padding:0 12px}
+.registerSearch input:focus-visible,.registerField select:focus-visible{outline:3px solid rgba(255,107,43,.35);outline-offset:2px}
+.registerActions{display:flex;gap:8px;align-items:center}
+.registerActions .primary,.registerActions .secondary{min-height:48px;white-space:nowrap}
+@media (max-width:1100px){
+ .registerFields{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:720px){
+ .registerIntro{flex-direction:column;align-items:flex-start}
+ .registerFields,.registerActions{grid-template-columns:1fr}
+ .registerActions{display:grid}
+ .registerActions .primary,.registerActions .secondary{width:100%}
+}
+

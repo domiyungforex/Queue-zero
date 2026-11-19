@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
+import { decodeAttendancePhoto } from "@/lib/school/photo-quality";
+import { attendanceObjectKey } from "@/lib/storage/keys";
+import { storePrivateImage } from "@/lib/storage/store-image";
 import { attendanceSecret } from "@/lib/qr/secret";
 import { validateAttendanceToken, ExpiredAttendanceQr } from "@/lib/qr/validation";
 
@@ -59,28 +62,18 @@ export async function POST(
       return NextResponse.json({ error: "Token does not match this class." }, { status: 403, headers });
     }
 
-    // Extract the base64 data
-    const dataUrlMatch = parsed.data.photo.match(/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/);
-    if (!dataUrlMatch) {
-      return NextResponse.json({ error: "Invalid image format. Use JPEG, PNG or WebP." }, { status: 400, headers });
+    const photo = decodeAttendancePhoto(parsed.data.photo);
+    if (!photo.ok) {
+      const status = photo.message.includes("450") ? 413 : 400;
+      return NextResponse.json({ error: photo.message }, { status, headers });
     }
-    const mimeType = dataUrlMatch[1];
-    const base64Data = dataUrlMatch[2];
 
-    let imageBuffer: Buffer;
+    let fileName: string;
     try {
-      imageBuffer = Buffer.from(base64Data, "base64");
+      fileName = attendanceObjectKey(orgId, classId, parsed.data.nonce, photo.ext);
     } catch {
-      return NextResponse.json({ error: "Could not decode image." }, { status: 400, headers });
+      return NextResponse.json({ error: "Invalid upload data" }, { status: 400, headers });
     }
-
-    if (imageBuffer.length > 450_000) {
-      return NextResponse.json({ error: "Photo must be under 450 KB." }, { status: 413, headers });
-    }
-
-    // Tenant-aware private path: attendance/org/class/nonce.ext
-    const fileExt = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
-    const fileName = `attendance/${orgId}/${classId}/${parsed.data.nonce}.${fileExt}`;
 
     const db = createJoinSupabaseClient();
 
@@ -98,33 +91,12 @@ export async function POST(
       return NextResponse.json({ error: "Attendance session is closed or QR has expired." }, { status: 410, headers });
     }
 
-    // Upload to Supabase Storage
-    const { data: uploaded, error: uploadError } = await db.storage
-      .from("attendance-photos")
-      .upload(fileName, imageBuffer, {
-        contentType: mimeType,
-        upsert: true,
-        cacheControl: "31536000",
-      });
-
-    if (uploadError || !uploaded) {
-      // Storage may not be configured — return a data URL as fallback
-      // This keeps the system functional even without storage bucket
-      console.warn("Photo storage upload failed:", uploadError?.message);
-      return NextResponse.json(
-        { url: parsed.data.photo, fallback: true },
-        { status: 200, headers }
-      );
+    const stored = await storePrivateImage(db, { key: fileName, body: photo.buffer, type: photo.mime });
+    if (!stored.ok) {
+      return NextResponse.json({ error: "Photo storage is unavailable. Attendance can still be recorded without a stored selfie." }, { status: 503, headers });
     }
 
-    // Get a signed URL (valid 7 days) so the lecturer dashboard can display it
-    const { data: signedData } = await db.storage
-      .from("attendance-photos")
-      .createSignedUrl(uploaded.path, 60 * 60 * 24 * 7);
-
-    const photoUrl = signedData?.signedUrl ?? parsed.data.photo;
-
-    return NextResponse.json({ url: photoUrl }, { status: 200, headers });
+    return NextResponse.json({ path: stored.key }, { status: 200, headers });
   } catch {
     return NextResponse.json({ error: "Photo upload failed." }, { status: 500, headers });
   }

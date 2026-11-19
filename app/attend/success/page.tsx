@@ -94,7 +94,7 @@ function SuccessContent() {
           Your presence has been successfully registered for <strong>{data.course_code}</strong>.
         </span>
 
-        {data.photo_url && (
+        {data.photo_url && (data.photo_url.startsWith("data:image/") || data.photo_url.startsWith("https://") || data.photo_url.startsWith("http://")) && (
           <div className={styles.selfieResultPreview}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

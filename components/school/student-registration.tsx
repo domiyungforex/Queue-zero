@@ -41,7 +41,7 @@ export function StudentRegistration(props: Props) {
 
   return (
     <form action={submit} className="school-form">
-      <p>Register once at {props.institution}. Later attendance only needs your matriculation number and a new photograph.</p>
+      <p>Register once at {props.institution}. Enter the matriculation number issued by your institution. TuRnMaRk stores that number and does not create or replace it. Later attendance only needs the same number and a new photograph.</p>
       <label>Full name<input name="fullName" required maxLength={160} autoComplete="name" /></label>
       <label>Matriculation number<input name="matricNumber" required maxLength={80} autoComplete="off" /></label>
       <label>Faculty<select name="facultyId" value={facultyId} onChange={(event) => setFacultyId(event.target.value)}>{props.faculties.map((faculty) => <option key={faculty.id} value={faculty.id}>{faculty.name}</option>)}</select></label>
