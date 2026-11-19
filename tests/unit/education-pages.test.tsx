@@ -20,6 +20,17 @@ beforeEach(() => {
 });
 
 describe("education workspace pages", () => {
+  it("keeps a private attendance photo from crashing the page or opening onboarding", async () => {
+    const snapshot = schoolFixture();
+    snapshot.attendance[0].photo_url = "org/class/selfie.jpg";
+    mocks.school.mockResolvedValue({ snapshot, canManage: true });
+    const html = renderToStaticMarkup(await AttendancePage({ searchParams: Promise.resolve({ period: "all" }) }));
+    expect(html).toContain("Attendance records");
+    expect(html).toContain("Àkín Johnson");
+    expect(html).not.toContain("org/class/selfie.jpg");
+    expect(html).not.toContain("/onboarding");
+  });
+
   it("calculates attendance analytics from finalized records", async () => {
     const html = renderToStaticMarkup(await AttendancePage({ searchParams: Promise.resolve({ period: "all" }) }));
     expect(html).toContain("Attendance trend");

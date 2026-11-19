@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getSchoolSnapshot } from "@/lib/school/data";
+import { attendancePhotoSrc } from "@/lib/school/photo-src";
 import { schoolTime, attendanceIsLate } from "@/lib/school/contracts";
 import { ClassControls, SchoolForm } from "@/components/school/forms";
 import { AttendanceQr } from "@/components/school/attendance-qr";
@@ -138,9 +139,9 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
                 {visibleStandard.map(({ record, displayName, displayMatric, flagged }) => (
                   <tr key={record.id}>
                     <td>
-                      {record.photo_url ? (
+                      {attendancePhotoSrc(record.photo_url) ? (
                         <Image
-                          src={record.photo_url}
+                          src={attendancePhotoSrc(record.photo_url)!}
                           alt={`Selfie for ${displayName}`}
                           width={40}
                           height={40}
@@ -193,9 +194,9 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
                   return (
                     <tr key={student.id}>
                       <td>
-                        {row?.photo_url ? (
+                        {attendancePhotoSrc(row?.photo_url) ? (
                           <Image
-                            src={row.photo_url}
+                            src={attendancePhotoSrc(row?.photo_url)!}
                             alt={`Selfie for ${student.full_name}`}
                             width={40}
                             height={40}

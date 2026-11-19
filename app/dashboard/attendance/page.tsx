@@ -24,6 +24,7 @@ import {
 import { AttendanceLocation } from "@/components/school/attendance-location";
 import styles from "@/components/school/education-pages.module.css";
 import { getSchoolSnapshot } from "@/lib/school/data";
+import { attendancePhotoSrc } from "@/lib/school/photo-src";
 
 const attended = new Set(["PRESENT", "LATE", "EARLY_LEAVE", "INCOMPLETE", "FLAGGED"]);
 const percent = (count: number, total: number) =>
@@ -411,9 +412,9 @@ export default async function AttendancePage({
 
               return (
                 <li key={record.id} style={{ gridTemplateColumns: "44px minmax(0, 1fr) auto 18px" }}>
-                  {record.photo_url ? (
+                  {attendancePhotoSrc(record.photo_url) ? (
                     <Image
-                      src={record.photo_url}
+                      src={attendancePhotoSrc(record.photo_url)!}
                       alt={`Photo for ${displayName}`}
                       width={40}
                       height={40}
