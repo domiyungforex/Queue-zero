@@ -388,19 +388,19 @@ export function StudentScan({
     startCamera();
   };
 
-  // Upload selfie to server storage, returning a URL (falls back to base64 on error)
-  const uploadPhoto = async (classId: string, nonce: string, photoDataUrl: string): Promise<string> => {
+  // Upload selfie to private storage. Never send the image bytes as the attendance record.
+  const uploadPhoto = async (classId: string, nonce: string, photoDataUrl: string): Promise<string | null> => {
     try {
       const res = await fetch(`/api/school/classes/${classId}/photo`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, nonce, photo: photoDataUrl }),
       });
-      if (!res.ok) return photoDataUrl;
+      if (!res.ok) return null;
       const json = (await res.json()) as { url?: string };
-      return json.url ?? photoDataUrl;
+      return json.url && !json.url.startsWith("data:") ? json.url : null;
     } catch {
-      return photoDataUrl;
+      return null;
     }
   };
 
@@ -424,7 +424,7 @@ export function StudentScan({
       const effectiveMatric = verifiedStudent?.matric_number || matricNumber;
 
       // Extract classId and nonce from token (they are base64-encoded JSON parts)
-      let photoToSubmit = capturedPhoto;
+      let photoToSubmit: string | null = null;
       if (capturedPhoto) {
         try {
           // Parse token: format is base64url(header).base64url(payload).signature

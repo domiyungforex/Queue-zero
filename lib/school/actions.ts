@@ -9,6 +9,7 @@ import type { SchoolActionState } from "./contracts";
 import { z } from "zod";
 import type { Json } from "@/lib/db/database.types";
 import { schoolActionErrorMessage } from "./action-errors";
+import { zonedWallTimeToUtc } from "./class-time";
 
 export async function manageSchool(_previous: SchoolActionState, form: FormData): Promise<SchoolActionState> {
   const membership = await requireBusinessMembership();
@@ -18,19 +19,15 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     if (raw.action === "enroll") raw.students = parseStudentCsv(String(raw.csv ?? ""));
     if (raw.action === "class") {
       raw.departure_required = false;
+      const dbForZone = await createUserSupabaseClient();
+      const zoneResult = await dbForZone.from("businesses").select("timezone").eq("id", membership.businessId).maybeSingle();
+      const timeZone = zoneResult.data?.timezone || "UTC";
       for (const field of ["starts_at", "planned_ends_at", "attendance_closes_at"]) {
         const val = raw[field];
         if (!val || val === "") {
           raw[field] = field === "planned_ends_at" ? null : "";
         } else {
-          const str = String(val).trim();
-          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(str)) {
-            raw[field] = str + ":00Z";
-          } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(str)) {
-            raw[field] = str + "Z";
-          } else {
-            raw[field] = str;
-          }
+          raw[field] = zonedWallTimeToUtc(String(val).trim(), timeZone);
         }
       }
       if (!raw.title) raw.title = null;

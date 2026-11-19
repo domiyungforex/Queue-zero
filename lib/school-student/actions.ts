@@ -206,7 +206,7 @@ export async function recordAttendance(input: unknown): Promise<ScanResult> {
     const db = createJoinSupabaseClient();
     const [deviceHash, networkHash] = await Promise.all([attendanceDeviceHash(token.organization_id), attendanceNetworkHash(token.organization_id)]);
     
-    // Primary: full 12-parameter signature (photo, location coordinates and accuracy)
+    const photo = parsed.data.photo && !parsed.data.photo.startsWith("data:") ? parsed.data.photo : null;
     let attendRes = await db.rpc("school_attend_accountless", {
       p_organization_id: token.organization_id,
       p_class_id: token.session_id,
@@ -216,7 +216,7 @@ export async function recordAttendance(input: unknown): Promise<ScanResult> {
       p_device_hash: deviceHash,
       p_network_hash: networkHash,
       p_request_id: parsed.data.requestId,
-      p_photo_url: parsed.data.photo ?? null,
+      p_photo_url: photo,
       p_location_lat: parsed.data.latitude ?? null,
       p_location_lng: parsed.data.longitude ?? null,
       p_location_accuracy_meters: parsed.data.accuracy ?? null,
