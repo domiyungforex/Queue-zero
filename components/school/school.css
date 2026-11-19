@@ -68,3 +68,12 @@
  .school-location-btn,.school-create-actions .button-primary,.school-form .button-primary,.school-form .button-secondary{width:100%;min-height:48px}
  .school-create-summary{background:#fffaf7}
 }
+
+.school-public-flow{width:min(720px,calc(100% - 32px));margin:24px auto 48px}
+.school-public-flow h1{margin:18px 0}
+.school-face-capture video,.school-face-capture img{width:min(100%,360px);aspect-ratio:1;object-fit:cover;border-radius:18px;background:#111318}
+.school-face-capture p{color:#5c564f;font-size:14px}
+.school-public-flow dl{display:grid;gap:8px;margin:12px 0}
+.school-public-flow dt{color:#8a8178;font-size:12px}
+.school-public-flow dd{margin:0;font-weight:700}
+@media(max-width:767px){.school-public-flow{width:min(100% - 24px,720px)}.school-face-capture video,.school-face-capture img{width:100%}}

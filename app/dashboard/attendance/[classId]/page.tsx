@@ -8,8 +8,9 @@ import { LiveRefresh } from "@/components/realtime/refresh";
 import { PageHeading, StatCard } from "@/components/ui/workspace";
 import "@/components/school/school.css";
 
-export default async function ClassPage({ params }: { params: Promise<{ classId: string }> }) {
+export default async function ClassPage({ params, searchParams }: { params: Promise<{ classId: string }>; searchParams?: Promise<{ q?: string; department?: string }> }) {
   const { classId } = await params;
+  const query: { q?: string; department?: string } = searchParams ? await searchParams : {};
   const { snapshot: data } = await getSchoolSnapshot(undefined, classId);
   const session = data.classes.find(item => item.id === classId)!;
   const course = data.courses.find(item => item.id === session.course_id)!;
@@ -30,6 +31,14 @@ export default async function ClassPage({ params }: { params: Promise<{ classId:
     return { record, displayName, displayMatric, flagged };
   });
 
+  const search = query.q?.trim().toLocaleLowerCase() ?? "";
+  const departmentFilter = query.department ?? "";
+  const departmentName = (departmentId?: string) => data.departments.find((department) => department.id === departmentId)?.name ?? "—";
+  const visible = (name: string, matric: string, departmentId?: string) => (!search || `${name} ${matric}`.toLocaleLowerCase().includes(search)) && (!departmentFilter || departmentId === departmentFilter);
+  const visibleStandard = standardRows.filter((row) => {
+    const student = data.students.find((item) => item.id === row.record.student_id);
+    return visible(row.displayName, row.displayMatric, student?.department_id);
+  });
   const present = records.filter(row => row.check_in_at).length;
   const percentLabel = isStandard
     ? null
@@ -98,10 +107,15 @@ export default async function ClassPage({ params }: { params: Promise<{ classId:
       <ClassControls session={session} />
 
       <h2 className="school-subheading">Student register</h2>
+      <form className="school-actions" role="search">
+        <label>Name or matric<input name="q" defaultValue={query.q ?? ""} placeholder="Search" /></label>
+        <label>Department<select name="department" defaultValue={departmentFilter}><option value="">All departments</option>{data.departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
+        <button className="button-secondary" type="submit">Filter</button>
+      </form>
 
       {isStandard ? (
         // STANDARD MODE: show all attendance submissions
-        standardRows.length === 0 ? (
+        visibleStandard.length === 0 ? (
           <p>No students have checked in yet. Students register by scanning the QR code.</p>
         ) : (
           <div className="school-table-wrap">
@@ -111,6 +125,7 @@ export default async function ClassPage({ params }: { params: Promise<{ classId:
                 <tr>
                   <th>Photo</th>
                   <th>Name</th>
+                  <th>Department</th>
                   <th>Matric</th>
                   <th>Arrival</th>
                   <th>Status</th>
@@ -119,7 +134,7 @@ export default async function ClassPage({ params }: { params: Promise<{ classId:
                 </tr>
               </thead>
               <tbody>
-                {standardRows.map(({ record, displayName, displayMatric, flagged }) => (
+                {visibleStandard.map(({ record, displayName, displayMatric, flagged }) => (
                   <tr key={record.id}>
                     <td>
                       {record.photo_url ? (
@@ -136,6 +151,7 @@ export default async function ClassPage({ params }: { params: Promise<{ classId:
                       )}
                     </td>
                     <th>{displayName}</th>
+                    <td>{departmentName(data.students.find((student) => student.id === record.student_id)?.department_id)}</td>
                     <td>{displayMatric}</td>
                     <td>{schoolTime(record.check_in_at)}</td>
                     <td>{record.status.replaceAll("_", " ")}</td>
@@ -168,6 +184,7 @@ export default async function ClassPage({ params }: { params: Promise<{ classId:
                 <tr>
                   <th>Photo</th>
                   <th>Name</th>
+                  <th>Department</th>
                   <th>Matric</th>
                   <th>Arrival</th>
                   <th>Status</th>
@@ -175,7 +192,7 @@ export default async function ClassPage({ params }: { params: Promise<{ classId:
                 </tr>
               </thead>
               <tbody>
-                {roster.map(student => {
+                {roster.filter((student) => visible(student.full_name, student.matric_number, student.department_id)).map(student => {
                   const row = records.find(r => r.student_id === student.id);
                   const flagged = unresolved.some(flag => flag.student_id === student.id);
                   return (
@@ -195,6 +212,7 @@ export default async function ClassPage({ params }: { params: Promise<{ classId:
                         )}
                       </td>
                       <th>{student.full_name}</th>
+                      <td>{departmentName(student.department_id)}</td>
                       <td>{student.matric_number}</td>
                       <td>{schoolTime(row?.check_in_at ?? null)}</td>
                       <td>{row?.status.replaceAll("_", " ") ?? "NOT PRESENT"}</td>

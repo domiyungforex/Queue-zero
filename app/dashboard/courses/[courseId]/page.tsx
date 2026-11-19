@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSchoolSnapshot } from "@/lib/school/data";
 import { schoolTime, attendanceIsLate } from "@/lib/school/contracts";
 import { CreateClassForm, EnrollmentForm, SchoolForm, TextField } from "@/components/school/forms";
+import { CourseAudienceForm } from "@/components/school/course-audience-form";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { EmptyState, PageHeading } from "@/components/ui/workspace";
 import "@/components/school/school.css";
@@ -34,6 +35,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
       })}</tbody>
     </table></div> : <EmptyState title="No classes yet" description="Create a class and open attendance to display its stable QR." />}
     <div className="school-grid"><CreateClassForm courseId={courseId} /><EnrollmentForm snapshot={data} courseId={courseId} /></div>
+    <CourseAudienceForm courseId={courseId} departments={data.departments.map((department) => ({ id: department.id, name: department.name }))} />
     {canManage ? <details className="school-optional">
       <summary>Lecturer access <span>Optional</span></summary>
       <div className="school-optional-content">

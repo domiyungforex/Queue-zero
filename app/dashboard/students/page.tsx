@@ -4,13 +4,14 @@ import { LiveRefresh } from "@/components/realtime/refresh";
 import { EducationEmpty, EducationHeading, EducationStatus, initials } from "@/components/school/education-ui";
 import styles from "@/components/school/education-pages.module.css";
 import { EnrollmentForm } from "@/components/school/forms";
+import { StudentCorrectionForm } from "@/components/school/student-correction-form";
 import { getSchoolSnapshot } from "@/lib/school/data";
 
 type StudentFilter = "all" | "present" | "absent" | "late";
 const tone = (status?: string) => status === "PRESENT" ? "success" as const : status === "ABSENT" ? "danger" as const : status === "LATE" ? "warning" as const : "muted" as const;
 
 export default async function StudentsPage({ searchParams = Promise.resolve({}) }: { searchParams?: Promise<{ q?: string; filter?: string }> } = {}) {
-  const [{ snapshot: data }, query] = await Promise.all([getSchoolSnapshot(), searchParams]);
+  const [{ snapshot: data, canManage }, query] = await Promise.all([getSchoolSnapshot(), searchParams]);
   const search = query.q?.trim().toLocaleLowerCase() ?? "";
   const filter: StudentFilter = ["present", "absent", "late"].includes(query.filter ?? "") ? query.filter as StudentFilter : "all";
   const latestByStudent = new Map<string, (typeof data.attendance)[number]>();
@@ -25,6 +26,10 @@ export default async function StudentsPage({ searchParams = Promise.resolve({}) 
   return <main className={styles.page}>
     <EducationHeading eyebrow="STUDENTS" title="Students" description="Manage your students and view details." action={data.courses.length ? <a className={styles.primary} href="#import-roster"><Plus size={18} aria-hidden="true" />Add students</a> : undefined} />
     <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
+    <section className={styles.panel}>
+      <p>Students register once, then check in with a matriculation number. These links are for this institution only.</p>
+      <p><a href={`/attend/register?org=${data.organization.id}`}>Student registration</a> · <a href={`/attend/check?org=${data.organization.id}`}>Attendance check-in</a></p>
+    </section>
     <form className={styles.toolbar} role="search"><label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">Search students</span><input name="q" type="search" defaultValue={query.q} placeholder="Search students…" /><input type="hidden" name="filter" value={filter} /></label><button className={styles.secondary} type="submit">Search</button></form>
     <nav className={styles.filters} aria-label="Filter students">{tabs.map((tab) => <Link className={styles.tab} data-active={filter === tab.value} key={tab.value} href={{ pathname: "/dashboard/students", query: { ...(query.q ? { q: query.q } : {}), ...(tab.value === "all" ? {} : { filter: tab.value }) } }}>{tab.label}</Link>)}</nav>
     {students.length ? <section className={styles.panel} aria-label="Students"><ul className={styles.rows}>{students.map((student) => {
@@ -32,6 +37,7 @@ export default async function StudentsPage({ searchParams = Promise.resolve({}) 
       const courseCodes = data.enrollments.filter((item) => item.student_id === student.id).map((item) => data.courses.find((course) => course.id === item.course_id)?.code).filter(Boolean).join(", ");
       return <li key={student.id}><span className={styles.avatar}>{initials(student.full_name)}</span><span className={styles.rowMain}><strong>{student.full_name}</strong><span>{student.matric_number} · {courseCodes || "No class assigned"}</span></span><span className={styles.rowEnd}>{latest ? <EducationStatus tone={tone(latest.status)}>{latest.status.replaceAll("_", " ")}</EducationStatus> : <EducationStatus tone="muted">No record</EducationStatus>}</span><ChevronRight className={styles.chevron} size={17} aria-hidden="true" /></li>;
     })}</ul></section> : <EducationEmpty title={search || filter !== "all" ? "No matching students" : "No students yet"} description={search || filter !== "all" ? "Try another search or attendance status." : "Import the official roster with each student’s name and matric number."} href={data.courses.length ? "#import-roster" : "/dashboard/courses?create=1#course-setup"} label={data.courses.length ? "Add students" : "Create a class"} icon={UsersRound} />}
+    {canManage && data.students.length ? <section className={`${styles.panel} ${styles.formWrap}`}><StudentCorrectionForm students={data.students} departments={data.departments} /></section> : null}
     {data.courses.length ? <section id="import-roster" className={`${styles.panel} ${styles.formWrap}`}><EnrollmentForm snapshot={data} /></section> : null}
   </main>;
 }
