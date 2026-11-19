@@ -113,7 +113,17 @@ export async function identifyStudent(organizationId: string, matricNumber: stri
     level: z.string().optional(),
     has_photo: z.boolean().optional(),
     photo_path: z.string().nullable().optional(),
-    sessions: z.array(z.object({ id: z.uuid(), code: z.string(), title: z.string(), session_title: z.string().nullable(), starts_at: z.string().nullable() })).optional(),
+    sessions: z.array(z.object({
+      id: z.uuid(),
+      code: z.string(),
+      title: z.string(),
+      session_title: z.string().nullable(),
+      starts_at: z.string().nullable(),
+      location_required: z.boolean().optional(),
+      location_lat: z.number().nullable().optional(),
+      location_lng: z.number().nullable().optional(),
+      geofence_radius_meters: z.number().nullable().optional(),
+    })).optional(),
   }).safeParse(result.data);
   if (result.error || !body.success || !body.data.ok || !body.data.student_id) {
     return { ok: false as const, message: body.success ? body.data.message ?? "No active attendance session was found for that matriculation number." : "Attendance identification is unavailable." };
@@ -133,11 +143,31 @@ export async function identifyStudent(organizationId: string, matricNumber: stri
     department: body.data.department ?? "",
     level: body.data.level ?? "",
     photoUrl,
-    sessions: sessions.map(({ id, code, title, session_title, starts_at }) => ({ id, code, title, sessionTitle: session_title, startsAt: starts_at })),
+    sessions: sessions.map(({ id, code, title, session_title, starts_at, location_required, location_lat, location_lng, geofence_radius_meters }) => ({
+      id,
+      code,
+      title,
+      sessionTitle: session_title,
+      startsAt: starts_at,
+      locationRequired: Boolean(location_required && location_lat != null && location_lng != null),
+      latitude: location_lat ?? null,
+      longitude: location_lng ?? null,
+      radiusMeters: geofence_radius_meters ?? null,
+    })),
   };
 }
 
-export async function recordIdentifiedAttendance(input: { ticket: string; classId: string; deviceId: string; photo?: string; method: "LIVE_PHOTO" | "MANUAL_DECLARED" }) {
+export async function recordIdentifiedAttendance(input: {
+  ticket: string;
+  classId: string;
+  deviceId: string;
+  photo?: string;
+  method: "LIVE_PHOTO" | "MANUAL_DECLARED";
+  latitude?: number | null;
+  longitude?: number | null;
+  accuracy?: number | null;
+  capturedAt?: string | null;
+}) {
   let ticket;
   try {
     ticket = readIdentityTicket(input.ticket, attendanceSecret());
@@ -165,6 +195,10 @@ export async function recordIdentifiedAttendance(input: { ticket: string; classI
     p_photo_path: photoPath,
     p_method: input.method,
     p_device_hash: deviceHash(ticket.org, input.deviceId),
+    p_location_lat: input.latitude ?? null,
+    p_location_lng: input.longitude ?? null,
+    p_location_accuracy_meters: input.accuracy ?? null,
+    p_location_captured_at: input.capturedAt ?? null,
   });
   const body = z.object({
     ok: z.boolean(),

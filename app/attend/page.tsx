@@ -51,6 +51,20 @@ async function resolveAttendanceClass(token: string) {
     if (!parsed.data.open) {
       return { classInfo: null, message: "Attendance for this class is currently closed." };
     }
+    if (parsed.data.location_lat == null || parsed.data.location_lng == null) {
+      const { data: zone } = await db
+        .from("class_sessions")
+        .select("location_lat, location_lng, geofence_radius_meters")
+        .eq("id", payload.session_id)
+        .eq("organization_id", payload.organization_id)
+        .maybeSingle();
+      if (zone?.location_lat != null && zone.location_lng != null) {
+        parsed.data.location_required = true;
+        parsed.data.location_lat = zone.location_lat;
+        parsed.data.location_lng = zone.location_lng;
+        parsed.data.geofence_radius_meters = zone.geofence_radius_meters ?? parsed.data.geofence_radius_meters;
+      }
+    }
     return { classInfo: parsed.data, message: null };
   }
 

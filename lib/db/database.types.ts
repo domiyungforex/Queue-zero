@@ -3389,6 +3389,7 @@ export type Database = {
                     "p_location_lat"?: number | null;
                     "p_location_lng"?: number | null;
                     "p_location_accuracy_meters"?: number | null;
+                    "p_location_captured_at"?: string | null;
                 };
                 Returns: Json;
             };

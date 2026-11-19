@@ -82,8 +82,18 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
 
       // If the database has an older RPC signature (e.g. 7 parameters from 20261110030000_smart_attendance_modes.sql
       // or PostgREST schema cache hasn't reloaded the 11-param signature), gracefully fall back:
+      const wantsLocation = parsed.data.location_lat != null && parsed.data.location_lng != null;
       if (
         primaryResult.error &&
+        wantsLocation &&
+        (primaryResult.error.code === "PGRST202" ||
+          (primaryResult.error.message && primaryResult.error.message.includes("schema cache")))
+      ) {
+        return { ok: false, message: "The class location could not be saved, so the session was not created. Apply the attendance location update and try again." };
+      }
+      if (
+        primaryResult.error &&
+        !wantsLocation &&
         (primaryResult.error.code === "PGRST202" ||
           (primaryResult.error.message && primaryResult.error.message.includes("schema cache")))
       ) {

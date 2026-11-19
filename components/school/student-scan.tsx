@@ -24,6 +24,7 @@ import {
 } from "@/lib/school-student/actions";
 import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
+import { assessAttendanceLocation, geolocationFailureMessage } from "@/lib/school/location";
 import styles from "./attendance-scan.module.css";
 
 export type PublicClass = {
@@ -47,6 +48,7 @@ type LocationState = {
   latitude?: number;
   longitude?: number;
   accuracy?: number;
+  capturedAt?: string;
   distanceMeters?: number;
   message?: string;
 };
@@ -65,25 +67,6 @@ function safeFormatTime(val?: string | null): string {
   } catch {
     return "Recorded";
   }
-}
-
-function calculateDistanceMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
 }
 
 export function StudentScan({
@@ -117,9 +100,7 @@ export function StudentScan({
       classInfo.location_lat != null &&
       classInfo.location_lng != null
   );
-  const [locationState, setLocationState] = useState<LocationState>({
-    status: isLocationRequired ? "idle" : "verified",
-  });
+  const [locationState, setLocationState] = useState<LocationState>({ status: "idle" });
 
   // Camera / Selfie
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -149,75 +130,46 @@ export function StudentScan({
 
   // Request location when required
   const requestLocation = useCallback(() => {
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setLocationState({
+        status: "error",
+        message: "Location can only be read on a secure connection. Open the attendance page over HTTPS and try again.",
+      });
+      return;
+    }
     if (!navigator.geolocation) {
       setLocationState({
         status: "error",
-        message: "Geolocation is not supported by your browser.",
+        message: "This browser does not support GPS location. Try Chrome or Safari on the phone you are attending with.",
       });
       return;
     }
     setLocationState({ status: "requesting" });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const studentLat = pos.coords.latitude;
-        const studentLng = pos.coords.longitude;
-        const accuracy = Math.round(pos.coords.accuracy);
-
-        if (classInfo.location_lat != null && classInfo.location_lng != null) {
-          const dist = calculateDistanceMeters(
-            studentLat,
-            studentLng,
-            classInfo.location_lat,
-            classInfo.location_lng
-          );
-          const maxRadius = classInfo.geofence_radius_meters ?? 100;
-          const accuracyOk = accuracy <= Math.max(maxRadius / 2, 50);
-
-          if (!accuracyOk) {
-            setLocationState({
-              status: "error",
-              latitude: studentLat,
-              longitude: studentLng,
-              accuracy,
-              distanceMeters: dist,
-              message: `Location accuracy is too low (±${accuracy}m). Please move to an open area and retry.`,
-            });
-          } else if (dist <= maxRadius) {
-            setLocationState({
-              status: "verified",
-              latitude: studentLat,
-              longitude: studentLng,
-              accuracy,
-              distanceMeters: dist,
-              message: `Within class zone (${dist}m away, ±${accuracy}m accuracy)`,
-            });
-          } else {
-            setLocationState({
-              status: "error",
-              latitude: studentLat,
-              longitude: studentLng,
-              accuracy,
-              distanceMeters: dist,
-              message: `You are outside the permitted area (${dist}m away; maximum ${maxRadius}m permitted).`,
-            });
-          }
-        } else {
-          setLocationState({
-            status: "verified",
-            latitude: studentLat,
-            longitude: studentLng,
-            accuracy,
-            message: `Location recorded (±${accuracy}m accuracy)`,
-          });
-        }
+        const assessment = assessAttendanceLocation({
+          sessionLatitude: classInfo.location_lat,
+          sessionLongitude: classInfo.location_lng,
+          radiusMeters: classInfo.geofence_radius_meters,
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracyMeters: pos.coords.accuracy,
+        });
+        const capturedAt = new Date(pos.timestamp || Date.now()).toISOString();
+        setLocationState({
+          status: assessment.verified ? "verified" : "error",
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: Math.round(pos.coords.accuracy),
+          capturedAt,
+          distanceMeters: assessment.distanceMeters ?? undefined,
+          message: assessment.message,
+        });
       },
       (err) => {
-        let msg = "Location permission denied. Please allow location access to continue.";
-        if (err.code === err.POSITION_UNAVAILABLE) msg = "Location information unavailable.";
-        if (err.code === err.TIMEOUT) msg = "Location request timed out. Please retry.";
-        setLocationState({ status: "error", message: msg });
+        setLocationState({ status: "error", message: geolocationFailureMessage(err.code) });
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   }, [classInfo.location_lat, classInfo.location_lng, classInfo.geofence_radius_meters]);
 
@@ -458,9 +410,10 @@ export function StudentScan({
         fullName: effectiveName,
         matricNumber: effectiveMatric,
         photo: photoToSubmit,
-        latitude: locationState.latitude ?? null,
-        longitude: locationState.longitude ?? null,
-        accuracy: locationState.accuracy ?? null,
+        latitude: locationState.status === "verified" ? locationState.latitude ?? null : null,
+        longitude: locationState.status === "verified" ? locationState.longitude ?? null : null,
+        accuracy: locationState.status === "verified" ? locationState.accuracy ?? null : null,
+        capturedAt: locationState.status === "verified" ? locationState.capturedAt ?? null : null,
       });
 
       setResult(response);
@@ -796,8 +749,8 @@ export function StudentScan({
                 <div className={styles.locationHeader}>
                   <MapPin size={18} className={styles.locationIcon} />
                   <div>
-                    <strong>Location Verification</strong>
-                    <p>Required by lecturer to verify presence in classroom.</p>
+                    <strong>Class location</strong>
+                    <p>This session checks that your GPS reading is inside the lecturer’s attendance zone. Location is requested once, only for this check-in, and is not tracked in the background.</p>
                   </div>
                 </div>
 
@@ -812,7 +765,7 @@ export function StudentScan({
                   <div className={styles.locationVerifiedBox}>
                     <CheckCircle2 size={18} />
                     <div>
-                      <strong>Location Confirmed</strong>
+                      <strong>GPS reading accepted</strong>
                       <p>{locationState.message}</p>
                     </div>
                   </div>

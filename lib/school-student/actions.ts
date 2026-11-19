@@ -19,6 +19,7 @@ const resultSchema = z.object({
   photo_url: z.string().nullable().optional(),
   identity_status: z.string().nullable().optional(),
   location_verified: z.boolean().nullable().optional(),
+  location_status: z.string().nullable().optional(),
 });
 export type ScanResult = z.infer<typeof resultSchema> & { expired?: boolean };
 
@@ -79,11 +80,13 @@ export async function recordAttendance(input: unknown): Promise<ScanResult> {
       p_location_lat: parsed.data.latitude ?? null,
       p_location_lng: parsed.data.longitude ?? null,
       p_location_accuracy_meters: parsed.data.accuracy ?? null,
+      p_location_captured_at: parsed.data.capturedAt ?? null,
     });
 
-    // Fallback: If PostgREST has not cached 12 params (PGRST202), fall back to 8 params
+    const sentLocation = parsed.data.latitude != null && parsed.data.longitude != null;
     if (
       attendRes.error &&
+      !sentLocation &&
       (attendRes.error.code === "PGRST202" ||
         (attendRes.error.message && attendRes.error.message.includes("schema cache")))
     ) {
@@ -105,6 +108,9 @@ export async function recordAttendance(input: unknown): Promise<ScanResult> {
     if (attendRes.error) {
       if (process.env.NODE_ENV !== "production") {
         console.warn("Attendance record failed", { code: attendRes.error.code, message: attendRes.error.message });
+      }
+      if (sentLocation && (attendRes.error.code === "PGRST202" || attendRes.error.message?.includes("schema cache"))) {
+        return { ok: false, status: "UNAVAILABLE", message: "Your location was read, but attendance could not store it. Attendance was not recorded." };
       }
       if (attendRes.error.code === "22023") {
         return { ok: false, status: "INVALID", message: attendRes.error.message || "Attendance is closed or details are invalid." };

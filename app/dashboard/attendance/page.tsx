@@ -6,7 +6,6 @@ import {
   ClipboardCheck,
   Clock3,
   LogOut,
-  MapPin,
   Search,
   ShieldCheck,
   UserX,
@@ -22,6 +21,7 @@ import {
   formatTime,
   initials,
 } from "@/components/school/education-ui";
+import { AttendanceLocation } from "@/components/school/attendance-location";
 import styles from "@/components/school/education-pages.module.css";
 import { getSchoolSnapshot } from "@/lib/school/data";
 
@@ -449,11 +449,7 @@ export default async function AttendancePage({
                       ) : (
                         <span style={{ color: "#6d36d3" }}>Standard</span>
                       )}
-                      {record.location_verified ? (
-                        <span style={{ color: "#15945f", display: "inline-flex", alignItems: "center", gap: "2px" }}>
-                          <MapPin size={12} /> Location ✓
-                        </span>
-                      ) : null}
+                      <AttendanceLocation record={record} />
                     </span>
                   </Link>
 

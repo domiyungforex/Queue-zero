@@ -4,6 +4,7 @@ import { getSchoolSnapshot } from "@/lib/school/data";
 import { schoolTime, attendanceIsLate } from "@/lib/school/contracts";
 import { ClassControls, SchoolForm } from "@/components/school/forms";
 import { AttendanceQr } from "@/components/school/attendance-qr";
+import { AttendanceLocation } from "@/components/school/attendance-location";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { PageHeading, StatCard } from "@/components/ui/workspace";
 import "@/components/school/school.css";
@@ -155,13 +156,7 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
                     <td>{displayMatric}</td>
                     <td>{schoolTime(record.check_in_at)}</td>
                     <td>{record.status.replaceAll("_", " ")}</td>
-                    <td>
-                      {record.location_verified
-                        ? "✓ Verified"
-                        : record.location_lat != null
-                          ? "Captured"
-                          : "—"}
-                    </td>
+                    <td><AttendanceLocation record={record} /></td>
                     <td>{flagged ? "Needs review" : "—"}</td>
                   </tr>
                 ))}
@@ -220,7 +215,7 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
                         {flagged
                           ? "Needs review"
                           : row?.check_in_at
-                            ? `Roster matched${row.location_verified ? " · Location ✓" : ""}`
+                            ? <><span>Roster matched</span><AttendanceLocation record={row} /></>
                             : "—"}
                       </td>
                     </tr>

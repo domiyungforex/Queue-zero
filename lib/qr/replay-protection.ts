@@ -11,4 +11,5 @@ export const attendanceScanSchema = z.object({
   latitude: z.number().min(-90).max(90).optional().nullable(),
   longitude: z.number().min(-180).max(180).optional().nullable(),
   accuracy: z.number().min(0).max(100_000).optional().nullable(),
+  capturedAt: z.string().min(10).max(40).optional().nullable(),
 }).strict();

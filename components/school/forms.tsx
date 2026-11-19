@@ -59,10 +59,13 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
         setDetectingLocation(false);
       },
       (err) => {
-        alert(`Could not get current location: ${err.message}`);
+        const denied = err.code === 1;
+        alert(denied
+          ? "Location permission was denied. Allow location for this site, then try again."
+          : `Could not get the current GPS reading: ${err.message}`);
         setDetectingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   };
 
