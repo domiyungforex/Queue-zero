@@ -141,7 +141,17 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     if (result.error) {
       if (process.env.NODE_ENV !== "production") console.warn("School action failed", { action, code: result.error.code, message: result.error.message });
       const attendanceAction = ["class", "open", "close_arrival", "finish", "revoke_qr", "resolve_flag"].includes(action);
-      return { ok: false, message: attendanceAction ? schoolActionErrorMessage(result.error) : result.error.code === "42501" ? "This record is unavailable or your access has changed." : result.error.code === "23505" ? "This record already exists. Check the course, email or matric number." : "We couldn’t save this change. Try again." };
+      const isCourseCreate = action === "course";
+      const message = attendanceAction
+        ? schoolActionErrorMessage(result.error)
+        : result.error.code === "42501"
+          ? isCourseCreate
+            ? "You do not have administrative permission to create courses in this department."
+            : "This record is unavailable or your access has changed."
+          : result.error.code === "23505"
+            ? "This record already exists. Check the course code, email or matric number."
+            : result.error.message || "We couldn’t save this change. Try again.";
+      return { ok: false, message };
     }
     const response = z.object({ id: z.uuid().optional(), message: z.string() }).safeParse(result.data);
     if (!response.success) return { ok: false, message: "The response was unavailable. Reload to check before retrying." };

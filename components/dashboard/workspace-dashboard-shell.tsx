@@ -10,7 +10,6 @@ import { TURNMARK_ASSETS } from "@/lib/brand/assets";
 import type { WorkspaceNotificationSnapshot } from "@/lib/notifications/workspace";
 import type { Database } from "@/lib/db/database.types";
 import styles from "./workspace-shell.module.css";
-import { SidebarFrame } from "@/components/dashboard/sidebar-frame";
 import { ServerResolvedAnalyticsIdentity } from "@/lib/analytics/identity";
 import { WorkspaceAnalyticsContext } from "@/components/analytics/workspace-context";
 
@@ -54,26 +53,36 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
     institutionStaffManagement,
   };
   const roleLabel = titleCase(membership.role);
+  const isIndividual = membership.workspaceOwnership === "INDIVIDUAL";
+  const isOrganizationCms = !isIndividual && (membership.role === "owner" || membership.role === "admin");
+  const isLecturer = membership.role === "lecturer";
+  const workspaceContextLabel = isOrganizationCms
+    ? "Organization CMS"
+    : isLecturer
+      ? "Lecturer Workspace"
+      : isIndividual
+        ? "Personal Workspace"
+        : "Operational Workspace";
   const initials = (userName ?? membership.businessName).split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
   const wordmark = TURNMARK_ASSETS.branding.wordmark;
   const education = membership.organizationMode === "SCHOOL" || membership.organizationMode === "HYBRID" || membership.organizationType === "UNIVERSITY_SCHOOL" || membership.professionalCategory === "LECTURER_TEACHER";
   const WorkspaceIcon = education ? GraduationCap : Building2;
 
   const workspaceType = membership.organizationMode ?? membership.workspaceOwnership ?? "ORGANIZATION";
-  return <><ServerResolvedAnalyticsIdentity userId={userId} /><WorkspaceAnalyticsContext workspaceKey={membership.businessId} workspaceType={workspaceType} userRole={membership.role} />
-    <SidebarFrame
-      sidebar={<>
-        <a className={styles.brand} href="/dashboard" aria-label="TuRnMaRk dashboard"><Image src={wordmark.src} width={wordmark.width} height={wordmark.height} alt={wordmark.alt} priority /></a>
-        <p className={styles.navCaption}>WORKSPACE</p>
-        <DashboardNavigation {...navigation} variant="desktop" />
-        <p className={styles.sidebarFoot}>TuRnMaRk keeps operational data inside the workspace you are authorized to use.</p>
-      </>}
-      header={<header className={styles.header}>
-        <div className={styles.identity}><span className={styles.workspaceIcon}><WorkspaceIcon size={18} /></span><div className={styles.identityCopy}><strong>{membership.businessName}</strong><span>{roleLabel} · {membership.workspaceOwnership === "INDIVIDUAL" ? "personal" : "organization"} workspace</span></div><LiveRefresh key={membership.businessId} topic={`business:${membership.businessId}`} authenticated /></div>
+  return <><ServerResolvedAnalyticsIdentity userId={userId} /><WorkspaceAnalyticsContext workspaceKey={membership.businessId} workspaceType={workspaceType} userRole={membership.role} /><div data-dashboard-shell="v2" className={styles.shell}>
+    <aside className={styles.sidebar}>
+      <a className={styles.brand} href="/dashboard" aria-label="TuRnMaRk dashboard"><Image src={wordmark.src} width={wordmark.width} height={wordmark.height} alt={wordmark.alt} priority /></a>
+      <p className={styles.navCaption}>{isOrganizationCms ? "ORGANIZATION CMS" : "WORKSPACE"}</p>
+      <DashboardNavigation {...navigation} variant="desktop" />
+      <p className={styles.sidebarFoot}>TuRnMaRk keeps operational data inside the workspace you are authorized to use.</p>
+    </aside>
+    <div className={styles.body}>
+      <header className={styles.header}>
+        <div className={styles.identity}><span className={styles.workspaceIcon}><WorkspaceIcon size={18} /></span><div className={styles.identityCopy}><strong>{membership.businessName}</strong><span>{roleLabel} · {workspaceContextLabel}</span></div><LiveRefresh key={membership.businessId} topic={`business:${membership.businessId}`} authenticated /></div>
         <div className={styles.headerSwitcher}><BusinessSelector key={membership.businessId} businessId={membership.businessId} memberships={memberships} /></div>
         <div className={styles.account}><NotificationCenter key={`desktop:${membership.businessId}`} variant="desktop" businessId={membership.businessId} userId={userId} initial={notifications} /><AuthNavigation /></div>
-      </header>}
-      mobileHeader={<>
+      </header>
+      <header className={styles.mobileHeader}>
         <a className={styles.mobileBrand} href="/dashboard" aria-label="TuRnMaRk dashboard"><Image src={wordmark.src} width={wordmark.width} height={wordmark.height} alt={wordmark.alt} priority /></a>
         <MobileWorkspaceSwitcher businessId={membership.businessId} memberships={memberships} contextLabel={education ? `${roleLabel} · School` : undefined} education={education} />
         <NotificationCenter key={`mobile:${membership.businessId}`} variant="mobile" businessId={membership.businessId} userId={userId} initial={notifications} />
@@ -82,11 +91,10 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
           <a href="/onboarding?new=workspace">Add workspace</a>
           <AuthNavigation showDashboard={false} />
         </div></details>
-      </>}
-      footer={<footer className={styles.footer}><span>TuRnMaRk · People flow better.</span><span>{membership.businessName}</span></footer>}
-      mobileNav={<DashboardNavigation {...navigation} variant="mobile" />}
-    >
-      {children}
-    </SidebarFrame>
-  </>;
+      </header>
+      <main id="main" className={styles.main}>{children}</main>
+      <footer className={styles.footer}><span>TuRnMaRk · People flow better.</span><span>{membership.businessName}</span></footer>
+      <DashboardNavigation {...navigation} variant="mobile" />
+    </div>
+  </div></>;
 }

@@ -6,11 +6,13 @@ import {
   ClipboardCheck,
   Clock3,
   LogOut,
+  MapPin,
   Search,
   ShieldCheck,
   UserX,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import {
   EducationEmpty,
@@ -20,10 +22,8 @@ import {
   formatTime,
   initials,
 } from "@/components/school/education-ui";
-import { AttendanceLocation } from "@/components/school/attendance-location";
 import styles from "@/components/school/education-pages.module.css";
 import { getSchoolSnapshot } from "@/lib/school/data";
-import { attendancePhotoSrc } from "@/lib/school/photo-src";
 
 const attended = new Set(["PRESENT", "LATE", "EARLY_LEAVE", "INCOMPLETE", "FLAGGED"]);
 const percent = (count: number, total: number) =>
@@ -47,6 +47,7 @@ export default async function AttendancePage({
   searchParams = Promise.resolve({}),
 }: {
   searchParams?: Promise<{
+    dept?: string;
     course?: string;
     session?: string;
     period?: string;
@@ -56,14 +57,19 @@ export default async function AttendancePage({
     page?: string;
   }>;
 } = {}) {
-  const [{ snapshot: data }, query] = await Promise.all([getSchoolSnapshot(), searchParams]);
+  const [{ snapshot: data, canManage }, query] = await Promise.all([getSchoolSnapshot(), searchParams]);
 
   const days = query.period === "30" ? 30 : query.period === "all" ? null : 7;
   const cutoff = days ? reportingCutoff(days) : null;
 
-  // Filter sessions by course, session ID, and cutoff date
+  const deptCourseIds = query.dept
+    ? new Set(data.courses.filter((c) => c.department_id === query.dept).map((c) => c.id))
+    : null;
+
+  // Filter sessions by department, course, session ID, and cutoff date
   const sessions = data.classes.filter(
     (session) =>
+      (!deptCourseIds || deptCourseIds.has(session.course_id)) &&
       (!query.course || session.course_id === query.course) &&
       (!query.session || session.id === query.session) &&
       (!cutoff || !session.starts_at || Date.parse(session.starts_at) >= cutoff)
@@ -103,8 +109,8 @@ export default async function AttendancePage({
       if (searchFilter) {
         const student = data.students.find((s) => s.id === record.student_id);
         const name = (record.submitted_name ?? student?.full_name ?? "").toLowerCase();
-      const matric = `${record.submitted_matric_number ?? ""} ${student?.matric_number ?? ""}`.toLowerCase();
-      if (!name.includes(searchFilter) && !matric.includes(searchFilter)) return false;
+        const matric = (record.submitted_matric_number ?? student?.matric_number ?? "").toLowerCase();
+        if (!name.includes(searchFilter) && !matric.includes(searchFilter)) return false;
       }
       return true;
     })
@@ -169,6 +175,7 @@ export default async function AttendancePage({
   // Helper to build URL query preserving filters
   const buildPageUrl = (pageNumber: number) => {
     const params = new URLSearchParams();
+    if (query.dept) params.set("dept", query.dept);
     if (query.course) params.set("course", query.course);
     if (query.session) params.set("session", query.session);
     if (query.period) params.set("period", query.period);
@@ -182,11 +189,15 @@ export default async function AttendancePage({
   return (
     <main className={styles.page}>
       <EducationHeading
-        eyebrow="ATTENDANCE"
-        title="Attendance records"
-        description="Search, filter, and monitor student attendance across courses and sessions in real time."
+        eyebrow={canManage ? "INSTITUTIONAL ATTENDANCE OVERSIGHT" : "ATTENDANCE"}
+        title={canManage ? "Consolidated Attendance Oversight" : "Attendance records"}
+        description={
+          canManage
+            ? "Realtime attendance records, verification statuses, and exceptions across all departments, courses, and authorized instructors."
+            : "Search, filter, and monitor student attendance across your assigned courses and sessions."
+        }
         action={
-          actionable ? (
+          actionable && !canManage ? (
             <Link className={styles.primary} href={`/dashboard/attendance/${actionable.id}`}>
               <ClipboardCheck size={18} aria-hidden="true" />
               Take attendance
@@ -196,69 +207,83 @@ export default async function AttendancePage({
       />
       <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
 
-      <form className={styles.registerBar} method="get" action="/dashboard/attendance">
-        <div className={styles.registerIntro}>
-          <div>
-            <h2>Find a student</h2>
-            <p>Search by name, matriculation number, or JAMB number. A 100-level JAMB number is the identifier the institution issued. It is shown as registered and is not replaced.</p>
-          </div>
-          <span className={styles.registerCount}>{allFilteredRecords.length} {allFilteredRecords.length === 1 ? "record" : "records"}</span>
-        </div>
-        <div className={styles.registerFields}>
-          <label className={`${styles.registerField} ${styles.registerFieldSearch}`}>
-            <span>Search</span>
-            <span className={styles.registerSearch}>
-              <Search size={16} aria-hidden="true" />
-              <input
-                name="search"
-                type="search"
-                placeholder="Name, matric or JAMB number"
-                defaultValue={query.search ?? ""}
-                autoComplete="off"
-              />
-            </span>
-          </label>
-          <label className={styles.registerField}>
-            <span>Course</span>
+      {/* Search and Filters Toolbar */}
+      <form className={styles.toolbar} method="get" action="/dashboard/attendance">
+        <label className={styles.search} style={{ gridColumn: "1 / -1" }}>
+          <Search size={16} aria-hidden="true" />
+          <input
+            name="search"
+            placeholder="Search by student name or matriculation number…"
+            defaultValue={query.search ?? ""}
+          />
+        </label>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", width: "100%", gridColumn: "1 / -1" }}>
+          {data.departments.length > 0 && (
+            <label className={styles.search} style={{ flex: "1 1 180px", minHeight: "44px" }}>
+              <span className="sr-only">Department</span>
+              <select name="dept" defaultValue={query.dept ?? ""}>
+                <option value="">All departments</option>
+                {data.departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          <label className={styles.search} style={{ flex: "1 1 180px", minHeight: "44px" }}>
+            <span className="sr-only">Course</span>
             <select name="course" defaultValue={query.course ?? ""}>
               <option value="">All courses</option>
-              {data.courses.map((course) => (
-                <option key={course.id} value={course.id}>{course.code} · {course.title}</option>
-              ))}
+              {data.courses
+                .filter((c) => !query.dept || c.department_id === query.dept)
+                .map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.code} · {course.title}
+                  </option>
+                ))}
             </select>
           </label>
-          <label className={styles.registerField}>
-            <span>Session</span>
+
+          <label className={styles.search} style={{ flex: "1 1 180px", minHeight: "44px" }}>
+            <span className="sr-only">Session</span>
             <select name="session" defaultValue={query.session ?? ""}>
               <option value="">All sessions</option>
               {data.classes.map((cls) => {
                 const c = data.courses.find((item) => item.id === cls.course_id);
                 return (
                   <option key={cls.id} value={cls.id}>
-                    {c ? `${c.code} · ` : ""}{cls.title ? `${cls.title} · ` : ""}{cls.starts_at?.slice(0, 10) ?? "Session"} ({cls.status})
+                    {c ? `${c.code} · ` : ""}
+                    {cls.title ? `${cls.title} · ` : ""}
+                    {cls.starts_at?.slice(0, 10) ?? "Session"} ({cls.status})
                   </option>
                 );
               })}
             </select>
           </label>
-          <label className={styles.registerField}>
-            <span>Period</span>
+
+          <label className={styles.search} style={{ flex: "1 1 140px", minHeight: "44px" }}>
+            <span className="sr-only">Time period</span>
             <select name="period" defaultValue={query.period ?? "7"}>
               <option value="7">This week</option>
               <option value="30">Last 30 days</option>
               <option value="all">All time</option>
             </select>
           </label>
-          <label className={styles.registerField}>
-            <span>Mode</span>
+
+          <label className={styles.search} style={{ flex: "1 1 140px", minHeight: "44px" }}>
+            <span className="sr-only">Verification Mode</span>
             <select name="mode" defaultValue={query.mode ?? ""}>
               <option value="">All modes</option>
               <option value="STANDARD">Standard</option>
               <option value="VERIFIED">Verified</option>
             </select>
           </label>
-          <label className={styles.registerField}>
-            <span>Status</span>
+
+          <label className={styles.search} style={{ flex: "1 1 140px", minHeight: "44px" }}>
+            <span className="sr-only">Status</span>
             <select name="status" defaultValue={query.status ?? ""}>
               <option value="">All statuses</option>
               <option value="PRESENT">Present</option>
@@ -267,12 +292,10 @@ export default async function AttendancePage({
               <option value="EARLY_LEAVE">Early leave</option>
             </select>
           </label>
-        </div>
-        <div className={styles.registerActions}>
-          <button className={styles.primary} type="submit">Search register</button>
-          {query.search || query.course || query.session || query.mode || query.status || (query.period && query.period !== "7") ? (
-            <Link className={styles.secondary} href="/dashboard/attendance">Clear</Link>
-          ) : null}
+
+          <button className={styles.secondary} type="submit" style={{ minHeight: "44px", padding: "0 18px" }}>
+            Apply filters
+          </button>
         </div>
       </form>
 
@@ -415,15 +438,20 @@ export default async function AttendancePage({
 
               return (
                 <li key={record.id} style={{ gridTemplateColumns: "44px minmax(0, 1fr) auto 18px" }}>
-                  {attendancePhotoSrc(record.photo_url) ? (
-                    <img
-                      src={`${attendancePhotoSrc(record.photo_url)!}?variant=thumb`}
+                  {record.photo_url ? (
+                    <Image
+                      src={record.photo_url}
                       alt={`Photo for ${displayName}`}
                       width={40}
                       height={40}
-                      loading="lazy"
-                      decoding="async"
-                      style={{ borderRadius: "50%", objectFit: "cover", width: 40, height: 40 }}
+                      unoptimized
+                      style={{
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        width: 40,
+                        height: 40,
+                        border: "2px solid #e8f8ef",
+                      }}
                     />
                   ) : (
                     <span className={styles.avatar}>{initials(displayName)}</span>
@@ -448,7 +476,11 @@ export default async function AttendancePage({
                       ) : (
                         <span style={{ color: "#6d36d3" }}>Standard</span>
                       )}
-                      <AttendanceLocation record={record} />
+                      {record.location_verified ? (
+                        <span style={{ color: "#15945f", display: "inline-flex", alignItems: "center", gap: "2px" }}>
+                          <MapPin size={12} /> Location ✓
+                        </span>
+                      ) : null}
                     </span>
                   </Link>
 

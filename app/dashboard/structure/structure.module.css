@@ -1,0 +1,210 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+}
+
+.actionRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.treeSection {
+  background: #ffffff;
+  border: 1px solid #ffd2bf;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.treeHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #f5ede6;
+}
+
+.treeIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #fff0e8;
+  color: #ff5c1a;
+  flex-shrink: 0;
+}
+
+.treeHeader h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #17130f;
+  margin: 0;
+}
+
+.treeHeader p {
+  font-size: 13px;
+  color: #70665e;
+  margin: 2px 0 0;
+}
+
+.facultyList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.facultyCard {
+  border: 1px solid #ffd2bf;
+  border-radius: 16px;
+  background: #fffbf9;
+  padding: 20px;
+}
+
+.facultyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.facultyBadge {
+  background: #ffd2bf;
+  color: #d94b14;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.facultyTitle {
+  font-size: 17px;
+  font-weight: 750;
+  color: #17130f;
+  margin: 0;
+}
+
+.deptCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: #70665e;
+}
+
+.departmentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.deptCard {
+  background: #ffffff;
+  border: 1px solid #eadecf;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.015);
+}
+
+.deptTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.deptIcon {
+  color: #ff5c1a;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.deptName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #17130f;
+  line-height: 1.3;
+}
+
+.deptBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #8c827b;
+  padding-top: 8px;
+  border-top: 1px solid #f8f3ef;
+}
+
+.viewCoursesLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #d94b14;
+  font-weight: 700;
+}
+
+.emptyDeptNotice {
+  padding: 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px dashed #eadecf;
+  font-size: 13px;
+  color: #8c827b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inlineAddDept {
+  color: #d94b14;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.formsSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.formCard {
+  background: #ffffff;
+  border: 1px solid #ffd2bf;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.formCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ff5c1a;
+  margin-bottom: 6px;
+}
+
+.formCardHeader h3 {
+  font-size: 16px;
+  font-weight: 750;
+  color: #17130f;
+  margin: 0;
+}
+
+.formCardSub {
+  font-size: 13px;
+  color: #70665e;
+  margin: 0 0 18px;
+  line-height: 1.4;
+}

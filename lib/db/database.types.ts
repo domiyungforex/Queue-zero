@@ -1297,6 +1297,7 @@ export type Database = {
                     "staff_title": string | null;
                     "token_hash": string;
                     "unit_id": string;
+                    "course_id": string | null;
                 };
                 Insert: {
                     "accepted_at"?: string | null;
@@ -1317,6 +1318,7 @@ export type Database = {
                     "staff_title"?: string | null;
                     "token_hash": string;
                     "unit_id": string;
+                    "course_id"?: string | null;
                 };
                 Update: {
                     "accepted_at"?: string | null;
@@ -1337,6 +1339,7 @@ export type Database = {
                     "staff_title"?: string | null;
                     "token_hash"?: string;
                     "unit_id"?: string;
+                    "course_id"?: string | null;
                 };
                 Relationships: [
                     {
@@ -2866,6 +2869,23 @@ export type Database = {
                 Args: {
                     "p_business_id": string;
                     "p_date"?: string | null;
+                };
+                Returns: Json;
+            };
+            "get_organization_cms_overview": {
+                Args: {
+                    "p_organization_id": string;
+                };
+                Returns: Json;
+            };
+            "get_organization_attendance_oversight": {
+                Args: {
+                    "p_organization_id": string;
+                    "p_department_id"?: string | null;
+                    "p_course_id"?: string | null;
+                    "p_status"?: string | null;
+                    "p_limit"?: number;
+                    "p_offset"?: number;
                 };
                 Returns: Json;
             };
