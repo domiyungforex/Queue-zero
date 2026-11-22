@@ -6,6 +6,7 @@ import { MobileWorkspaceSwitcher } from "@/components/dashboard/mobile-workspace
 import { DashboardNavigation } from "@/components/dashboard/navigation";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { NotificationCenter } from "@/components/dashboard/notification-center";
+import { AccountMenuBackdrop } from "@/components/dashboard/account-menu-backdrop";
 import { TURNMARK_ASSETS } from "@/lib/brand/assets";
 import type { WorkspaceNotificationSnapshot } from "@/lib/notifications/workspace";
 import type { Database } from "@/lib/db/database.types";
@@ -89,16 +90,7 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
           <NotificationCenter key={`mobile:${membership.businessId}`} variant="mobile" businessId={membership.businessId} userId={userId} initial={notifications} />
           <details className={styles.mobileAccount}>
             <summary aria-label="Open account menu">{userImageUrl ? <Image src={userImageUrl} width={36} height={36} alt="" unoptimized /> : initials || "TM"}</summary>
-            <div
-              className={styles.accountBackdrop}
-              aria-hidden="true"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const d = e.currentTarget.closest("details");
-                if (d) d.open = false;
-              }}
-            />
+            <AccountMenuBackdrop />
             <div className={styles.mobileAccountMenu} role="menu">
               {membership.role === "owner" && <><a href="/dashboard/settings"><Settings2 size={16} aria-hidden="true" />Workspace settings</a><a href="/dashboard/billing"><CreditCard size={16} aria-hidden="true" />Billing</a></>}
               <a href="/onboarding?new=workspace">Add workspace</a>
