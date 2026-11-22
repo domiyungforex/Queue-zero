@@ -59,7 +59,7 @@ export async function IndividualWorkspaceOverview({ userName, businessName }: Pr
         </div>
 
         {queues.length ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "16px", marginTop: "12px" }}>
             {queues.map((q) => (
               <div
                 key={q.id}

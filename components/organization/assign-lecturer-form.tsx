@@ -45,11 +45,14 @@ export function AssignLecturerForm({ courseId, courseCode, courseTitle, onClose 
       style={{
         background: "#ffffff",
         border: "1px solid #ffd2bf",
-        borderRadius: "16px",
-        padding: "20px",
-        boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+        borderRadius: "20px",
+        padding: "clamp(16px, 4vw, 24px)",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
         maxWidth: "460px",
         width: "100%",
+        maxHeight: "min(90dvh, 600px)",
+        overflowY: "auto",
+        boxSizing: "border-box",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>

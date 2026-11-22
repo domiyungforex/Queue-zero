@@ -94,7 +94,7 @@ export default async function CoursesPage({ searchParams }: Props = {}) {
               background: "#ffffff",
               border: "1px solid #ffd2bf",
               borderRadius: "20px",
-              padding: "24px",
+              padding: "clamp(16px, 4vw, 24px)",
             }}
           >
             <div style={{ marginBottom: "18px" }}>

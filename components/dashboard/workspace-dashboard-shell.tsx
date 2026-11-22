@@ -85,12 +85,27 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
       <header className={styles.mobileHeader}>
         <a className={styles.mobileBrand} href="/dashboard" aria-label="TuRnMaRk dashboard"><Image src={wordmark.src} width={wordmark.width} height={wordmark.height} alt={wordmark.alt} priority /></a>
         <MobileWorkspaceSwitcher businessId={membership.businessId} memberships={memberships} contextLabel={education ? `${roleLabel} · School` : undefined} education={education} />
-        <NotificationCenter key={`mobile:${membership.businessId}`} variant="mobile" businessId={membership.businessId} userId={userId} initial={notifications} />
-        <details className={styles.mobileAccount}><summary aria-label="Open account menu">{userImageUrl ? <Image src={userImageUrl} width={36} height={36} alt="" unoptimized /> : initials || "TM"}</summary><div className={styles.mobileAccountMenu}>
-          {membership.role === "owner" && <><a href="/dashboard/settings"><Settings2 size={16} aria-hidden="true" />Workspace settings</a><a href="/dashboard/billing"><CreditCard size={16} aria-hidden="true" />Billing</a></>}
-          <a href="/onboarding?new=workspace">Add workspace</a>
-          <AuthNavigation showDashboard={false} />
-        </div></details>
+        <div className={styles.mobileHeaderActions}>
+          <NotificationCenter key={`mobile:${membership.businessId}`} variant="mobile" businessId={membership.businessId} userId={userId} initial={notifications} />
+          <details className={styles.mobileAccount}>
+            <summary aria-label="Open account menu">{userImageUrl ? <Image src={userImageUrl} width={36} height={36} alt="" unoptimized /> : initials || "TM"}</summary>
+            <div
+              className={styles.accountBackdrop}
+              aria-hidden="true"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const d = e.currentTarget.closest("details");
+                if (d) d.open = false;
+              }}
+            />
+            <div className={styles.mobileAccountMenu} role="menu">
+              {membership.role === "owner" && <><a href="/dashboard/settings"><Settings2 size={16} aria-hidden="true" />Workspace settings</a><a href="/dashboard/billing"><CreditCard size={16} aria-hidden="true" />Billing</a></>}
+              <a href="/onboarding?new=workspace">Add workspace</a>
+              <AuthNavigation showDashboard={false} />
+            </div>
+          </details>
+        </div>
       </header>
       <main id="main" className={styles.main}>{children}</main>
       <footer className={styles.footer}><span>TuRnMaRk · People flow better.</span><span>{membership.businessName}</span></footer>

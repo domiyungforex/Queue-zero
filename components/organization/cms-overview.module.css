@@ -3,6 +3,10 @@
   flex-direction: column;
   gap: 28px;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+  box-sizing: border-box;
 }
 
 .headerActions {
@@ -14,8 +18,9 @@
 
 .kpiGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 16px;
+  min-width: 0;
 }
 
 .kpiCard {
@@ -128,8 +133,9 @@
 
 .quadrants {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 20px;
+  min-width: 0;
 }
 
 .quadCard {
@@ -140,6 +146,7 @@
   background: #ffffff;
   border: 1px solid #ffd2bf;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+  min-width: 0;
 }
 
 .quadHeader {
@@ -189,5 +196,41 @@
   .liveBanner {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+  }
+  .oversightLink {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .quadrants {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .quadCard {
+    padding: 18px;
+  }
+  .kpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .kpiCard {
+    padding: 14px;
+    gap: 10px;
+  }
+  .kpiValue {
+    font-size: 22px;
+  }
+  .kpiIconWrap {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+@media (max-width: 340px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
   }
 }

@@ -100,8 +100,9 @@
 
 .departmentGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
   gap: 12px;
+  min-width: 0;
 }
 
 .deptCard {
@@ -175,9 +176,10 @@
 
 .formsSection {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 20px;
   margin-top: 8px;
+  min-width: 0;
 }
 
 .formCard {
@@ -185,6 +187,27 @@
   border: 1px solid #ffd2bf;
   border-radius: 20px;
   padding: 24px;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .formsSection {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .formCard {
+    padding: 18px;
+  }
+  .treeSection {
+    padding: 16px;
+    border-radius: 16px;
+  }
+  .facultyCard {
+    padding: 16px;
+  }
+  .departmentGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .formCardHeader {

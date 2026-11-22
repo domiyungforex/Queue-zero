@@ -161,7 +161,12 @@ export function DashboardNavigation({
     return (
       <nav aria-label="Workspace navigation" className={styles.desktopNav}>
         {links.map((link) => (
-          <Link href={link.href} key={link.href} aria-current={active(link.href) ? "page" : undefined}>
+          <Link
+            href={link.href}
+            key={link.href}
+            aria-current={active(link.href) ? "page" : undefined}
+            data-label={link.label}
+          >
             <link.icon size={18} />
             {link.label}
           </Link>

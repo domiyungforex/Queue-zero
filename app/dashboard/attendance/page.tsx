@@ -293,7 +293,7 @@ export default async function AttendancePage({
             </select>
           </label>
 
-          <button className={styles.secondary} type="submit" style={{ minHeight: "44px", padding: "0 18px" }}>
+          <button className={styles.secondary} type="submit" style={{ minHeight: "44px", padding: "0 18px", flex: "1 1 140px", justifyContent: "center" }}>
             Apply filters
           </button>
         </div>

@@ -171,6 +171,9 @@ export function CourseManagerRow({
 
       {showAssignModal && (
         <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAssignModal(false);
+          }}
           style={{
             position: "fixed",
             inset: 0,
@@ -179,7 +182,7 @@ export function CourseManagerRow({
             display: "grid",
             placeItems: "center",
             zIndex: 1000,
-            padding: "20px",
+            padding: "16px",
           }}
         >
           <AssignLecturerForm

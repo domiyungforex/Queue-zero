@@ -36,9 +36,34 @@ export function MobileWorkspaceSwitcher({ businessId, memberships, contextLabel,
       <span className={styles.switcherCopy}><strong>{current.businessName}</strong><small>{contextLabel ?? (current.workspaceOwnership === "INDIVIDUAL" ? "Personal Workspace" : "Organization Workspace")}</small></span>
       <ChevronDown size={17} aria-hidden="true" />
     </summary>
-    <div className={styles.switcherMenu}>
-      <p>YOUR WORKSPACES</p>
-      {memberships.map((membership) => <WorkspaceOption key={membership.businessId} membership={membership} current={membership.businessId === businessId} />)}
+    <div
+      className={styles.switcherBackdrop}
+      aria-hidden="true"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const details = e.currentTarget.closest("details");
+        if (details) details.open = false;
+      }}
+    />
+    <div className={styles.switcherMenu} role="dialog" aria-modal="true" aria-label="Workspaces">
+      <div className={styles.switcherHeader}>
+        <p>YOUR WORKSPACES</p>
+        <button
+          type="button"
+          className={styles.switcherClose}
+          onClick={(e) => {
+            const details = e.currentTarget.closest("details");
+            if (details) details.open = false;
+          }}
+          aria-label="Close workspace switcher"
+        >
+          ✕
+        </button>
+      </div>
+      <div className={styles.switcherList}>
+        {memberships.map((membership) => <WorkspaceOption key={membership.businessId} membership={membership} current={membership.businessId === businessId} />)}
+      </div>
       <Link href="/onboarding?new=workspace"><Plus size={17} aria-hidden="true" />Add workspace</Link>
     </div>
   </details>;

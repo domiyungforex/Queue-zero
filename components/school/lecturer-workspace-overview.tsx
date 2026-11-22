@@ -120,7 +120,7 @@ export async function LecturerWorkspaceOverview({ organizationName, userName }: 
         </div>
 
         {snapshot.courses.length ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: "16px", marginTop: "12px" }}>
             {snapshot.courses.map((course) => {
               const rosterCount = snapshot.enrollments.filter((e) => e.course_id === course.id).length;
               return (
