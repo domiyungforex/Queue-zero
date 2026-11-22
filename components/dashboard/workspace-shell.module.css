@@ -181,6 +181,20 @@
   font-size: 10px;
 }
 
+/* Bottom-sheet workspace switcher: render overlays only while the disclosure is open.
+   Explicitly override the browser's details behavior because these elements have
+   authored display styles and must never cover the page in the closed state. */
+.mobileSwitcher:not([open]) > .switcherBackdrop,
+.mobileSwitcher:not([open]) > .switcherMenu {
+  display: none;
+}
+.mobileSwitcher[open] > .switcherBackdrop {
+  display: block;
+}
+.mobileSwitcher[open] > .switcherMenu {
+  display: flex;
+}
+
 /* Bottom-sheet workspace switcher: never exceeds viewport */
 .switcherBackdrop {
   position: fixed;
