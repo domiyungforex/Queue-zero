@@ -49,48 +49,116 @@ export default async function BookingsDashboardPage({ searchParams }: { searchPa
         <StatCard label="No-shows" value={metrics.no_show} icon={<UserX size={18} />} />
       </div>
 
-      {/* Filters */}
-      <form method="GET" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20, alignItems: "flex-end" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "#73788a" }}>Date</label>
-          <input
-            type="date"
-            name="date"
-            defaultValue={sp.date || ""}
-            style={{ minHeight: 40, border: "1.5px solid #dcd5d0", borderRadius: 10, padding: "0 10px", fontSize: 13 }}
-          />
+      {/* Refined Unified Filters Bar */}
+      <form
+        method="GET"
+        style={{
+          display: "flex",
+          gap: "12px",
+          flexWrap: "wrap",
+          marginBottom: "20px",
+          alignItems: "center",
+          background: "#ffffff",
+          border: "1px solid #f0e6e1",
+          borderRadius: "18px",
+          padding: "14px 18px",
+          boxShadow: "0 6px 20px rgba(72,39,23,.03)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: "1 1 200px" }}>
+          <span style={{ color: "#9295a1", display: "grid", placeItems: "center" }}>
+            <Calendar size={17} aria-hidden="true" />
+          </span>
+          <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+            <span style={{ fontSize: "10px", fontWeight: 800, color: "#8a8d9b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Date</span>
+            <input
+              type="date"
+              name="date"
+              defaultValue={sp.date || ""}
+              style={{
+                width: "100%",
+                minHeight: "36px",
+                border: "0",
+                outline: "none",
+                background: "transparent",
+                fontSize: "13px",
+                fontWeight: 650,
+                color: "#111318",
+                padding: "2px 0",
+              }}
+            />
+          </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "#73788a" }}>Status</label>
-          <select
-            name="status"
-            defaultValue={sp.status || ""}
-            style={{ minHeight: 40, border: "1.5px solid #dcd5d0", borderRadius: 10, padding: "0 10px", fontSize: 13 }}
-          >
-            <option value="">All statuses</option>
-            <option value="CONFIRMED">Confirmed</option>
-            <option value="CHECKED_IN">Checked In</option>
-            <option value="CANCELLED">Cancelled</option>
-            <option value="NO_SHOW">No-Show</option>
-            <option value="COMPLETED">Completed</option>
-          </select>
+
+        <div style={{ width: "1px", height: "32px", background: "#f0e6e1" }} />
+
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: "1 1 180px" }}>
+          <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+            <span style={{ fontSize: "10px", fontWeight: 800, color: "#8a8d9b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Status</span>
+            <select
+              name="status"
+              defaultValue={sp.status || ""}
+              style={{
+                width: "100%",
+                minHeight: "36px",
+                border: "0",
+                outline: "none",
+                background: "transparent",
+                fontSize: "13px",
+                fontWeight: 650,
+                color: "#111318",
+                padding: "2px 0",
+                cursor: "pointer",
+              }}
+            >
+              <option value="">All statuses</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="CHECKED_IN">Checked In</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="NO_SHOW">No-Show</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: "#73788a" }}>Search</label>
-          <input
-            type="text"
-            name="q"
-            defaultValue={sp.q || ""}
-            placeholder="Name or reference"
-            style={{ minHeight: 40, border: "1.5px solid #dcd5d0", borderRadius: 10, padding: "0 10px", fontSize: 13, minWidth: 180 }}
-          />
+
+        <div style={{ width: "1px", height: "32px", background: "#f0e6e1" }} />
+
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: "2 1 240px" }}>
+          <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+            <span style={{ fontSize: "10px", fontWeight: 800, color: "#8a8d9b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Search</span>
+            <input
+              type="text"
+              name="q"
+              defaultValue={sp.q || ""}
+              placeholder="Name or booking reference…"
+              style={{
+                width: "100%",
+                minHeight: "36px",
+                border: "0",
+                outline: "none",
+                background: "transparent",
+                fontSize: "13px",
+                fontWeight: 650,
+                color: "#111318",
+                padding: "2px 0",
+              }}
+            />
+          </div>
         </div>
+
         <button
           type="submit"
-          className="button-secondary"
-          style={{ minHeight: 40, padding: "0 18px", fontSize: 12 }}
+          className="button-primary"
+          style={{
+            minHeight: "42px",
+            padding: "0 20px",
+            fontSize: "13px",
+            fontWeight: 800,
+            borderRadius: "12px",
+            flexShrink: 0,
+          }}
         >
-          Filter
+          Apply Filters
         </button>
       </form>
 

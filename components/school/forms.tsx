@@ -245,9 +245,193 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
   );
 }
 export function EnrollmentForm({ snapshot, courseId }: { snapshot: SchoolSnapshot; courseId?: string }) {
-  const input = useRef<HTMLTextAreaElement>(null); const [error, setError] = useState("");
+  const input = useRef<HTMLTextAreaElement>(null);
+  const [error, setError] = useState("");
+  const [fileName, setFileName] = useState("");
   const [state, run, pending] = useActionState(importRoster, { ok: false, message: "" });
-  return <form action={run} className="school-form"><h2>Import course roster</h2>{courseId ? <input type="hidden" name="course_id" value={courseId} /> : <SelectField name="course_id" label="Course" options={snapshot.courses.map(course => ({ id: course.id, name: `${course.code} · ${course.title}` }))} />}<p className="text-sm text-muted">Required columns: matric_number, student_name. Optional: programme, level.</p><p className="text-sm"><a href="/api/school/roster-template" download="attendance-roster-template.csv" style={{ color: "#003d32", textDecoration: "underline", fontWeight: 600 }}>Download CSV roster template</a></p><label>CSV file (optional)<input type="file" accept=".csv,text/csv" onChange={async event => { setError(""); const file = event.target.files?.[0]; if (!file) return; if (file.size > 100000) { setError("Import a CSV smaller than 100 KB."); return; } try { if (input.current) input.current.value = await file.text(); } catch { setError("We couldn’t read the file. Paste the CSV below."); } }} /></label><label>Student CSV<textarea ref={input} name="csv" required rows={7} maxLength={100000} placeholder={"matric_number,student_name,programme,level\nCSC/2022/001,Dominion Akinyele,Computer Science,400L"} /></label><p className="text-sm text-muted">Columns: matric_number, student_name, programme, level. Preview is required before import.</p>{error && <FeedbackNotice ok={false} message={error} />}<button className="button-secondary" disabled={pending} type="submit">{pending ? "Checking…" : "Preview import"}</button>{state.preview && <div className="notice" role="status"><strong>{state.preview.valid} valid</strong><p>{state.preview.duplicates} duplicate rows · {state.preview.invalid} invalid rows · {state.preview.existing} already enrolled</p></div>}{state.message && <FeedbackNotice ok={state.ok} message={state.message} />}{state.preview && !state.imported && state.preview.duplicates === 0 && state.preview.invalid === 0 && <button className="button-primary" name="confirm" value="yes" disabled={pending} type="submit">Confirm import</button>}</form>;
+
+  return (
+    <form action={run} className="school-form" style={{ display: "grid", gap: "20px" }}>
+      <div style={{ borderBottom: "1px solid #f3ece8", paddingBottom: "14px" }}>
+        <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 850, color: "#111318" }}>Import Course Roster</h2>
+        <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#73788a" }}>
+          Batch enroll students from a spreadsheet or comma-separated list.
+        </p>
+      </div>
+
+      {courseId ? (
+        <input type="hidden" name="course_id" value={courseId} />
+      ) : (
+        <SelectField
+          name="course_id"
+          label="Select Target Course"
+          options={snapshot.courses.map((course) => ({
+            id: course.id,
+            name: `${course.code} · ${course.title}`,
+          }))}
+        />
+      )}
+
+      {/* CSV upload card */}
+      <div
+        style={{
+          border: "2px dashed #e5ddd7",
+          borderRadius: "16px",
+          padding: "20px",
+          background: "#fcfaf8",
+          textAlign: "center",
+          display: "grid",
+          gap: "10px",
+          justifyItems: "center",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#d94b14" }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <strong style={{ fontSize: "14px", color: "#111318" }}>Upload CSV Document</strong>
+        </div>
+        <p style={{ margin: 0, fontSize: "12px", color: "#73788a", maxWidth: "420px" }}>
+          Upload a <code style={{ background: "#eee4df", padding: "2px 6px", borderRadius: "4px" }}>.csv</code> file with headers: <code style={{ color: "#d94b14" }}>matric_number, student_name, programme, level</code>
+        </p>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+          <label
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 16px",
+              background: "#ffffff",
+              border: "1.5px solid #dcd5d0",
+              borderRadius: "10px",
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "#111318",
+              cursor: "pointer",
+            }}
+          >
+            <span>{fileName ? `File: ${fileName}` : "Choose CSV file"}</span>
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              style={{ display: "none" }}
+              onChange={async (event) => {
+                setError("");
+                const file = event.target.files?.[0];
+                if (!file) return;
+                setFileName(file.name);
+                if (file.size > 100000) {
+                  setError("Import a CSV smaller than 100 KB.");
+                  return;
+                }
+                try {
+                  if (input.current) input.current.value = await file.text();
+                } catch {
+                  setError("We couldn’t read the file. Paste the CSV manually below.");
+                }
+              }}
+            />
+          </label>
+          <a
+            href="/api/school/roster-template"
+            download="attendance-roster-template.csv"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "#ff6b2b",
+              textDecoration: "underline",
+            }}
+          >
+            Download CSV template
+          </a>
+        </div>
+      </div>
+
+      {/* Manual CSV editor box */}
+      <div style={{ display: "grid", gap: "6px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <label style={{ fontSize: "12px", fontWeight: 750, color: "#111318" }}>
+            Student CSV Data
+          </label>
+          <span style={{ fontSize: "11px", color: "#8a8d9b" }}>
+            One row per student
+          </span>
+        </div>
+        <textarea
+          ref={input}
+          name="csv"
+          required
+          rows={6}
+          maxLength={100000}
+          placeholder={"matric_number,student_name,programme,level\nCSC/2022/001,Dominion Akinyele,Computer Science,400L\nCSC/2022/002,Sarah Adebayo,Computer Science,400L"}
+          style={{
+            width: "100%",
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            fontSize: "12.5px",
+            lineHeight: "1.5",
+            padding: "12px 14px",
+            borderRadius: "12px",
+            border: "1.5px solid #e2dad5",
+            background: "#fffefd",
+          }}
+        />
+      </div>
+
+      {error && <FeedbackNotice ok={false} message={error} />}
+
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+        <button className="button-secondary" disabled={pending} type="submit" style={{ minHeight: "44px", borderRadius: "12px", fontWeight: 800 }}>
+          {pending ? "Analyzing CSV…" : "Preview import"}
+        </button>
+      </div>
+
+      {state.preview && (
+        <div
+          style={{
+            background: "#f7faf8",
+            border: "1px solid #c9e4d5",
+            borderRadius: "14px",
+            padding: "16px 18px",
+            display: "grid",
+            gap: "8px",
+          }}
+          role="status"
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ display: "grid", width: "24px", height: "24px", placeItems: "center", borderRadius: "6px", background: "#dcfce7", color: "#166534" }}>
+              ✓
+            </span>
+            <strong style={{ fontSize: "14px", color: "#14532d" }}>
+              {state.preview.valid} students ready to import
+            </strong>
+          </div>
+          <p style={{ margin: 0, fontSize: "12px", color: "#4b5563" }}>
+            {state.preview.duplicates} duplicate rows · {state.preview.invalid} invalid rows · {state.preview.existing} already enrolled
+          </p>
+        </div>
+      )}
+
+      {state.message && <FeedbackNotice ok={state.ok} message={state.message} />}
+
+      {state.preview && !state.imported && state.preview.duplicates === 0 && state.preview.invalid === 0 && (
+        <button
+          className="button-primary"
+          name="confirm"
+          value="yes"
+          disabled={pending}
+          type="submit"
+          style={{ minHeight: "46px", borderRadius: "12px", fontWeight: 800 }}
+        >
+          Confirm & Save {state.preview.valid} Students to Course
+        </button>
+      )}
+    </form>
+  );
 }
 export function ClassControls({ session }: { session: SchoolSnapshot["classes"][number] }) {
   const [confirm, setConfirm] = useState(false);

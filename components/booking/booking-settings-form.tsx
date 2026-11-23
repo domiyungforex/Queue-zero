@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { RefreshCw, Save } from "lucide-react";
+import { FeedbackNotice } from "@/components/school/feedback-notice";
 import type { BookingSettings } from "@/lib/booking/types";
 import { saveBookingSettings } from "@/lib/booking/staff-actions";
 
@@ -112,14 +113,10 @@ export function BookingSettingsForm({ initial }: Props) {
   return (
     <div className="settings-form" style={{ maxWidth: 640 }}>
       {message && (
-        <p role="status" style={{ padding: "10px 16px", borderRadius: 10, background: "#f0fdf4", border: "1px solid #bbf7d0", marginBottom: 16, fontSize: 13, color: "#166534" }}>
-          {message}
-        </p>
+        <FeedbackNotice ok={true} message={message} />
       )}
       {error && (
-        <p role="alert" style={{ padding: "10px 16px", borderRadius: 10, background: "#fef2f2", border: "1px solid #fecaca", marginBottom: 16, fontSize: 13, color: "#dc2626" }}>
-          {error}
-        </p>
+        <FeedbackNotice ok={false} message={error} />
       )}
 
       {/* Enabled Toggle */}

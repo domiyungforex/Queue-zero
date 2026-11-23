@@ -163,40 +163,75 @@ export function EducationHome({ data, dashboard, individual = false, userName = 
     </section>
 
     {!individual && (
-      <div
+      <section
+        aria-label="Institution Overview"
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "12px",
-          background: "#ffffff",
-          border: "1px solid #e3ebe4",
-          borderRadius: "16px",
-          padding: "14px 20px",
-          boxShadow: "0 4px 16px rgba(72,39,23,.03)",
+          background: "linear-gradient(135deg, #ffffff 0%, #fffbf8 100%)",
+          border: "1px solid #f0e6e1",
+          borderRadius: "22px",
+          padding: "20px 24px",
+          boxShadow: "0 8px 30px rgba(72,39,23,.04)",
+          display: "grid",
+          gap: "16px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "12px", fontWeight: 800, color: "#111318", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Institution Overview
-          </span>
-          <span style={{ fontSize: "11px", color: "#15945f", background: "#e8f8ef", padding: "2px 8px", borderRadius: "999px", fontWeight: 750 }}>
-            Active Organization
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ display: "grid", width: "32px", height: "32px", placeItems: "center", borderRadius: "10px", background: "#fff0e8", color: "#ff6b2b" }}>
+              <GraduationCap size={18} aria-hidden="true" />
+            </span>
+            <div>
+              <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "#111318", letterSpacing: "-0.02em" }}>
+                Institution Structure
+              </h2>
+              <p style={{ margin: 0, fontSize: "11px", color: "#73788a" }}>
+                Academic governance and deployment status
+              </p>
+            </div>
+          </div>
+          <span style={{ fontSize: "11px", color: "#16855b", background: "#e8f8ef", padding: "4px 12px", borderRadius: "999px", fontWeight: 800, border: "1px solid #c2ebd5" }}>
+            ● Organization Verified
           </span>
         </div>
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", fontSize: "12px", color: "#686775" }}>
-          <span><strong style={{ color: "#111318" }}>{data.faculties.length}</strong> {data.faculties.length === 1 ? "Faculty" : "Faculties"}</span>
-          <span style={{ color: "#d5e0d8" }}>•</span>
-          <span><strong style={{ color: "#111318" }}>{data.departments.length}</strong> {data.departments.length === 1 ? "Department" : "Departments"}</span>
-          <span style={{ color: "#d5e0d8" }}>•</span>
-          <span><strong style={{ color: "#111318" }}>{data.courses.length}</strong> {data.courses.length === 1 ? "Course" : "Courses"}</span>
-          <span style={{ color: "#d5e0d8" }}>•</span>
-          <span><strong style={{ color: "#111318" }}>{data.lecturers.length}</strong> Assigned {data.lecturers.length === 1 ? "Lecturer" : "Lecturers"}</span>
-          <span style={{ color: "#d5e0d8" }}>•</span>
-          <span><strong style={{ color: "#111318" }}>{dashboard.metrics.totalStudents}</strong> Enrolled Students</span>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+            gap: "12px",
+          }}
+        >
+          <div style={{ background: "#ffffff", border: "1px solid #f3ece8", borderRadius: "14px", padding: "12px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#8a8d9b", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Faculties</span>
+            <strong style={{ fontSize: "22px", fontWeight: 850, color: "#111318", marginTop: "4px", display: "block" }}>{data.faculties.length}</strong>
+            <span style={{ fontSize: "10px", color: "#73788a" }}>Active divisions</span>
+          </div>
+
+          <div style={{ background: "#ffffff", border: "1px solid #f3ece8", borderRadius: "14px", padding: "12px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#8a8d9b", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Departments</span>
+            <strong style={{ fontSize: "22px", fontWeight: 850, color: "#111318", marginTop: "4px", display: "block" }}>{data.departments.length}</strong>
+            <span style={{ fontSize: "10px", color: "#73788a" }}>Academic units</span>
+          </div>
+
+          <div style={{ background: "#ffffff", border: "1px solid #f3ece8", borderRadius: "14px", padding: "12px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#8a8d9b", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Courses</span>
+            <strong style={{ fontSize: "22px", fontWeight: 850, color: "#111318", marginTop: "4px", display: "block" }}>{data.courses.length}</strong>
+            <span style={{ fontSize: "10px", color: "#73788a" }}>Accredited units</span>
+          </div>
+
+          <div style={{ background: "#ffffff", border: "1px solid #f3ece8", borderRadius: "14px", padding: "12px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#8a8d9b", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Assigned Lecturers</span>
+            <strong style={{ fontSize: "22px", fontWeight: 850, color: "#ff6b2b", marginTop: "4px", display: "block" }}>{data.lecturers.length}</strong>
+            <span style={{ fontSize: "10px", color: "#73788a" }}>Delegated leads</span>
+          </div>
+
+          <div style={{ background: "#ffffff", border: "1px solid #f3ece8", borderRadius: "14px", padding: "12px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#8a8d9b", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Total Enrolled</span>
+            <strong style={{ fontSize: "22px", fontWeight: 850, color: "#16855b", marginTop: "4px", display: "block" }}>{dashboard.metrics.totalStudents}</strong>
+            <span style={{ fontSize: "10px", color: "#73788a" }}>Registered roster</span>
+          </div>
         </div>
-      </div>
+      </section>
     )}
 
     <section className={styles.kpis} aria-label="Education workspace summary">

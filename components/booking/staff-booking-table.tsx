@@ -10,6 +10,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { StaffBookingItem } from "@/lib/booking/staff-actions";
+import { FeedbackNotice } from "@/components/school/feedback-notice";
 import {
   staffCheckInBooking,
   staffCancelBooking,
@@ -82,20 +83,9 @@ export function StaffBookingTable({ bookings: initial, total }: Props) {
   return (
     <div>
       {message && (
-        <p
-          role="status"
-          style={{
-            padding: "10px 16px",
-            borderRadius: 10,
-            background: "#f0fdf4",
-            border: "1px solid #bbf7d0",
-            marginBottom: 16,
-            fontSize: 13,
-            color: "#166534",
-          }}
-        >
-          {message}
-        </p>
+        <div style={{ marginBottom: 16 }}>
+          <FeedbackNotice ok={!message.toLowerCase().includes("fail") && !message.toLowerCase().includes("error")} message={message} />
+        </div>
       )}
 
       <div style={{ overflowX: "auto" }}>
