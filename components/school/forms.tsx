@@ -262,14 +262,33 @@ export function EnrollmentForm({ snapshot, courseId }: { snapshot: SchoolSnapsho
       {courseId ? (
         <input type="hidden" name="course_id" value={courseId} />
       ) : (
-        <SelectField
-          name="course_id"
-          label="Select Target Course"
-          options={snapshot.courses.map((course) => ({
-            id: course.id,
-            name: `${course.code} · ${course.title}`,
-          }))}
-        />
+        <label style={{ display: "grid", gap: "6px" }}>
+          <span style={{ fontSize: "12px", fontWeight: 750, color: "#111318" }}>
+            Course Roster Target
+          </span>
+          <select
+            name="course_id"
+            required
+            defaultValue=""
+            style={{
+              minHeight: "44px",
+              borderRadius: "12px",
+              border: "1.5px solid #e2dad5",
+              padding: "0 14px",
+              fontSize: "13px",
+              fontWeight: 650,
+              background: "#ffffff",
+              color: "#111318",
+            }}
+          >
+            <option value="" disabled>Choose the course to enroll students into…</option>
+            {snapshot.courses.map((course) => (
+              <option key={course.id} value={course.id}>
+                {course.code} — {course.title}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
 
       {/* CSV upload card */}
