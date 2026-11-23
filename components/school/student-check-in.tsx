@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { identifyStudent, recordIdentifiedAttendance } from "@/lib/school-student/registration";
 import { assessAttendanceLocation, geolocationFailureMessage } from "@/lib/school/location";
 import { FaceCapture } from "./face-capture";
+import { FeedbackNotice } from "./feedback-notice";
 
 type Session = {
   id: string;
@@ -190,7 +191,7 @@ export function StudentCheckIn({ organizationId, institution }: { organizationId
             <div>
               <p>The lecturer set an attendance zone of {selected.radiusMeters ?? 100} metres. Your coordinates are saved with this check-in only.</p>
               <button type="button" className="button-secondary" disabled={locating || pending} onClick={captureLocation}>{locating ? "Reading GPS…" : gps ? "Read location again" : "Use my location"}</button>
-              {assessment ? <p role="status">{assessment.message}</p> : null}
+              {assessment ? <FeedbackNotice ok={assessment.verified} message={assessment.message} /> : null}
             </div>
           ) : selected ? <p>Location is not required for this session. The record will say location was not requested.</p> : null}
           {profile.sessions.length > 0 ? <>
@@ -199,7 +200,7 @@ export function StudentCheckIn({ organizationId, institution }: { organizationId
           </> : null}
         </section>
       ) : null}
-      {message ? <p role={ok ? "status" : "alert"}>{message}</p> : null}
+      {message ? <FeedbackNotice ok={ok} message={message} /> : null}
     </div>
   );
 }

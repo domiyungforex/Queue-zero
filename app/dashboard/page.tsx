@@ -5,6 +5,7 @@ import { InstitutionOverview } from "@/components/institution/overview";
 import { OrganizationSetupStatus } from "@/components/organization/setup-status";
 import { ProfessionalOverview } from "@/components/professional/overview";
 import { SchoolOverview } from "@/components/school/overview";
+import { FeedbackNotice } from "@/components/school/feedback-notice";
 import { DashboardWelcomeBanner } from "@/components/ui/turnmark-system";
 import { PageHeading, StatCard, duration } from "@/components/ui/workspace";
 import { requireBusinessMembership } from "@/lib/business/membership";
@@ -18,7 +19,7 @@ export default async function Page({ searchParams }: DashboardPageProps = {}) {
   const membership = await requireBusinessMembership();
   const query = await searchParams;
   const onboardingComplete = query?.onboarding === "complete" && Boolean(membership.onboardingCompletedAt);
-  const success = onboardingComplete ? <div role="status" className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950">Your workspace is ready.</div> : null;
+  const success = onboardingComplete ? <FeedbackNotice ok={true} message="Your workspace is ready. All permissions and tools have been configured." style={{ marginBottom: "20px" }} /> : null;
   const organizationProfile = membership.workspaceOwnership === "ORGANIZATION" ? await getOrganizationWorkspaceProfile() : null;
   const organizationStatus = organizationProfile ? <OrganizationSetupStatus profile={organizationProfile} /> : null;
 

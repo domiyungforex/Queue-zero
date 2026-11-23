@@ -5,6 +5,7 @@ import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import Link from "next/link";
 import { ArrowRight, AlertCircle, RefreshCw, MapPin } from "lucide-react";
+import { FeedbackNotice } from "./feedback-notice";
 import { importRoster, manageSchool } from "@/lib/school/actions";
 import type { SchoolSnapshot } from "@/lib/school/contracts";
 
@@ -20,7 +21,22 @@ export function SchoolForm({ action, title, children, submit = "Save", fields = 
     if (action === "open") captureAnalytics(ANALYTICS_EVENTS.classSessionStarted);
     if (action === "finish") captureAnalytics(ANALYTICS_EVENTS.attendanceSessionClosed);
   }, [action, state]);
-  return <form action={run} className="school-form">{title && <h2>{title}</h2>}<input type="hidden" name="action" value={action} />{Object.entries(fields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}{children}<button disabled={pending} className="button-primary" type="submit">{pending ? "Saving…" : submit}</button>{state.message && <p role={state.ok ? "status" : "alert"}>{state.message}{state.ok && state.id && action === "class" && <> <Link href={`/dashboard/attendance/${state.id}`}>Open class attendance <ArrowRight size={16} aria-hidden="true" /></Link></>}</p>}</form>;
+  return <form action={run} className="school-form">
+    {title && <h2>{title}</h2>}
+    <input type="hidden" name="action" value={action} />
+    {Object.entries(fields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
+    {children}
+    <button disabled={pending} className="button-primary" type="submit">{pending ? "Saving…" : submit}</button>
+    {state.message && (
+      <FeedbackNotice ok={state.ok} message={state.message}>
+        {state.ok && state.id && action === "class" && (
+          <Link href={`/dashboard/attendance/${state.id}`} style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "inherit", fontWeight: 700, textDecoration: "underline" }}>
+            Open class attendance <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        )}
+      </FeedbackNotice>
+    )}
+  </form>;
 }
 export function TextField({ name, label, type = "text", maxLength = 160, required = true }: { name: string; label: string; type?: string; maxLength?: number; required?: boolean }) { return <label>{label}<input name={name} type={type} maxLength={maxLength} required={required} /></label>; }
 export function SelectField({ name, label, options }: { name: string; label: string; options: { id: string; name: string }[] }) { return <label>{label}<select name={name} required defaultValue=""><option value="" disabled>Select {label.toLowerCase()}</option>{options.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>; }
@@ -116,17 +132,11 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
       </header>
 
       {errorMessage && (
-        <div className="school-form-error" role="alert">
-          <AlertCircle size={18} aria-hidden="true" />
-          <span>{errorMessage}</span>
-        </div>
+        <FeedbackNotice ok={false} message={errorMessage} style={{ margin: "16px 22px 0" }} />
       )}
 
       {isSuccess && (
-        <div className="school-form-success" role="status">
-          <RefreshCw size={18} className="animate-spin" aria-hidden="true" />
-          <span>Session created. Opening attendance…</span>
-        </div>
+        <FeedbackNotice ok={true} message="Session created. Opening attendance…" style={{ margin: "16px 22px 0" }} />
       )}
 
       <div className="school-create-layout">
@@ -237,7 +247,7 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
 export function EnrollmentForm({ snapshot, courseId }: { snapshot: SchoolSnapshot; courseId?: string }) {
   const input = useRef<HTMLTextAreaElement>(null); const [error, setError] = useState("");
   const [state, run, pending] = useActionState(importRoster, { ok: false, message: "" });
-  return <form action={run} className="school-form"><h2>Import course roster</h2>{courseId ? <input type="hidden" name="course_id" value={courseId} /> : <SelectField name="course_id" label="Course" options={snapshot.courses.map(course => ({ id: course.id, name: `${course.code} · ${course.title}` }))} />}<p className="text-sm text-muted">Required columns: matric_number, student_name. Optional: programme, level.</p><p className="text-sm"><a href="/api/school/roster-template" download="attendance-roster-template.csv" style={{ color: "#003d32", textDecoration: "underline", fontWeight: 600 }}>Download CSV roster template</a></p><label>CSV file (optional)<input type="file" accept=".csv,text/csv" onChange={async event => { setError(""); const file = event.target.files?.[0]; if (!file) return; if (file.size > 100000) { setError("Import a CSV smaller than 100 KB."); return; } try { if (input.current) input.current.value = await file.text(); } catch { setError("We couldn’t read the file. Paste the CSV below."); } }} /></label><label>Student CSV<textarea ref={input} name="csv" required rows={7} maxLength={100000} placeholder={"matric_number,student_name,programme,level\nCSC/2022/001,Dominion Akinyele,Computer Science,400L"} /></label><p className="text-sm text-muted">Columns: matric_number, student_name, programme, level. Preview is required before import.</p>{error && <p role="alert">{error}</p>}<button className="button-secondary" disabled={pending} type="submit">{pending ? "Checking…" : "Preview import"}</button>{state.preview && <div className="notice" role="status"><strong>{state.preview.valid} valid</strong><p>{state.preview.duplicates} duplicate rows · {state.preview.invalid} invalid rows · {state.preview.existing} already enrolled</p></div>}{state.message && <p role={state.ok ? "status" : "alert"}>{state.message}</p>}{state.preview && !state.imported && state.preview.duplicates === 0 && state.preview.invalid === 0 && <button className="button-primary" name="confirm" value="yes" disabled={pending} type="submit">Confirm import</button>}</form>;
+  return <form action={run} className="school-form"><h2>Import course roster</h2>{courseId ? <input type="hidden" name="course_id" value={courseId} /> : <SelectField name="course_id" label="Course" options={snapshot.courses.map(course => ({ id: course.id, name: `${course.code} · ${course.title}` }))} />}<p className="text-sm text-muted">Required columns: matric_number, student_name. Optional: programme, level.</p><p className="text-sm"><a href="/api/school/roster-template" download="attendance-roster-template.csv" style={{ color: "#003d32", textDecoration: "underline", fontWeight: 600 }}>Download CSV roster template</a></p><label>CSV file (optional)<input type="file" accept=".csv,text/csv" onChange={async event => { setError(""); const file = event.target.files?.[0]; if (!file) return; if (file.size > 100000) { setError("Import a CSV smaller than 100 KB."); return; } try { if (input.current) input.current.value = await file.text(); } catch { setError("We couldn’t read the file. Paste the CSV below."); } }} /></label><label>Student CSV<textarea ref={input} name="csv" required rows={7} maxLength={100000} placeholder={"matric_number,student_name,programme,level\nCSC/2022/001,Dominion Akinyele,Computer Science,400L"} /></label><p className="text-sm text-muted">Columns: matric_number, student_name, programme, level. Preview is required before import.</p>{error && <FeedbackNotice ok={false} message={error} />}<button className="button-secondary" disabled={pending} type="submit">{pending ? "Checking…" : "Preview import"}</button>{state.preview && <div className="notice" role="status"><strong>{state.preview.valid} valid</strong><p>{state.preview.duplicates} duplicate rows · {state.preview.invalid} invalid rows · {state.preview.existing} already enrolled</p></div>}{state.message && <FeedbackNotice ok={state.ok} message={state.message} />}{state.preview && !state.imported && state.preview.duplicates === 0 && state.preview.invalid === 0 && <button className="button-primary" name="confirm" value="yes" disabled={pending} type="submit">Confirm import</button>}</form>;
 }
 export function ClassControls({ session }: { session: SchoolSnapshot["classes"][number] }) {
   const [confirm, setConfirm] = useState(false);

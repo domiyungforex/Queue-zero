@@ -4,6 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useRef, useState } from "react";
+import { FeedbackNotice } from "./feedback-notice";
 import { clientPhotoQuality } from "@/lib/school/photo-quality";
 
 type Props = {
@@ -70,7 +71,7 @@ export function FaceCapture({ onAccept, busy }: Props) {
   return (
     <div className="school-face-capture">
       {preview ? <img src={preview} alt="Photograph ready to submit" /> : <video ref={videoRef} autoPlay playsInline muted />}
-      {error ? <p role="alert">{error}</p> : <p>This photograph is stored privately. It is not checked by a facial-recognition service.</p>}
+      {error ? <FeedbackNotice ok={false} message={error} /> : <p>This photograph is stored privately. It is not checked by a facial-recognition service.</p>}
       <div className="school-actions">
         {!stream && !preview ? <button type="button" className="button-secondary" onClick={start}>Open camera</button> : null}
         {stream && !preview ? <button type="button" className="button-primary" onClick={capture}>Capture</button> : null}

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { registerStudent } from "@/lib/school-student/registration";
 import { FaceCapture } from "./face-capture";
+import { FeedbackNotice } from "./feedback-notice";
 
 type Department = { id: string; faculty_id: string; name: string };
 type Props = {
@@ -53,7 +54,7 @@ export function StudentRegistration(props: Props) {
       <label className="school-check"><input type="checkbox" name="consent" value="yes" required /> I agree that {props.institution} may store this photograph for attendance reference, and I understand it will not be compared by an automated biometric service.</label>
       <FaceCapture onAccept={setPhoto} busy={pending} />
       <button className="button-primary" type="submit" disabled={pending || !photo}>{pending ? "Saving…" : "Submit registration"}</button>
-      {message ? <p role={ok ? "status" : "alert"}>{message}</p> : null}
+      {message ? <FeedbackNotice ok={ok} message={message} /> : null}
     </form>
   );
 }
