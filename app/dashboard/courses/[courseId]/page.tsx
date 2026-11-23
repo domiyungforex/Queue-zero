@@ -36,17 +36,28 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
     </table></div> : <EmptyState title="No classes yet" description="Create a class and open attendance to display its stable QR." />}
     <div className="school-grid"><CreateClassForm courseId={courseId} /><EnrollmentForm snapshot={data} courseId={courseId} /></div>
     <CourseAudienceForm courseId={courseId} departments={data.departments.map((department) => ({ id: department.id, name: department.name }))} />
-    {canManage ? <details className="school-optional">
-      <summary>Lecturer access <span>Optional</span></summary>
+    {canManage ? <details className="school-optional" open>
+      <summary>Lecturer assignments <span>Academic Staff</span></summary>
       <div className="school-optional-content">
-        <p>Assigning a lecturer delegates access to this course. It is not required to open attendance.</p>
-        <SchoolForm action="lecturer" title="Add lecturer access" fields={{ course_id: courseId }} submit="Add lecturer">
+        <p>Assigning a lecturer delegates access to this course. Assigned lecturers can launch class sessions, take verified student attendance, and manage rosters on behalf of the institution.</p>
+        {lecturers.length ? (
+          <div style={{ marginBottom: "16px" }}>
+            <h3 style={{ margin: "0 0 8px", fontSize: "14px", fontWeight: 750 }}>Currently Assigned:</h3>
+            <div style={{ display: "grid", gap: "10px" }}>
+              {lecturers.map((lecturer) => <SchoolForm key={lecturer.clerk_user_id} action="remove_lecturer" title={lecturer.display_name} fields={{ course_id: courseId, user_id: lecturer.clerk_user_id }} submit="Remove access">
+                <p style={{ margin: 0, fontSize: "12px", color: "#73788a" }}>Authorized lecturer for {course.code}.</p>
+              </SchoolForm>)}
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: "12px 16px", background: "#fffaf7", border: "1px dashed #ffd9ca", borderRadius: "10px", marginBottom: "16px", color: "#d94b14", fontSize: "13px" }}>
+            No lecturer assigned yet. Assign a lecturer below so they can take attendance and conduct sessions for this course.
+          </div>
+        )}
+        <SchoolForm action="lecturer" title="Assign a lecturer" fields={{ course_id: courseId }} submit="Assign lecturer">
           <TextField name="email" label="Verified lecturer email" type="email" maxLength={254} />
           <p className="text-sm text-muted">The lecturer must already have a TuRnMaRk staff account with this email verified.</p>
         </SchoolForm>
-        {lecturers.map((lecturer) => <SchoolForm key={lecturer.clerk_user_id} action="remove_lecturer" title={lecturer.display_name} fields={{ course_id: courseId, user_id: lecturer.clerk_user_id }} submit="Remove access">
-          <p>Removes this lecturer’s delegated access to this course.</p>
-        </SchoolForm>)}
       </div>
     </details> : null}
   </>;

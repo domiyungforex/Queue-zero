@@ -1,4 +1,4 @@
-import { BookOpen, CalendarClock, ChevronRight, Plus, Search, UsersRound } from "lucide-react";
+import { BookOpen, CalendarClock, ChevronRight, Plus, Search, UserCheck, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { EducationEmpty, EducationHeading, EducationStatus, formatTime } from "@/components/school/education-ui";
@@ -47,10 +47,29 @@ export default async function ClassesPage({ searchParams = Promise.resolve({}) }
         const session = sessions.find((item) => item.status === "OPEN") ?? sessions[0];
         const roster = (snapshot.enrollments ?? []).filter((item) => item.course_id === course.id).length;
         const arrivals = session ? snapshot.attendance.filter((item) => item.class_session_id === session.id && item.check_in_at).length : 0;
+        const courseLecturers = snapshot.lecturers.filter((item) => item.course_id === course.id);
         const status = statusView(session?.status);
         return <Link className={styles.card} href={session?.status === "OPEN" ? `/dashboard/attendance/${session.id}` : `/dashboard/courses/${course.id}`} key={course.id}>
           <span className={styles.icon}><BookOpen size={21} aria-hidden="true" /></span>
-          <span className={styles.cardCopy}><strong>{course.code}</strong><span>{course.title}</span><span className={styles.meta}><UsersRound size={13} aria-hidden="true" />{session?.status === "OPEN" ? `${arrivals} ${arrivals === 1 ? "arrival" : "arrivals"}` : `${roster} ${roster === 1 ? "student" : "students"}`}<CalendarClock size={13} aria-hidden="true" />{formatTime(session?.starts_at ?? null)}</span></span>
+          <span className={styles.cardCopy}>
+            <strong>{course.code}</strong>
+            <span>{course.title}</span>
+            <span className={styles.meta}>
+              <UsersRound size={13} aria-hidden="true" />
+              {session?.status === "OPEN" ? `${arrivals} ${arrivals === 1 ? "arrival" : "arrivals"}` : `${roster} ${roster === 1 ? "student" : "students"}`}
+              <CalendarClock size={13} aria-hidden="true" />
+              {formatTime(session?.starts_at ?? null)}
+              {courseLecturers.length > 0 && (
+                <>
+                  <span style={{ margin: "0 2px", color: "#d5e0d8" }}>•</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    <UserCheck size={13} aria-hidden="true" />
+                    <span>{courseLecturers.map((l) => l.display_name).join(", ")}</span>
+                  </span>
+                </>
+              )}
+            </span>
+          </span>
           <span><EducationStatus tone={status.tone}>{status.label}</EducationStatus><ChevronRight className={styles.chevron} size={18} aria-hidden="true" /></span>
         </Link>;
       })}

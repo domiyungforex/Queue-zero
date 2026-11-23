@@ -233,9 +233,11 @@ export default async function AttendancePage({
               <option value="">All sessions</option>
               {data.classes.map((cls) => {
                 const c = data.courses.find((item) => item.id === cls.course_id);
+                const l = data.lecturers.filter((item) => item.course_id === cls.course_id);
+                const lecturerTag = l.length ? ` · ${l[0].display_name}` : "";
                 return (
                   <option key={cls.id} value={cls.id}>
-                    {c ? `${c.code} · ` : ""}{cls.title ? `${cls.title} · ` : ""}{cls.starts_at?.slice(0, 10) ?? "Session"} ({cls.status})
+                    {c ? `${c.code} · ` : ""}{cls.title ? `${cls.title} · ` : ""}{cls.starts_at?.slice(0, 10) ?? "Session"} ({cls.status}){lecturerTag}
                   </option>
                 );
               })}

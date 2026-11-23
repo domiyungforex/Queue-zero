@@ -55,18 +55,20 @@ function sessionStatus(status: string) {
   return "Upcoming";
 }
 
-function ClassRows({ data, classes }: { data: SchoolSnapshot; classes: EducationDashboard["classes"] }) {
+function ClassRows({ data, classes, individual = false }: { data: SchoolSnapshot; classes: EducationDashboard["classes"]; individual?: boolean }) {
   if (!classes.length) {
-    return <DashboardEmptyState title="No classes today" description="Scheduled classes will appear here when they are available." href="/dashboard/courses" label="Create a class" />;
+    return <DashboardEmptyState title="No classes today" description={individual ? "Scheduled classes will appear here when they are available." : "No classes currently scheduled across departments."} href="/dashboard/courses" label={individual ? "Create a class" : "Manage courses"} />;
   }
 
   return <ul className={styles.classList}>{classes.slice(0, 4).map((session, index) => {
     const course = data.courses.find((item) => item.id === session.course_id);
+    const sessionLecturers = data.lecturers.filter((item) => item.course_id === session.course_id);
+    const lecturerName = sessionLecturers[0]?.display_name;
     return <li className={styles.classRow} key={session.id}>
       <span className={`${styles.rowIcon} ${styles[`rowIcon${index % 3}`]}`}><BookOpen size={18} aria-hidden="true" /></span>
       <Link className={styles.rowMain} href={`/dashboard/attendance/${session.id}`} aria-label={`Open ${course?.code ?? "class"} attendance`}>
         <strong>{course?.code ?? "Class"}</strong>
-        <span>{course?.title ?? "Course details"}</span>
+        <span>{course?.title ?? "Course details"}{!individual && lecturerName ? ` · Lecturer: ${lecturerName}` : ""}</span>
       </Link>
       <span className={styles.rowTime}><Clock3 size={14} aria-hidden="true" />{classTimeRange(session.starts_at, session.ends_at)}</span>
       <DashboardStatusBadge status={sessionStatus(session.status)} />
@@ -75,17 +77,24 @@ function ClassRows({ data, classes }: { data: SchoolSnapshot; classes: Education
   })}</ul>;
 }
 
-const quickActions = [
-  { href: "/dashboard/courses", label: "Create Class", description: "Set up a class", icon: Plus, tone: "orange" },
-  { href: "/dashboard/students", label: "Add Students", description: "Import a roster", icon: UserPlus, tone: "purple" },
-  { href: "/dashboard/attendance", label: "Take Attendance", description: "Open class tools", icon: QrCode, tone: "blue" },
-  { href: "/dashboard/exports", label: "View Reports", description: "Attendance insights", icon: BarChart3, tone: "green" },
-] as const;
+function QuickActions({ individual = false }: { individual?: boolean }) {
+  const actions = individual
+    ? [
+        { href: "/dashboard/courses", label: "Create Class", description: "Set up a class", icon: Plus, tone: "orange" as const },
+        { href: "/dashboard/attendance", label: "Take Attendance", description: "Open class tools", icon: QrCode, tone: "blue" as const },
+        { href: "/dashboard/students", label: "My Students", description: "Manage roster", icon: UserPlus, tone: "purple" as const },
+        { href: "/dashboard/exports", label: "Class Reports", description: "Attendance records", icon: BarChart3, tone: "green" as const },
+      ]
+    : [
+        { href: "/dashboard/courses", label: "Assign Lecturers", description: "Delegate course leads", icon: UserCheck, tone: "purple" as const },
+        { href: "/dashboard/students", label: "Student Onboarding", description: "Registration links", icon: UserPlus, tone: "orange" as const },
+        { href: "/dashboard/attendance", label: "Monitor Sessions", description: "Audit live lectures", icon: ClipboardCheck, tone: "blue" as const },
+        { href: "/dashboard/exports", label: "Institution Reports", description: "Accreditation analytics", icon: BarChart3, tone: "green" as const },
+      ];
 
-function QuickActions() {
   return <section className={styles.panel} aria-labelledby="quick-actions-title">
     <header className={styles.panelHeader}><h2 id="quick-actions-title">Quick Actions</h2></header>
-    <div className={styles.quickGrid}>{quickActions.map(({ href, label, description, icon: Icon, tone }) => <Link className={styles.quickAction} data-tone={tone} href={href} key={href}>
+    <div className={styles.quickGrid}>{actions.map(({ href, label, description, icon: Icon, tone }) => <Link className={styles.quickAction} data-tone={tone} href={href} key={href}>
       <span className={styles.quickIcon}><Icon size={19} aria-hidden="true" /></span>
       <strong>{label}</strong>
       <span>{description}</span>
@@ -126,9 +135,29 @@ export function EducationHome({ data, dashboard, individual = false, userName = 
         <p className={styles.heroDescription}>
           {individual
             ? "Your focused personal workspace: manage your classes, track attendance, and guide your students."
-            : "Institutional education management: monitor across classes, manage curricula, and oversee verified student attendance."}
+            : "Institutional education management: assign academic staff to courses, monitor live classroom attendance, and oversee verified student records."}
         </p>
-        {activeClass ? <Link className={styles.heroAction} href={`/dashboard/attendance/${activeClass.id}`}><ClipboardCheck size={20} aria-hidden="true" />Take attendance</Link> : <Link className={styles.heroAction} href="/dashboard/courses"><Plus size={20} aria-hidden="true" />Create class</Link>}
+        {individual ? (
+          activeClass ? (
+            <Link className={styles.heroAction} href={`/dashboard/attendance/${activeClass.id}`}>
+              <ClipboardCheck size={20} aria-hidden="true" />Take attendance
+            </Link>
+          ) : (
+            <Link className={styles.heroAction} href="/dashboard/courses">
+              <Plus size={20} aria-hidden="true" />Create class
+            </Link>
+          )
+        ) : (
+          activeClass ? (
+            <Link className={styles.heroAction} href={`/dashboard/attendance/${activeClass.id}`}>
+              <ClipboardCheck size={20} aria-hidden="true" />Monitor Live Session
+            </Link>
+          ) : (
+            <Link className={styles.heroAction} href="/dashboard/courses">
+              <BookOpen size={20} aria-hidden="true" />Manage Courses & Lecturers
+            </Link>
+          )
+        )}
       </div>
       <WorkspaceCharacter asset={TURNMARK_ASSETS.characters.student} className={styles.heroCharacter} priority />
     </section>
@@ -163,6 +192,8 @@ export function EducationHome({ data, dashboard, individual = false, userName = 
           <span style={{ color: "#d5e0d8" }}>•</span>
           <span><strong style={{ color: "#111318" }}>{data.courses.length}</strong> {data.courses.length === 1 ? "Course" : "Courses"}</span>
           <span style={{ color: "#d5e0d8" }}>•</span>
+          <span><strong style={{ color: "#111318" }}>{data.lecturers.length}</strong> Assigned {data.lecturers.length === 1 ? "Lecturer" : "Lecturers"}</span>
+          <span style={{ color: "#d5e0d8" }}>•</span>
           <span><strong style={{ color: "#111318" }}>{dashboard.metrics.totalStudents}</strong> Enrolled Students</span>
         </div>
       </div>
@@ -175,11 +206,11 @@ export function EducationHome({ data, dashboard, individual = false, userName = 
       <DashboardKpiCard icon={CalendarDays} value={dashboard.metrics.classesToday} label="Classes Today" color="#d94b14" soft="#fff0e8" />
     </section>
 
-    <QuickActions />
+    <QuickActions individual={individual} />
 
     <section className={styles.panel} aria-labelledby="todays-classes-title">
       <header className={styles.panelHeader}><h2 id="todays-classes-title">Today’s Classes</h2><Link href="/dashboard/classes">View all<ChevronRight size={15} aria-hidden="true" /></Link></header>
-      <ClassRows data={data} classes={dashboard.classes} />
+      <ClassRows data={data} classes={dashboard.classes} individual={individual} />
     </section>
 
     <div className={styles.lowerGrid}>
