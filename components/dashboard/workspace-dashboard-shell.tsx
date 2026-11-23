@@ -69,13 +69,25 @@ export function WorkspaceDashboardShell({ children, membership, memberships, ins
         <p className={styles.sidebarFoot}>TuRnMaRk keeps operational data inside the workspace you are authorized to use.</p>
       </>}
       header={<header className={styles.header}>
-        <div className={styles.identity}><span className={styles.workspaceIcon}><WorkspaceIcon size={18} /></span><div className={styles.identityCopy}><strong>{membership.businessName}</strong><span>{roleLabel} · {membership.workspaceOwnership === "INDIVIDUAL" ? "personal" : "organization"} workspace</span></div><LiveRefresh key={membership.businessId} topic={`business:${membership.businessId}`} authenticated /></div>
+        <div className={styles.identity}>
+          <span className={styles.workspaceIcon}><WorkspaceIcon size={18} /></span>
+          <div className={styles.identityCopy}>
+            <strong>{membership.businessName}</strong>
+            <span>{roleLabel} · {membership.workspaceOwnership === "INDIVIDUAL" ? "Personal Workspace" : "Organization Portal"}</span>
+          </div>
+          <LiveRefresh key={membership.businessId} topic={`business:${membership.businessId}`} authenticated />
+        </div>
         <div className={styles.headerSwitcher}><BusinessSelector key={membership.businessId} businessId={membership.businessId} memberships={memberships} /></div>
         <div className={styles.account}><NotificationCenter key={`desktop:${membership.businessId}`} variant="desktop" businessId={membership.businessId} userId={userId} initial={notifications} /><AuthNavigation /></div>
       </header>}
       mobileHeader={<>
         <a className={styles.mobileBrand} href="/dashboard" aria-label="TuRnMaRk dashboard"><Image src={wordmark.src} width={wordmark.width} height={wordmark.height} alt={wordmark.alt} priority /></a>
-        <MobileWorkspaceSwitcher businessId={membership.businessId} memberships={memberships} contextLabel={education ? `${roleLabel} · School` : undefined} education={education} />
+        <MobileWorkspaceSwitcher
+          businessId={membership.businessId}
+          memberships={memberships}
+          contextLabel={membership.workspaceOwnership === "INDIVIDUAL" ? `${roleLabel} · Personal Workspace` : `${roleLabel} · Organization Portal`}
+          education={education}
+        />
         <NotificationCenter key={`mobile:${membership.businessId}`} variant="mobile" businessId={membership.businessId} userId={userId} initial={notifications} />
         <details className={styles.mobileAccount}><summary aria-label="Open account menu">{userImageUrl ? <Image src={userImageUrl} width={36} height={36} alt="" unoptimized /> : initials || "TM"}</summary><div className={styles.mobileAccountMenu}>
           {membership.role === "owner" && <><a href="/dashboard/settings"><Settings2 size={16} aria-hidden="true" />Workspace settings</a><a href="/dashboard/billing"><CreditCard size={16} aria-hidden="true" />Billing</a></>}

@@ -57,8 +57,9 @@ export function DashboardNavigation({
   const pathname = usePathname();
   const manager = role === "owner" || role === "admin";
   const owner = role === "owner";
-  const individualLecturer = workspaceOwnership === "INDIVIDUAL" && professionalCategory === "LECTURER_TEACHER";
-  const individualService = workspaceOwnership === "INDIVIDUAL" && Boolean(professionalCategory) && !individualLecturer;
+  const isIndividual = workspaceOwnership === "INDIVIDUAL";
+  const individualLecturer = isIndividual && (mode === "SCHOOL" || mode === "HYBRID" || professionalCategory === "LECTURER_TEACHER" || organizationType === "UNIVERSITY_SCHOOL");
+  const individualService = isIndividual && !individualLecturer;
   const education = mode !== "BUSINESS" || organizationType === "UNIVERSITY_SCHOOL" || individualLecturer;
   const teaching = education && (manager || role === "lecturer" || institutionTeaching);
   const links: NavigationLink[] = [];

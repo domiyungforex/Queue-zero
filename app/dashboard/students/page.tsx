@@ -5,6 +5,7 @@ import { EducationEmpty, EducationHeading, EducationStatus, initials } from "@/c
 import styles from "@/components/school/education-pages.module.css";
 import { EnrollmentForm } from "@/components/school/forms";
 import { StudentCorrectionForm } from "@/components/school/student-correction-form";
+import { StudentAccessLinks } from "@/components/school/student-access-links";
 import { getSchoolSnapshot } from "@/lib/school/data";
 
 type StudentFilter = "all" | "present" | "absent" | "late";
@@ -30,10 +31,7 @@ export default async function StudentsPage({ searchParams = Promise.resolve({}) 
   return <main className={styles.page}>
     <EducationHeading eyebrow="STUDENTS" title="Students" description="Manage your students and view details." action={data.courses.length ? <a className={styles.primary} href="#import-roster"><Plus size={18} aria-hidden="true" />Add students</a> : undefined} />
     <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
-    <section className={styles.panel}>
-      <p>Students register once, then check in with a matriculation number. These links are for this institution only.</p>
-      <p><a href={`/attend/register?org=${data.organization.id}`}>Student registration</a> · <a href={`/attend/check?org=${data.organization.id}`}>Attendance check-in</a></p>
-    </section>
+    <StudentAccessLinks organizationId={data.organization.id} organizationName={data.organization.name} />
     <form className={styles.toolbar} role="search"><label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">Search students</span><input name="q" type="search" defaultValue={query.q} placeholder="Name, matric or JAMB number" /><input type="hidden" name="filter" value={filter} /></label><button className={styles.secondary} type="submit">Search</button></form>
     <nav className={styles.filters} aria-label="Filter students">{tabs.map((tab) => <Link className={styles.tab} data-active={filter === tab.value} key={tab.value} href={{ pathname: "/dashboard/students", query: { ...(query.q ? { q: query.q } : {}), ...(tab.value === "all" ? {} : { filter: tab.value }) } }}>{tab.label}</Link>)}</nav>
     {visibleStudents.length ? <section className={styles.panel} aria-label="Students"><ul className={styles.rows}>{visibleStudents.map((student) => {

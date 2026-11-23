@@ -118,13 +118,55 @@ export function EducationHome({ data, dashboard, individual = false, userName = 
       <div className={styles.heroShapeOne} aria-hidden="true" />
       <div className={styles.heroShapeTwo} aria-hidden="true" />
       <div className={styles.heroCopy}>
-        <p className={styles.eyebrow}>WELCOME BACK</p>
-        <h1 id="education-welcome"><span className={styles.heroLead}>Good morning,</span><span className={styles.heroAccent}>{userName}</span></h1>
-        <p className={styles.heroDescription}>{individual ? "Manage your classes, track attendance and keep your students informed from one focused workspace." : "Manage your classes, track attendance and keep your students informed."}</p>
+        <p className={styles.eyebrow}>{individual ? "PERSONAL TEACHING WORKSPACE" : "ORGANIZATION EDUCATION PORTAL"}</p>
+        <h1 id="education-welcome">
+          <span className={styles.heroLead}>{individual ? "Good day," : "Welcome to "}</span>
+          <span className={styles.heroAccent}>{individual ? userName : data.organization.name}</span>
+        </h1>
+        <p className={styles.heroDescription}>
+          {individual
+            ? "Your focused personal workspace: manage your classes, track attendance, and guide your students."
+            : "Institutional education management: monitor across classes, manage curricula, and oversee verified student attendance."}
+        </p>
         {activeClass ? <Link className={styles.heroAction} href={`/dashboard/attendance/${activeClass.id}`}><ClipboardCheck size={20} aria-hidden="true" />Take attendance</Link> : <Link className={styles.heroAction} href="/dashboard/courses"><Plus size={20} aria-hidden="true" />Create class</Link>}
       </div>
       <WorkspaceCharacter asset={TURNMARK_ASSETS.characters.student} className={styles.heroCharacter} priority />
     </section>
+
+    {!individual && (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "12px",
+          background: "#ffffff",
+          border: "1px solid #e3ebe4",
+          borderRadius: "16px",
+          padding: "14px 20px",
+          boxShadow: "0 4px 16px rgba(72,39,23,.03)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "12px", fontWeight: 800, color: "#111318", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Institution Overview
+          </span>
+          <span style={{ fontSize: "11px", color: "#15945f", background: "#e8f8ef", padding: "2px 8px", borderRadius: "999px", fontWeight: 750 }}>
+            Active Organization
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", fontSize: "12px", color: "#686775" }}>
+          <span><strong style={{ color: "#111318" }}>{data.faculties.length}</strong> {data.faculties.length === 1 ? "Faculty" : "Faculties"}</span>
+          <span style={{ color: "#d5e0d8" }}>•</span>
+          <span><strong style={{ color: "#111318" }}>{data.departments.length}</strong> {data.departments.length === 1 ? "Department" : "Departments"}</span>
+          <span style={{ color: "#d5e0d8" }}>•</span>
+          <span><strong style={{ color: "#111318" }}>{data.courses.length}</strong> {data.courses.length === 1 ? "Course" : "Courses"}</span>
+          <span style={{ color: "#d5e0d8" }}>•</span>
+          <span><strong style={{ color: "#111318" }}>{dashboard.metrics.totalStudents}</strong> Enrolled Students</span>
+        </div>
+      </div>
+    )}
 
     <section className={styles.kpis} aria-label="Education workspace summary">
       <DashboardKpiCard icon={GraduationCap} value={dashboard.metrics.totalStudents} label="Total Students" color="#ff6b2b" soft="#fff0e8" />
