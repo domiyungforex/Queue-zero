@@ -32,11 +32,11 @@ export default async function StudentsPage({ searchParams = Promise.resolve({}) 
     <EducationHeading eyebrow="STUDENTS" title="Students" description="Manage your students and view details." action={data.courses.length ? <a className={styles.primary} href="#import-roster"><Plus size={18} aria-hidden="true" />Add students</a> : undefined} />
     <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
     <StudentAccessLinks organizationId={data.organization.id} organizationName={data.organization.name} />
-    <form className={styles.toolbar} role="search"><label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">Search students</span><input name="q" type="search" defaultValue={query.q} placeholder="Name, matric or JAMB number" /><input type="hidden" name="filter" value={filter} /></label><button className={styles.secondary} type="submit">Search</button></form>
+    <form className={styles.toolbar} role="search"><label className={styles.search}><Search size={17} aria-hidden="true" /><span className="sr-only">Search students</span><input name="q" type="search" enterKeyHint="search" defaultValue={query.q} placeholder="Name, matric or JAMB number" /><input type="hidden" name="filter" value={filter} /></label><button className={styles.secondary} type="submit">Search students</button></form>
     <nav className={styles.filters} aria-label="Filter students">{tabs.map((tab) => <Link className={styles.tab} data-active={filter === tab.value} key={tab.value} href={{ pathname: "/dashboard/students", query: { ...(query.q ? { q: query.q } : {}), ...(tab.value === "all" ? {} : { filter: tab.value }) } }}>{tab.label}</Link>)}</nav>
     {visibleStudents.length ? (
       <section className={styles.panel} aria-label="Students">
-        <ul className={styles.rows}>
+        <ul className={`${styles.rows} stagger-list`}>
           {visibleStudents.map((student) => {
             const latest = latestByStudent.get(student.id);
             const courseCodes = data.enrollments.filter((item) => item.student_id === student.id).map((item) => data.courses.find((course) => course.id === item.course_id)?.code).filter(Boolean).join(", ");

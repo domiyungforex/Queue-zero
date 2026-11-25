@@ -93,11 +93,19 @@
  .register-actions .button-primary,.register-actions .button-secondary{width:100%;justify-content:center}
 }
 
-.school-public-flow{width:min(720px,calc(100% - 32px));margin:24px auto 48px}
-.school-public-flow h1{margin:18px 0}
+.school-public-flow{width:min(560px,calc(100% - 28px));margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 0 max(36px,env(safe-area-inset-bottom))}
+.school-public-header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px}
+.school-public-pill{display:inline-flex;align-items:center;padding:6px 14px;border-radius:999px;background:#f4f7f4;border:1px solid #ffd5c2;color:#d94814;font-size:11px;font-weight:700}
+.school-public-card{margin-top:16px;overflow:hidden;border:1px solid #eee7e3;border-radius:22px;background:#fff;box-shadow:var(--tm-shadow-md,0 10px 35px rgba(17,24,39,.06));animation:tm-enter-scale 220ms cubic-bezier(.16,1,.3,1)}
+.school-public-intro{padding:24px 24px 20px;background:linear-gradient(145deg,#fffaf7 0%,#f4f7f4 100%);border-bottom:1px solid #f3e6de;text-align:left}
+.school-public-intro p{margin:0;color:#e05318;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.school-public-intro h1{margin:6px 0 0;font-size:clamp(24px,5.5vw,30px);font-weight:800;line-height:1.12;letter-spacing:-.03em;color:#111318}
+.school-public-intro span{display:block;margin-top:6px;color:var(--tm-gray-500,#647087);font-size:13px;line-height:1.55}
+.school-public-body{padding:20px 24px 24px}
 .school-face-capture video,.school-face-capture img{width:min(100%,360px);aspect-ratio:1;object-fit:cover;border-radius:18px;background:#111318}
-.school-face-capture p{color:#5c564f;font-size:14px}
+.school-face-capture p{color:var(--tm-gray-500,#647087);font-size:14px;text-align:left}
 .school-public-flow dl{display:grid;gap:8px;margin:12px 0}
+@media(max-width:600px){.school-public-intro,.school-public-body{padding-inline:18px}}
 .school-public-flow dt{color:#8a8178;font-size:12px}
 .school-public-flow dd{margin:0;font-weight:700}
 @media(max-width:767px){.school-public-flow{width:min(100% - 24px,720px)}.school-face-capture video,.school-face-capture img{width:100%}}

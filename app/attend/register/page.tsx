@@ -14,9 +14,20 @@ export default async function RegisterStudentPage({ searchParams }: { searchPara
   const directory = orgId ? await loadRegistrationDirectory(orgId) : { ok: false as const, message: "Ask your institution for its registration link." };
   return (
     <main className="school-public-flow">
-      <Brand />
-      <h1>Student registration</h1>
-      {directory.ok ? <StudentRegistration organizationId={orgId} institution={directory.institution} faculties={directory.faculties} departments={directory.departments} /> : <FeedbackNotice ok={false} message={directory.message} />}
+      <header className="school-public-header">
+        <Brand />
+        <span className="school-public-pill">One-time setup</span>
+      </header>
+      <section className="school-public-card">
+        <div className="school-public-intro">
+          <p>Institutional roster</p>
+          <h1>Student registration</h1>
+          <span>Register once with your matriculation number and reference photograph.</span>
+        </div>
+        <div className="school-public-body">
+          {directory.ok ? <StudentRegistration organizationId={orgId} institution={directory.institution} faculties={directory.faculties} departments={directory.departments} /> : <FeedbackNotice ok={false} message={directory.message} />}
+        </div>
+      </section>
     </main>
   );
 }

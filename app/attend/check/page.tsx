@@ -14,9 +14,20 @@ export default async function AttendanceCheckPage({ searchParams }: { searchPara
   const directory = orgId ? await loadRegistrationDirectory(orgId) : { ok: false as const, message: "Ask your institution for its attendance link." };
   return (
     <main className="school-public-flow">
-      <Brand />
-      <h1>Attendance check-in</h1>
-      {directory.ok ? <StudentCheckIn organizationId={orgId} institution={directory.institution} /> : <FeedbackNotice ok={false} message={directory.message ?? "Ask your institution for its attendance link."} />}
+      <header className="school-public-header">
+        <Brand />
+        <span className="school-public-pill">No account needed</span>
+      </header>
+      <section className="school-public-card">
+        <div className="school-public-intro">
+          <p>Class check-in</p>
+          <h1>Attendance check-in</h1>
+          <span>Enter your matriculation number to locate your institution&apos;s active session.</span>
+        </div>
+        <div className="school-public-body">
+          {directory.ok ? <StudentCheckIn organizationId={orgId} institution={directory.institution} /> : <FeedbackNotice ok={false} message={directory.message ?? "Ask your institution for its attendance link."} />}
+        </div>
+      </section>
     </main>
   );
 }

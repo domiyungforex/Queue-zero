@@ -612,18 +612,25 @@
   gap: 8px;
   border: 0;
   border-radius: 12px;
+  padding: 12px 22px;
   color: #ffffff;
   background: #111318;
-  box-shadow: 0 6px 18px rgba(255, 107, 43, 0.32);
+  box-shadow: 0 2px 4px rgba(17, 24, 39, 0.08), 0 8px 18px rgba(255, 107, 43, 0.24);
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease-out, box-shadow 160ms ease-out;
 }
 
-.primaryButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #f05c1b 0%, #ee3a58 100%);
-  box-shadow: 0 8px 22px rgba(255, 107, 43, 0.4);
+@media (hover: hover) and (pointer: fine) {
+  .primaryButton:hover:not(:disabled) {
+    background: linear-gradient(135deg, #f05c1b 0%, #ee3a58 100%);
+    box-shadow: 0 3px 6px rgba(17, 24, 39, 0.1), 0 12px 24px rgba(255, 107, 43, 0.34);
+  }
+}
+
+.primaryButton:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .primaryButton:disabled {
@@ -639,39 +646,82 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1.5px solid #dcd5d0;
+  border: 1.5px solid #d5dce6;
   border-radius: 12px;
+  padding: 12px 22px;
   color: #111318;
   background: #ffffff;
-  font-size: 13px;
-  font-weight: 750;
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease-out, border-color 160ms ease-out;
 }
 
-.secondaryButton:hover {
-  background: #fffaf7;
+@media (hover: hover) and (pointer: fine) {
+  .secondaryButton:hover {
+    background: #f6f8fb;
+    border-color: #bcc6d6;
+  }
+}
+
+.secondaryButton:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@keyframes scanEnterScale {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes scanSuccessPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.38);
+  }
+  60% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 14px rgba(22, 163, 74, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+}
+
+@keyframes scanErrorShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
 }
 
 /* Success Card */
 .successCard {
   display: grid;
   justify-items: center;
-  padding: 30px 24px 28px;
+  padding: 32px 24px 28px;
   text-align: center;
-  animation: fadeIn 0.3s ease-out;
+  animation: scanEnterScale 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .successBadge {
   display: grid;
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   place-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   border-radius: 50%;
   color: #ffffff;
-  background: #111318;
-  box-shadow: 0 10px 25px rgba(255, 107, 43, 0.35);
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25), 0 12px 28px rgba(22, 163, 74, 0.2);
+  animation: scanSuccessPulse 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .successEyebrow {
@@ -809,7 +859,11 @@
   justify-items: center;
   padding: 30px 24px 26px;
   text-align: center;
-  animation: fadeIn 0.3s ease-out;
+  animation: scanEnterScale 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.errorCard {
+  animation: scanEnterScale 220ms cubic-bezier(0.16, 1, 0.3, 1), scanErrorShake 360ms cubic-bezier(0.4, 0, 0.2, 1) 120ms;
 }
 
 .unavailable {
