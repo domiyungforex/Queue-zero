@@ -584,6 +584,7 @@ export function StudentScan({
                       placeholder="e.g. CSC/2022/045"
                       autoCapitalize="characters"
                       autoComplete="off"
+                      enterKeyHint="search"
                       required
                     />
                     <button
@@ -639,15 +640,15 @@ export function StudentScan({
                     </div>
                     <div className={styles.fieldGroup}>
                       <label htmlFor="registerLevel" className={styles.fieldLabel}>Academic level</label>
-                      <input id="registerLevel" name="level" className={styles.textInput} required maxLength={40} placeholder="e.g. 300" />
+                      <input id="registerLevel" name="level" className={styles.textInput} inputMode="numeric" required maxLength={40} placeholder="e.g. 300" />
                     </div>
                     <div className={styles.fieldGroup}>
                       <label htmlFor="registerEmail" className={styles.fieldLabel}>Email</label>
-                      <input id="registerEmail" name="email" type="email" className={styles.textInput} maxLength={254} autoComplete="email" />
+                      <input id="registerEmail" name="email" type="email" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} className={styles.textInput} maxLength={254} autoComplete="email" />
                     </div>
                     <div className={styles.fieldGroup}>
                       <label htmlFor="registerPhone" className={styles.fieldLabel}>Phone</label>
-                      <input id="registerPhone" name="phone" type="tel" className={styles.textInput} maxLength={20} autoComplete="tel" />
+                      <input id="registerPhone" name="phone" type="tel" inputMode="tel" className={styles.textInput} maxLength={20} autoComplete="tel" />
                     </div>
                     <p>Provide an email or a phone number. The photograph is a reference, not biometric proof.</p>
                     <label className={styles.fieldLabel}>

@@ -237,6 +237,9 @@ function AuthFormInner({ mode }: { mode: "sign-in" | "sign-up" }) {
             type={channel === "phone" && method === "code" ? "tel" : "email"}
             inputMode={channel === "phone" && method === "code" ? "tel" : "email"}
             autoComplete={channel === "phone" && method === "code" ? "tel" : "email"}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             required
             autoFocus={isWelcomeBack}
             disabled={sent || busy}
