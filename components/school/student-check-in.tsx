@@ -108,7 +108,7 @@ export function StudentCheckIn({ organizationId, institution }: { organizationId
     setClassId(result.sessions.length === 1 ? result.sessions[0].id : "");
     if (result.sessions.length === 0) {
       setOk(false);
-      setMessage("There is no active attendance session for your enrollments. Ask your lecturer if the class is open and you were enrolled before it opened.");
+      setMessage("There is no active attendance session open right now at this institution. Ask your lecturer to open the attendance session.");
     } else if (result.sessions.some((session) => session.locationRequired)) {
       setMessage("This attendance check uses your location once to compare it with the class zone. It is not tracked in the background.");
     }

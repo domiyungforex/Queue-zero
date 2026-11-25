@@ -52,10 +52,12 @@ const registerSchema = z.object({
   email: z.string().trim().email().max(254).or(z.literal("")),
   phone: z.string().trim().max(20),
   consent: z.literal("yes"),
-  photo: z.string().min(100).max(700_000),
+  photo: z.string().min(100).max(3_000_000),
 });
 
 export async function registerStudent(form: FormData) {
+  const emailVal = form.get("email");
+  const phoneVal = form.get("phone");
   const parsed = registerSchema.safeParse({
     organizationId: form.get("organizationId"),
     fullName: form.get("fullName"),
@@ -63,12 +65,30 @@ export async function registerStudent(form: FormData) {
     facultyId: form.get("facultyId"),
     departmentId: form.get("departmentId"),
     level: form.get("level"),
-    email: form.get("email") ?? "",
-    phone: form.get("phone") ?? "",
+    email: emailVal ? String(emailVal).trim() : "",
+    phone: phoneVal ? String(phoneVal).trim() : "",
     consent: form.get("consent"),
     photo: form.get("photo"),
   });
-  if (!parsed.success) return { ok: false as const, message: "Check every required field, including consent and a clear photograph." };
+  if (!parsed.success) {
+    const issues = parsed.error.issues;
+    const missing: string[] = [];
+    if (issues.some((i) => i.path.includes("fullName"))) missing.push("Full Name");
+    if (issues.some((i) => i.path.includes("matricNumber"))) missing.push("Matriculation Number");
+    if (issues.some((i) => i.path.includes("facultyId"))) missing.push("Faculty");
+    if (issues.some((i) => i.path.includes("departmentId"))) missing.push("Department");
+    if (issues.some((i) => i.path.includes("level"))) missing.push("Academic Level");
+    if (issues.some((i) => i.path.includes("consent"))) missing.push("Consent Checkbox");
+    if (issues.some((i) => i.path.includes("photo"))) missing.push("Reference Photograph");
+    if (issues.some((i) => i.path.includes("email"))) missing.push("Valid Email Format");
+    const detail = missing.length ? ` Please provide: ${missing.join(", ")}.` : "";
+    return { ok: false as const, message: `Check required fields.${detail}` };
+  }
+  const cleanEmail = parsed.data.email || null;
+  const cleanPhone = parsed.data.phone || null;
+  if (!cleanEmail && !cleanPhone) {
+    return { ok: false as const, message: "Provide an email address or a phone number for communication." };
+  }
   const photo = decodeAttendancePhoto(parsed.data.photo);
   if (!photo.ok) return { ok: false as const, message: photo.message };
   const db = createJoinSupabaseClient();
@@ -83,8 +103,8 @@ export async function registerStudent(form: FormData) {
     p_faculty_id: parsed.data.facultyId,
     p_department_id: parsed.data.departmentId,
     p_level: parsed.data.level,
-    p_email: parsed.data.email,
-    p_phone: parsed.data.phone,
+    p_email: cleanEmail,
+    p_phone: cleanPhone,
     p_consent: true,
     p_photo_path: path,
   });
@@ -180,7 +200,7 @@ export async function recordIdentifiedAttendance(input: {
   }
   const classId = orgId.safeParse(input.classId);
   if (!classId.success || !ticket.classes.includes(classId.data)) {
-    return { ok: false as const, message: input.method === "LIVE_PHOTO" ? "Choose one of the sessions shown for your enrollment." : "There is no eligible session to confirm." };
+    return { ok: false as const, message: input.method === "LIVE_PHOTO" ? "Choose one of the open sessions for this institution." : "There is no active session to confirm." };
   }
   const db = createJoinSupabaseClient();
   let photoPath: string | null = null;

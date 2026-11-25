@@ -25,6 +25,7 @@ import {
   type ScanResult,
 } from "@/lib/school-student/actions";
 import { FaceCapture } from "./face-capture";
+import { DynamicCameraModal } from "./dynamic-camera-modal";
 import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import { assessAttendanceLocation, geolocationFailureMessage } from "@/lib/school/location";
@@ -118,6 +119,7 @@ export function StudentScan({
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [autoCaptureCountdown, setAutoCaptureCountdown] = useState<number | null>(null);
   const [imageQualityGood, setImageQualityGood] = useState<boolean | null>(null);
+  const [cameraModalOpen, setCameraModalOpen] = useState(false);
 
   // Submission
   const [submitting, setSubmitting] = useState(false);
@@ -278,10 +280,12 @@ export function StudentScan({
 
     setLookupError("");
     setStep(2);
-    startCamera();
+    setCapturedPhoto(null);
+    // Open the dynamic camera modal automatically
+    setCameraModalOpen(true);
   };
 
-  // Camera initialization
+  // Camera initialization (kept for legacy quality-check effect, now unused after modal migration)
   const startCamera = async () => {
     setCameraError("");
     setCapturedPhoto(null);
@@ -847,92 +851,156 @@ export function StudentScan({
         </div>
       )}
 
-      {/* STEP 2: SELFIE CAPTURE */}
+      {/* STEP 2: SELFIE CAPTURE & REVIEW */}
       {step === 2 && (
         <div className={styles.stepContainer}>
           <div className={styles.stepHeader}>
-            <h3 className={styles.stepHeading}>Face the camera</h3>
+            <h3 className={styles.stepHeading}>
+              {!capturedPhoto ? "Take attendance selfie" : "Review and submit attendance"}
+            </h3>
             <p className={styles.stepDescription}>
-              Hold your phone close to your face. Your photo will be captured automatically.
+              {!capturedPhoto
+                ? "Position your face in the camera frame with good lighting."
+                : "Confirm your details and photograph before submitting your attendance."}
             </p>
           </div>
 
+          <DynamicCameraModal
+            isOpen={cameraModalOpen}
+            onClose={() => setCameraModalOpen(false)}
+            onConfirmPhoto={(photo) => {
+              setCapturedPhoto(photo);
+              setCameraModalOpen(false);
+            }}
+            title="Take attendance selfie"
+            description="Center your face in the oval frame with good lighting."
+          />
+
           <div className={styles.cameraBox}>
             {!capturedPhoto ? (
-              <div className={styles.cameraPreviewFrame}>
-                <video
-                  ref={videoRef}
-                  playsInline
-                  muted
-                  autoPlay
-                  className={styles.cameraVideo}
-                />
-                {/* Circular face overlay with green scanning ring */}
-                <div className={styles.faceTargetRing}>
-                  <div className={styles.scanningPulseLine} />
-                </div>
-
-                {autoCaptureCountdown !== null && (
-                  <div className={styles.countdownBadge}>
-                    <span>Hold still… capturing in {autoCaptureCountdown}</span>
-                  </div>
-                )}
-
-                {imageQualityGood !== null && (
-                  <div
-                    className={`${styles.qualityBadge} ${
-                      imageQualityGood ? styles.qualityGood : styles.qualityPoor
-                    }`}
-                  >
-                    <Sparkles size={13} />
-                    {imageQualityGood ? "Good lighting" : "Adjust lighting or angle"}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className={styles.photoPreviewWrapper}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={capturedPhoto}
-                  alt="Captured Selfie"
-                  width={320}
-                  height={320}
-                  className={styles.capturedPhoto}
-                />
-                <span className={styles.capturedConfirmBadge}>
-                  <CheckCircle2 size={16} /> Photo captured
-                </span>
-              </div>
-            )}
-
-            {cameraError && (
-              <div className={styles.cameraErrorNotice} role="alert">
-                <p>{cameraError}</p>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={startCamera}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", padding: "24px 16px" }}>
+                <div
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    background: "#fff0e8",
+                    display: "grid",
+                    placeItems: "center",
+                    color: "#ff6b2b",
+                  }}
                 >
-                  <RefreshCw size={15} /> Retry Camera
-                </button>
-              </div>
-            )}
-
-            <div className={styles.cameraActions}>
-              {!capturedPhoto ? (
+                  <Camera size={36} />
+                </div>
+                <div style={{ textAlign: "center", maxWidth: "340px" }}>
+                  <p style={{ margin: "0 0 6px", fontSize: "15px", fontWeight: 750, color: "#111318" }}>
+                    Attendance photograph required
+                  </p>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#73788a", lineHeight: 1.5 }}>
+                    Open the camera to take a clear live photograph. You can flip between front and back cameras and retake as many times as you need.
+                  </p>
+                </div>
                 <button
                   type="button"
                   className={styles.primaryButton}
-                  onClick={captureSelfie}
+                  onClick={() => setCameraModalOpen(true)}
+                  style={{ width: "100%", maxWidth: "320px", marginTop: "8px" }}
                 >
-                  <Camera size={18} /> Capture Photo
+                  <Camera size={18} /> Open Camera
                 </button>
-              ) : (
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "18px", width: "100%" }}>
+                {/* Photo Thumbnail */}
+                <div className={styles.photoPreviewWrapper}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={capturedPhoto}
+                    alt="Captured Selfie"
+                    width={240}
+                    height={240}
+                    className={styles.capturedPhoto}
+                  />
+                  <span className={styles.capturedConfirmBadge}>
+                    <CheckCircle2 size={16} /> Photo confirmed
+                  </span>
+                </div>
+
+                {/* Review Details Card */}
+                <div
+                  style={{
+                    background: "#fffaf7",
+                    border: "1px solid #ffd9ca",
+                    borderRadius: "16px",
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#d94b14", letterSpacing: "0.08em" }}>
+                      CHECK-IN SUMMARY
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCameraModalOpen(true)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#ff6b2b",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <RotateCcw size={13} /> Retake
+                    </button>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
+                    <div>
+                      <span style={{ display: "block", fontSize: "11px", color: "#8a7d76" }}>Full Name</span>
+                      <strong style={{ color: "#111318" }}>{verifiedStudent?.full_name || fullName}</strong>
+                    </div>
+                    <div>
+                      <span style={{ display: "block", fontSize: "11px", color: "#8a7d76" }}>Matric Number</span>
+                      <strong style={{ color: "#111318" }}>{verifiedStudent?.matric_number || matricNumber}</strong>
+                    </div>
+                    <div>
+                      <span style={{ display: "block", fontSize: "11px", color: "#8a7d76" }}>Course</span>
+                      <strong style={{ color: "#111318" }}>{classInfo.course_code}</strong>
+                    </div>
+                    <div>
+                      <span style={{ display: "block", fontSize: "11px", color: "#8a7d76" }}>Institution</span>
+                      <strong style={{ color: "#111318" }}>{classInfo.organization_name}</strong>
+                    </div>
+                  </div>
+                  {isLocationRequired && locationState.status === "verified" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#15945f", marginTop: "4px" }}>
+                      <CheckCircle2 size={14} />
+                      <span>GPS location confirmed within class zone</span>
+                    </div>
+                  )}
+                </div>
+
+                <p style={{ margin: 0, fontSize: "12px", color: "#8a7d76", lineHeight: 1.4, textAlign: "center" }}>
+                  This photograph is stored privately for lecturer verification only.
+                </p>
+
+                {lookupError && (
+                  <div className={styles.formErrorNotice} role="alert">
+                    <strong>{lookupError}</strong>
+                  </div>
+                )}
+
                 <div className={styles.twoButtonRow}>
                   <button
                     type="button"
                     className={styles.secondaryButton}
-                    onClick={retakeSelfie}
+                    onClick={() => setCameraModalOpen(true)}
                   >
                     <RotateCcw size={16} /> Retake
                   </button>
@@ -945,8 +1013,8 @@ export function StudentScan({
                     {submitting ? "Submitting…" : "Confirm & Submit"}
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

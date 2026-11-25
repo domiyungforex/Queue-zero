@@ -3,9 +3,9 @@
 /* Private camera frames are data URLs, so the image optimizer cannot fetch them. */
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useRef, useState } from "react";
-import { FeedbackNotice } from "./feedback-notice";
-import { clientPhotoQuality } from "@/lib/school/photo-quality";
+import { useState } from "react";
+import { Camera, Check, RefreshCw } from "lucide-react";
+import { DynamicCameraModal } from "./dynamic-camera-modal";
 
 type Props = {
   onAccept: (dataUrl: string) => void;
@@ -13,73 +13,66 @@ type Props = {
 };
 
 export function FaceCapture({ onAccept, busy }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [error, setError] = useState("");
-  const [preview, setPreview] = useState<string | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  useEffect(() => {
-    return () => stream?.getTracks().forEach((track) => track.stop());
-  }, [stream]);
-
-  async function start() {
-    setError("");
-    setPreview(null);
-    try {
-      const next = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 720 } }, audio: false });
-      setStream(next);
-      if (videoRef.current) videoRef.current.srcObject = next;
-    } catch {
-      setError("Camera permission was denied or no camera is available. You can use the manual confirmation instead of a photograph.");
-    }
-  }
-
-  function capture() {
-    const video = videoRef.current;
-    if (!video || video.videoWidth < 2) {
-      setError("The camera preview is not ready yet.");
-      return;
-    }
-    const canvas = document.createElement("canvas");
-    const size = Math.min(video.videoWidth, video.videoHeight, 960);
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const sx = (video.videoWidth - size) / 2;
-    const sy = (video.videoHeight - size) / 2;
-    ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
-    const sample = ctx.getImageData(0, 0, 24, 24).data;
-    let total = 0;
-    const values: number[] = [];
-    for (let i = 0; i < sample.length; i += 16) {
-      const value = (sample[i] + sample[i + 1] + sample[i + 2]) / 3;
-      values.push(value);
-      total += value;
-    }
-    const mean = total / values.length;
-    const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
-    const quality = clientPhotoQuality(size, size, variance);
-    if (quality) {
-      setError(quality);
-      return;
-    }
-    setError("");
-    setPreview(canvas.toDataURL("image/jpeg", 0.82));
-  }
+  const handleConfirm = (dataUrl: string) => {
+    setPhoto(dataUrl);
+    onAccept(dataUrl);
+  };
 
   return (
-    <div className="school-face-capture">
-      {preview ? <img src={preview} alt="Photograph ready to submit" /> : <video ref={videoRef} autoPlay playsInline muted />}
-      {error ? <FeedbackNotice ok={false} message={error} /> : <p>This photograph is stored privately. It is not checked by a facial-recognition service.</p>}
-      <div className="school-actions">
-        {!stream && !preview ? <button type="button" className="button-secondary" onClick={start}>Open camera</button> : null}
-        {stream && !preview ? <button type="button" className="button-primary" onClick={capture}>Capture</button> : null}
-        {preview ? <>
-          <button type="button" className="button-secondary" onClick={() => setPreview(null)} disabled={busy}>Retake</button>
-          <button type="button" className="button-primary" onClick={() => onAccept(preview)} disabled={busy}>{busy ? "Saving…" : "Use this photograph"}</button>
-        </> : null}
+    <div className="school-face-capture" style={{ display: "grid", gap: "12px", justifyItems: "center" }}>
+      {photo ? (
+        <div style={{ position: "relative", width: "min(100%, 260px)", aspectRatio: "1 / 1", borderRadius: "18px", overflow: "hidden", border: "2px solid #ff6b2b", boxShadow: "0 8px 24px rgba(255, 107, 43, 0.15)" }}>
+          <img src={photo} alt="Confirmed reference photograph" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <div style={{ position: "absolute", bottom: "10px", left: "50%", transform: "translateX(-50%)", background: "rgba(22, 133, 91, 0.9)", color: "#fff", fontSize: "11px", fontWeight: 750, padding: "4px 12px", borderRadius: "999px", display: "flex", alignItems: "center", gap: "4px" }}>
+            <Check size={12} /> Photograph confirmed
+          </div>
+        </div>
+      ) : (
+        <div style={{ width: "min(100%, 260px)", aspectRatio: "1 / 1", borderRadius: "18px", background: "#f8f5f3", border: "2px dashed #ded4cd", display: "grid", placeItems: "center", padding: "20px", textAlign: "center" }}>
+          <div>
+            <div style={{ display: "grid", width: "48px", height: "48px", placeItems: "center", borderRadius: "14px", background: "#fff0e8", color: "#ff6b2b", margin: "0 auto 10px" }}>
+              <Camera size={24} />
+            </div>
+            <p style={{ margin: 0, fontSize: "12px", fontWeight: 700, color: "#111318" }}>Reference photograph required</p>
+            <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#73788a" }}>Click below to open the camera modal and take your photo.</p>
+          </div>
+        </div>
+      )}
+
+      <p style={{ margin: 0, fontSize: "11px", color: "#73788a", textAlign: "center" }}>
+        This photograph is stored privately. It is not checked by an automated biometric service.
+      </p>
+
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+        <button
+          type="button"
+          className="button-primary"
+          onClick={() => setModalOpen(true)}
+          disabled={busy}
+          style={{ minHeight: "44px", padding: "0 20px", borderRadius: "12px", fontSize: "13px", fontWeight: 750, display: "inline-flex", alignItems: "center", gap: "6px" }}
+        >
+          {photo ? (
+            <>
+              <RefreshCw size={14} /> Retake Photograph
+            </>
+          ) : (
+            <>
+              <Camera size={15} /> Open Camera
+            </>
+          )}
+        </button>
       </div>
+
+      <DynamicCameraModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirmPhoto={handleConfirm}
+        title="Student Reference Photograph"
+        description="Hold steady and face the camera with good lighting."
+      />
     </div>
   );
 }

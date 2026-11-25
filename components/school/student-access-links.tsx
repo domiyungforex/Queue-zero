@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, ExternalLink, QrCode, UserCheck, UserPlus } from "lucide-react";
+import { Check, Copy, ExternalLink, MessageCircle, QrCode, Share2, UserCheck, UserPlus } from "lucide-react";
 
 type Props = {
   organizationId: string;
@@ -49,6 +49,12 @@ export function StudentAccessLinks({ organizationId, organizationName }: Props) 
         setTimeout(() => setCopiedCheckin(false), 2000);
       }
     }
+  };
+
+  const shareWhatsApp = (path: string, intro: string) => {
+    const fullUrl = getFullUrl(path);
+    const msg = encodeURIComponent(`${intro}\n\n${fullUrl}`);
+    window.open(`https://api.whatsapp.com/send?text=${msg}`, "_blank");
   };
 
   return (
@@ -183,6 +189,27 @@ export function StudentAccessLinks({ organizationId, organizationName }: Props) 
                 </>
               )}
             </button>
+            <button
+              type="button"
+              onClick={() => shareWhatsApp(registerPath, `Register once at ${organizationName} for smart class attendance:`)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "#25D366",
+                color: "#ffffff",
+                border: "none",
+                padding: "8px 14px",
+                borderRadius: "10px",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+              title="Share registration link on WhatsApp"
+            >
+              <MessageCircle size={13} aria-hidden="true" />
+              <span>WhatsApp</span>
+            </button>
           </div>
         </div>
 
@@ -279,6 +306,27 @@ export function StudentAccessLinks({ organizationId, organizationName }: Props) 
                   <span>Copy Link</span>
                 </>
               )}
+            </button>
+            <button
+              type="button"
+              onClick={() => shareWhatsApp(checkinPath, `Check in for active lecture at ${organizationName}:`)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "#25D366",
+                color: "#ffffff",
+                border: "none",
+                padding: "8px 14px",
+                borderRadius: "10px",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+              title="Share check-in link on WhatsApp"
+            >
+              <MessageCircle size={13} aria-hidden="true" />
+              <span>WhatsApp</span>
             </button>
           </div>
         </div>

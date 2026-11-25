@@ -19,7 +19,7 @@ const headers = {
 const bodySchema = z.object({
   token: z.string().min(10),
   nonce: z.string().uuid(),
-  photo: z.string().min(100).max(600_000), // base64 data URL, max ~450 KB
+  photo: z.string().min(100).max(3_000_000), // base64 data URL
 });
 
 export async function POST(

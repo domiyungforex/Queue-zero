@@ -14,8 +14,8 @@ export function decodeAttendancePhoto(dataUrl: string) {
   const match = dataUrl.match(allowed);
   if (!match) return { ok: false as const, message: "Use a JPEG, PNG or WebP photograph." };
   const buffer = Buffer.from(match[2].replace(/\s/g, ""), "base64");
-  if (buffer.length < 12_000) return { ok: false as const, message: "The photograph is too small to use. Move closer and retake it." };
-  if (buffer.length > 450_000) return { ok: false as const, message: "The photograph must be under 450 KB. Retake it." };
+  if (buffer.length < 10_000) return { ok: false as const, message: "The photograph is too small to use. Move closer and retake it." };
+  if (buffer.length > 1_500_000) return { ok: false as const, message: "The photograph must be under 1.5 MB. Retake it." };
   const mime = match[1];
   if (!imageBytesMatchType(buffer, mime)) return { ok: false as const, message: "The file is not a valid JPEG, PNG or WebP photograph." };
   const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";

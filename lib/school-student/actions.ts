@@ -105,8 +105,8 @@ export async function lookupVerifiedStudent(tokenString: string, matricNumber: s
     });
     const identifiedBody = identifiedSchema.safeParse(identified.data);
     const known = !identified.error && identifiedBody.success && identifiedBody.data.ok && Boolean(identifiedBody.data.full_name);
-    const eligible = known && (identifiedBody.success ? (identifiedBody.data.sessions ?? []).some((session) => session.id === token.session_id) : false);
-    if (known && eligible && identifiedBody.success) {
+    // Institutional recognition is sufficient: student does NOT need course-specific enrolment
+    if (known && identifiedBody.success) {
       return {
         ok: true,
         found: true,
@@ -131,7 +131,6 @@ export async function lookupVerifiedStudent(tokenString: string, matricNumber: s
     const decision = decideStudentAccess({
       rosterFound: false,
       identified: known,
-      eligibleForClass: eligible,
       verificationMode: verificationMode(sessionBody.data.verification_mode),
       sessionOpen: sessionBody.data.open !== false,
     });
