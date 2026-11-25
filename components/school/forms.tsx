@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import Link from "next/link";
-import { ArrowRight, AlertCircle, RefreshCw, MapPin } from "lucide-react";
+import { ArrowRight, RefreshCw, MapPin } from "lucide-react";
 import { FeedbackNotice } from "./feedback-notice";
 import { importRoster, manageSchool } from "@/lib/school/actions";
 import type { SchoolSnapshot } from "@/lib/school/contracts";

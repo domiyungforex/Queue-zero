@@ -46,8 +46,8 @@ export default async function ClassesPage({ searchParams = Promise.resolve({}) }
         const sessions = sessionsByCourse.get(course.id) ?? [];
         const session = sessions.find((item) => item.status === "OPEN") ?? sessions[0];
         const roster = (snapshot.enrollments ?? []).filter((item) => item.course_id === course.id).length;
-        const arrivals = session ? snapshot.attendance.filter((item) => item.class_session_id === session.id && item.check_in_at).length : 0;
-        const courseLecturers = snapshot.lecturers.filter((item) => item.course_id === course.id);
+        const arrivals = session ? (snapshot.attendance ?? []).filter((item) => item.class_session_id === session.id && item.check_in_at).length : 0;
+        const courseLecturers = (snapshot.lecturers ?? []).filter((item) => item.course_id === course.id);
         const status = statusView(session?.status);
         return <Link className={styles.card} href={session?.status === "OPEN" ? `/dashboard/attendance/${session.id}` : `/dashboard/courses/${course.id}`} key={course.id}>
           <span className={styles.icon}><BookOpen size={21} aria-hidden="true" /></span>

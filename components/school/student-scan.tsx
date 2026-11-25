@@ -14,7 +14,6 @@ import {
   RotateCcw,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   UserCheck,
 } from "lucide-react";
 import {
@@ -26,6 +25,7 @@ import {
 } from "@/lib/school-student/actions";
 import { FaceCapture } from "./face-capture";
 import { DynamicCameraModal } from "./dynamic-camera-modal";
+import { FeedbackNotice } from "./feedback-notice";
 import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import { assessAttendanceLocation, geolocationFailureMessage } from "@/lib/school/location";
@@ -113,31 +113,12 @@ export function StudentScan({
   const [locationState, setLocationState] = useState<LocationState>({ status: "idle" });
 
   // Camera / Selfie
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [cameraError, setCameraError] = useState("");
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
-  const [autoCaptureCountdown, setAutoCaptureCountdown] = useState<number | null>(null);
-  const [imageQualityGood, setImageQualityGood] = useState<boolean | null>(null);
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
 
   // Submission
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
-
-  // Stop camera tracks cleanly
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
 
   // Request location when required
   const requestLocation = useCallback(() => {
@@ -285,114 +266,6 @@ export function StudentScan({
     setCameraModalOpen(true);
   };
 
-  // Camera initialization (kept for legacy quality-check effect, now unused after modal migration)
-  const startCamera = async () => {
-    setCameraError("");
-    setCapturedPhoto(null);
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setCameraError("Camera access is not supported by your browser or device.");
-        return;
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(() => {});
-      }
-    } catch {
-      setCameraError("Camera permission denied. Please allow camera access to take your selfie.");
-    }
-  };
-
-  // Capture photo from video stream — declared before quality-check effect so the ref is stable
-  const captureSelfie = useCallback(() => {
-    if (!videoRef.current) return;
-    try {
-      const video = videoRef.current;
-      const canvas = document.createElement("canvas");
-      const size = Math.min(video.videoWidth || 480, video.videoHeight || 480);
-      canvas.width = 400;
-      canvas.height = 400;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      const sx = ((video.videoWidth || 400) - size) / 2;
-      const sy = ((video.videoHeight || 400) - size) / 2;
-      ctx.drawImage(video, sx, sy, size, size, 0, 0, 400, 400);
-
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-      setCapturedPhoto(dataUrl);
-      setAutoCaptureCountdown(null);
-      stopCamera();
-    } catch {
-      setCameraError("Failed to capture image. Please retry.");
-    }
-  }, []);
-
-  // Live quality check loop & optional automatic capture
-  useEffect(() => {
-    if (step !== 2 || capturedPhoto || !streamRef.current) return;
-
-    let active = true;
-    let steadyCount = 0;
-
-    const interval = setInterval(() => {
-      if (!active || !videoRef.current || videoRef.current.readyState < 2) return;
-      try {
-        const video = videoRef.current;
-        const canvas = document.createElement("canvas");
-        canvas.width = 64;
-        canvas.height = 64;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(video, 0, 0, 64, 64);
-        const imgData = ctx.getImageData(0, 0, 64, 64).data;
-
-        // Compute brightness
-        let totalBrightness = 0;
-        for (let i = 0; i < imgData.length; i += 4) {
-          totalBrightness += (imgData[i] + imgData[i + 1] + imgData[i + 2]) / 3;
-        }
-        const avgBrightness = totalBrightness / (64 * 64);
-        const goodLight = avgBrightness > 40 && avgBrightness < 230;
-        setImageQualityGood(goodLight);
-
-        if (goodLight) {
-          steadyCount++;
-          if (steadyCount >= 3) {
-            setAutoCaptureCountdown((prev) => {
-              if (prev === null) return 2;
-              if (prev > 1) return prev - 1;
-              // Auto capture trigger
-              captureSelfie();
-              return null;
-            });
-          }
-        } else {
-          steadyCount = 0;
-          setAutoCaptureCountdown(null);
-        }
-      } catch {
-        // canvas analysis fallback
-      }
-    }, 600);
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [step, capturedPhoto, captureSelfie]);
-
-  const retakeSelfie = () => {
-    setCapturedPhoto(null);
-    setAutoCaptureCountdown(null);
-    startCamera();
-  };
-
   // Upload selfie to private storage. Never send the image bytes as the attendance record.
   const uploadPhoto = async (classId: string, nonce: string, photoDataUrl: string): Promise<string | null> => {
     try {
@@ -511,7 +384,6 @@ export function StudentScan({
       captureAnalytics(ANALYTICS_EVENTS.attendanceQrCheckinFailed);
     } finally {
       setSubmitting(false);
-      stopCamera();
     }
   };
 
@@ -684,7 +556,7 @@ export function StudentScan({
 
       {/* STEP 1: DETAILS */}
       {step === 1 && (
-        <div className={styles.stepContainer}>
+        <div className={`${styles.stepContainer} tm-step-prev`}>
           <div className={styles.stepHeader}>
             <h3 className={styles.stepHeading}>Enter your matric number</h3>
             <p className={styles.stepDescription}>No account or sign-in is required. We look up the details already registered for you.</p>
@@ -834,9 +706,7 @@ export function StudentScan({
             )}
 
             {lookupError && (
-              <div className={styles.formErrorNotice} role="alert">
-                <strong>{lookupError}</strong>
-              </div>
+              <FeedbackNotice ok={false} message={lookupError} />
             )}
 
             <button
@@ -853,7 +723,7 @@ export function StudentScan({
 
       {/* STEP 2: SELFIE CAPTURE & REVIEW */}
       {step === 2 && (
-        <div className={styles.stepContainer}>
+        <div className={`${styles.stepContainer} tm-step-next`}>
           <div className={styles.stepHeader}>
             <h3 className={styles.stepHeading}>
               {!capturedPhoto ? "Take attendance selfie" : "Review and submit attendance"}
@@ -986,14 +856,12 @@ export function StudentScan({
                   )}
                 </div>
 
-                <p style={{ margin: 0, fontSize: "12px", color: "#8a7d76", lineHeight: 1.4, textAlign: "center" }}>
+                <p style={{ margin: 0, fontSize: "12px", color: "var(--tm-gray-500)", lineHeight: 1.5, textAlign: "left" }}>
                   This photograph is stored privately for lecturer verification only.
                 </p>
 
                 {lookupError && (
-                  <div className={styles.formErrorNotice} role="alert">
-                    <strong>{lookupError}</strong>
-                  </div>
+                  <FeedbackNotice ok={false} message={lookupError} />
                 )}
 
                 <div className={styles.twoButtonRow}>

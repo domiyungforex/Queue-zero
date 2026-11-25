@@ -14,7 +14,8 @@ describe("education home", () => {
     const dashboard = buildEducationDashboard(data, "2026-10-03");
     const html = renderToStaticMarkup(<EducationHome data={data} dashboard={dashboard} />);
 
-    expect(html).toContain("Good morning,");
+    expect(html).toContain("Welcome to ");
+    expect(html).toContain("Test institution");
     expect(html).toContain("Lecturer");
     expect(html).toContain("Total Students");
     expect(html).toContain(">1</strong>");

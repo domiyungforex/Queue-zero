@@ -4,7 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Check, FlipHorizontal, RefreshCw, Sparkles, X } from "lucide-react";
+import { Camera, Check, RefreshCw, RotateCcw, Sparkles, X } from "lucide-react";
 import { clientPhotoQuality } from "@/lib/school/photo-quality";
 import { FeedbackNotice } from "./feedback-notice";
 
@@ -31,16 +31,20 @@ export function DynamicCameraModal({
   const [error, setError] = useState<string>("");
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
 
-  const stopCamera = useCallback(() => {
+  const stopMediaTracks = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
+  };
+
+  const stopCamera = useCallback(() => {
+    stopMediaTracks();
     setCameraActive(false);
   }, []);
 
   const startCamera = useCallback(async (mode: "user" | "environment" = facingMode) => {
-    stopCamera();
+    stopMediaTracks();
     setError("");
     setCapturedPhoto(null);
 
@@ -83,20 +87,22 @@ export function DynamicCameraModal({
       }
       setCameraActive(false);
     }
-  }, [facingMode, stopCamera]);
+  }, [facingMode]);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
     if (isOpen) {
-      startCamera(facingMode);
+      timer = setTimeout(() => {
+        startCamera(facingMode);
+      }, 0);
     } else {
-      stopCamera();
-      setCapturedPhoto(null);
-      setError("");
+      stopMediaTracks();
     }
     return () => {
-      stopCamera();
+      if (timer) clearTimeout(timer);
+      stopMediaTracks();
     };
-  }, [isOpen, startCamera, facingMode, stopCamera]);
+  }, [isOpen, startCamera, facingMode]);
 
   const toggleCamera = () => {
     const nextMode = facingMode === "user" ? "environment" : "user";
@@ -341,7 +347,7 @@ export function DynamicCameraModal({
                   style={{ minHeight: "44px", padding: "0 14px", borderRadius: "12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
                   title="Switch Camera"
                 >
-                  <FlipHorizontal size={16} />
+                  <RotateCcw size={16} />
                   <span style={{ fontSize: "12px" }}>Flip</span>
                 </button>
               ) : (

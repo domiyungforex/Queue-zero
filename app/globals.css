@@ -361,3 +361,268 @@ body:before{background:radial-gradient(circle at 92% -8%,rgba(255,107,43,.14),tr
  .settings-layout{grid-template-columns:minmax(0,1.4fr) minmax(260px,.75fr)}
 }
 
+/* ==========================================================================
+   TuRnMaRk Motion, Typography & Craft System
+   ========================================================================== */
+:root {
+  interpolate-size: allow-keywords;
+  --tm-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --tm-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --tm-duration-in: 220ms;
+  --tm-duration-out: 175ms; /* ~20% shorter than entrance */
+  --tm-dropdown-in: 180ms;
+  --tm-dropdown-out: 144ms;
+  --tm-stagger-step: 30ms;
+  /* Blue-tinted neutral grays (same cool-slate hue across shades) */
+  --tm-gray-50: #f6f8fb;
+  --tm-gray-100: #eef2f7;
+  --tm-gray-200: #dfe5ee;
+  --tm-gray-400: #8792a6;
+  --tm-gray-500: #647087;
+  --tm-gray-600: #4c576c;
+  --tm-text-secondary: var(--tm-gray-500);
+  /* Layered small shadows for natural elevation */
+  --tm-shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.04), 0 4px 10px rgba(17, 24, 39, 0.05), 0 10px 20px rgba(58, 30, 18, 0.03);
+  --tm-shadow-md: 0 2px 4px rgba(17, 24, 39, 0.05), 0 8px 18px rgba(17, 24, 39, 0.06), 0 18px 34px rgba(58, 30, 18, 0.05);
+  --tm-shadow-lg: 0 4px 8px rgba(17, 24, 39, 0.06), 0 14px 28px rgba(17, 24, 39, 0.08), 0 28px 56px rgba(58, 30, 18, 0.08);
+}
+
+/* Prevent theme-switching glitch by disabling transitions during swap */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}
+
+/* Typography & hierarchy */
+body {
+  font-weight: 400;
+  line-height: 1.6;
+}
+h1, h2, h3, h4 {
+  line-height: 1.12;
+  margin-top: 1.35em;
+  margin-bottom: 0.45em;
+}
+h1:first-child, h2:first-child, h3:first-child, h4:first-child {
+  margin-top: 0;
+}
+p {
+  line-height: 1.6;
+}
+.page-description,
+.empty-state p,
+.settings-note p,
+.confirmation-card p {
+  text-align: left;
+}
+.baseline-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+/* Tables: right-align numbers with tabular-nums so digits line up */
+table td[data-numeric="true"],
+table th[data-numeric="true"],
+.school-table td.numeric,
+.school-table th.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Generous horizontal padding vs vertical padding & tactile 0.97 press */
+.button-primary,
+.button-secondary,
+.button-quiet,
+.button-danger,
+.call-next,
+.complete-button {
+  padding: 11px 22px;
+  transition: transform 140ms var(--tm-ease-out), background 160ms var(--tm-ease-out), border-color 160ms var(--tm-ease-out), box-shadow 160ms var(--tm-ease-out), filter 160ms var(--tm-ease-out);
+  will-change: transform;
+}
+button:active:not(:disabled),
+.button-primary:active:not(:disabled),
+.button-secondary:active:not(:disabled),
+.button-quiet:active:not(:disabled),
+.button-danger:active:not(:disabled),
+.call-next:active:not(:disabled),
+.complete-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Keyframes: GPU-only transform & opacity */
+@keyframes tm-enter-scale {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tm-popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes tm-row-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tm-error-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes tm-success-pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.35); }
+  55% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(22, 163, 74, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+
+@keyframes tm-slide-next {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tm-slide-prev {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tm-icon-crossfade {
+  from { opacity: 0; transform: scale(0.88); filter: blur(3px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* Feedback states: error shake + success pulse */
+.tm-feedback-error,
+[aria-invalid="true"] {
+  animation: tm-error-shake 340ms var(--tm-ease-in-out);
+}
+.tm-feedback-success,
+.tm-feedback-info {
+  animation: tm-enter-scale var(--tm-duration-in) var(--tm-ease-out);
+}
+.tm-success-pulse {
+  animation: tm-success-pulse 520ms var(--tm-ease-out);
+}
+
+/* Modals & dialogs: scale from 0.97 (never 0) with ease-out entrance */
+.confirmation-card,
+.confirmation-dialog[open] .confirmation-card {
+  animation: tm-enter-scale var(--tm-duration-in) var(--tm-ease-out);
+  box-shadow: var(--tm-shadow-lg);
+}
+
+/* Dropdowns & popovers: 150-250ms, scale 0.95 from trigger */
+.row-menu,
+.mobileMenu nav {
+  transform-origin: top right;
+  animation: tm-popover-in var(--tm-dropdown-in) var(--tm-ease-out);
+  box-shadow: var(--tm-shadow-md);
+}
+
+/* Accordions: smooth height: auto via interpolate-size */
+details::details-content {
+  transition: block-size var(--tm-duration-in) var(--tm-ease-out), opacity var(--tm-duration-in) var(--tm-ease-out), content-visibility var(--tm-duration-in) allow-discrete;
+}
+details[open] > *:not(summary) {
+  animation: tm-enter-scale 240ms var(--tm-ease-out) 40ms backwards;
+}
+
+/* List rows staggered by 30ms */
+.waiting-list > li,
+.stagger-list > * {
+  animation: tm-row-stagger var(--tm-duration-in) var(--tm-ease-out) backwards;
+}
+.waiting-list > li:nth-child(1), .stagger-list > *:nth-child(1) { animation-delay: 0ms; }
+.waiting-list > li:nth-child(2), .stagger-list > *:nth-child(2) { animation-delay: 30ms; }
+.waiting-list > li:nth-child(3), .stagger-list > *:nth-child(3) { animation-delay: 60ms; }
+.waiting-list > li:nth-child(4), .stagger-list > *:nth-child(4) { animation-delay: 90ms; }
+.waiting-list > li:nth-child(5), .stagger-list > *:nth-child(5) { animation-delay: 120ms; }
+.waiting-list > li:nth-child(6), .stagger-list > *:nth-child(6) { animation-delay: 150ms; }
+.waiting-list > li:nth-child(7), .stagger-list > *:nth-child(7) { animation-delay: 180ms; }
+.waiting-list > li:nth-child(8), .stagger-list > *:nth-child(8) { animation-delay: 210ms; }
+.waiting-list > li:nth-child(9), .stagger-list > *:nth-child(9) { animation-delay: 240ms; }
+.waiting-list > li:nth-child(10), .stagger-list > *:nth-child(10) { animation-delay: 270ms; }
+
+/* Moving knob / switch thumb stretches by 12% during transition */
+.tm-knob {
+  transition: transform 180ms var(--tm-ease-in-out);
+}
+.tm-knob:active,
+[data-moving="true"] .tm-knob {
+  transform: scaleX(1.12);
+}
+
+/* Stepper directional slide helpers */
+.tm-step-next {
+  animation: tm-slide-next 240ms var(--tm-ease-out);
+}
+.tm-step-prev {
+  animation: tm-slide-prev 240ms var(--tm-ease-out);
+}
+
+/* Icon crossfade with scale + blur */
+.tm-icon-swap {
+  animation: tm-icon-crossfade 180ms var(--tm-ease-out);
+}
+
+/* Tooltip group: delay only the first tooltip, snap subsequent ones */
+.tm-tooltip-group [data-tooltip] {
+  transition: opacity 150ms var(--tm-ease-out) 350ms, transform 150ms var(--tm-ease-out) 350ms;
+}
+.tm-tooltip-group:hover [data-tooltip] {
+  transition-delay: 0ms;
+}
+
+/* Rubberband drag / scroll containment */
+.tm-rubberband {
+  overscroll-behavior: contain;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tm-feedback-error,
+  .tm-feedback-success,
+  .tm-feedback-info,
+  .tm-success-pulse,
+  .confirmation-card,
+  .row-menu,
+  .mobileMenu nav,
+  .waiting-list > li,
+  .stagger-list > *,
+  .tm-step-next,
+  .tm-step-prev,
+  .tm-icon-swap {
+    animation: none !important;
+  }
+  button:active:not(:disabled),
+  .button-primary:active:not(:disabled),
+  .button-secondary:active:not(:disabled) {
+    transform: none !important;
+  }
+}
+
