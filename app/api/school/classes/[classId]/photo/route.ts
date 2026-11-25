@@ -6,6 +6,7 @@ import { attendanceObjectKey } from "@/lib/storage/keys";
 import { storePrivateImage } from "@/lib/storage/store-image";
 import { attendanceSecret } from "@/lib/qr/secret";
 import { validateAttendanceToken, ExpiredAttendanceQr } from "@/lib/qr/validation";
+import { checkRateLimit, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -27,6 +28,15 @@ export async function POST(
   { params }: { params: Promise<{ classId: string }> }
 ) {
   try {
+    const ip = clientIpFromRequest(request);
+    const rate = checkRateLimit(`photo:${ip}`, { limit: 20, windowMs: 60_000 });
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: "Too many upload attempts. Please wait a moment and try again." },
+        { status: 429, headers: { ...headers, "Retry-After": String(rate.retryAfterSeconds) } },
+      );
+    }
+
     const { classId } = await params;
     if (!z.uuid().safeParse(classId).success) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400, headers });

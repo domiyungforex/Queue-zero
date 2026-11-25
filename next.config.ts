@@ -1,3 +1,39 @@
 import type { NextConfig } from "next";
-const config: NextConfig = { poweredByHeader: false, reactStrictMode: true, agentRules: false, images: { remotePatterns: [{ protocol: "https", hostname: "**.supabase.co" }, { protocol: "https", hostname: "**.supabase.in" }], }, async redirects() { return [{ source: "/demo", destination: "/dashboard", permanent: false }]; }, async headers() { return [{ source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Service-Worker-Allowed", value: "/" }] }]; } };
+const securityHeaders = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(self), geolocation=(self), microphone=(), payment=()" },
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+];
+
+const config: NextConfig = {
+  poweredByHeader: false,
+  reactStrictMode: true,
+  agentRules: false,
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.supabase.co" },
+      { protocol: "https", hostname: "**.supabase.in" },
+    ],
+  },
+  async redirects() {
+    return [{ source: "/demo", destination: "/dashboard", permanent: false }];
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+    ];
+  },
+};
 export default config;
