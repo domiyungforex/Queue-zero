@@ -2,7 +2,9 @@
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
+import { requireUserId } from "@/lib/auth/server";
 import { requireBusinessMembership } from "@/lib/business/membership";
+import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { createUserSupabaseClient } from "@/lib/db/server";
 import { schoolInputSchema, parseStudentCsv, parseStudentCsvPreview } from "./validation";
 import type { SchoolActionState } from "./contracts";
@@ -192,4 +194,156 @@ export async function importRoster(_previous: RosterImportState, form: FormData)
     unstable_rethrow(error);
     return { ok: false, message: error instanceof Error && /^(Import at most|Use required|Include between|Check the CSV)/.test(error.message) ? error.message : "Check the CSV and try again." };
   }
+}
+
+export type SchoolDeleteResult = { ok: boolean; message: string };
+
+type UntypedDeleteBuilder = {
+  from: (table: string) => {
+    delete: () => {
+      eq: (col: string, val: string) => {
+        eq: (col2: string, val2: string) => Promise<unknown>;
+      };
+    };
+  };
+};
+
+async function deleteSessionChildren(
+  db: ReturnType<typeof createJoinSupabaseClient>,
+  organizationId: string,
+  sessionIds: string[],
+) {
+  if (sessionIds.length === 0) return;
+  await db.from("attendance_scan_requests").delete().in("class_session_id", sessionIds).eq("organization_id", organizationId);
+  await db.from("attendance_qr_nonces").delete().in("class_session_id", sessionIds).eq("organization_id", organizationId);
+  await db.from("attendance_flags").delete().in("class_session_id", sessionIds).eq("organization_id", organizationId);
+  await db.from("attendance_records").delete().in("class_session_id", sessionIds).eq("organization_id", organizationId);
+  await db.from("attendance_device_uses").delete().in("class_session_id", sessionIds).eq("organization_id", organizationId);
+  await db.from("class_roster").delete().in("class_session_id", sessionIds).eq("organization_id", organizationId);
+  await db.from("class_lecturers").delete().in("class_session_id", sessionIds).eq("organization_id", organizationId);
+  await db.from("class_sessions").delete().in("id", sessionIds).eq("organization_id", organizationId);
+}
+
+export async function deleteCourse(courseId: string): Promise<SchoolDeleteResult> {
+  const [membership, userId] = await Promise.all([requireBusinessMembership(), requireUserId()]);
+  const parsed = z.string().uuid().safeParse(courseId);
+  if (!parsed.success) return { ok: false, message: "Invalid course identifier." };
+
+  const canManageAll =
+    Boolean(membership.institutionType) || membership.role === "owner" || membership.role === "admin";
+  if (!canManageAll && membership.role !== "lecturer") {
+    return { ok: false, message: "You do not have permission to delete courses." };
+  }
+
+  const db = createJoinSupabaseClient();
+  const { data: course } = await db
+    .from("courses")
+    .select("id, organization_id, code")
+    .eq("id", parsed.data)
+    .eq("organization_id", membership.businessId)
+    .maybeSingle();
+
+  if (!course) return { ok: false, message: "Course not found in this organization." };
+
+  if (!canManageAll && membership.role === "lecturer") {
+    const { data: assigned } = await db
+      .from("course_lecturers")
+      .select("course_id")
+      .eq("course_id", course.id)
+      .eq("organization_id", membership.businessId)
+      .eq("clerk_user_id", userId)
+      .maybeSingle();
+    if (!assigned) {
+      return { ok: false, message: "Only an owner, admin, or assigned lecturer can delete this course." };
+    }
+  }
+
+  const { data: sessions } = await db
+    .from("class_sessions")
+    .select("id")
+    .eq("course_id", course.id)
+    .eq("organization_id", membership.businessId);
+
+  await deleteSessionChildren(db, membership.businessId, (sessions ?? []).map((s) => s.id));
+
+  const untyped = db as unknown as UntypedDeleteBuilder;
+  await untyped.from("course_audiences").delete().eq("course_id", course.id).eq("organization_id", membership.businessId);
+  await db.from("course_students").delete().eq("course_id", course.id).eq("organization_id", membership.businessId);
+  await db.from("course_lecturers").delete().eq("course_id", course.id).eq("organization_id", membership.businessId);
+
+  const { error } = await db
+    .from("courses")
+    .delete()
+    .eq("id", course.id)
+    .eq("organization_id", membership.businessId);
+
+  if (error) return { ok: false, message: "Course could not be deleted right now. Try again." };
+
+  revalidatePath("/dashboard", "layout");
+  return { ok: true, message: `Course ${course.code} and its sessions were deleted.` };
+}
+
+export async function deleteStudentProfile(studentId: string): Promise<SchoolDeleteResult> {
+  const membership = await requireBusinessMembership();
+  const parsed = z.string().uuid().safeParse(studentId);
+  if (!parsed.success) return { ok: false, message: "Invalid student identifier." };
+
+  const allowed =
+    Boolean(membership.institutionType) || ["owner", "admin", "lecturer"].includes(membership.role);
+  if (!allowed) return { ok: false, message: "You do not have permission to delete student profiles." };
+
+  const db = createJoinSupabaseClient();
+  const { data: student } = await db
+    .from("school_profiles")
+    .select("id, organization_id, matric_number")
+    .eq("id", parsed.data)
+    .eq("organization_id", membership.businessId)
+    .maybeSingle();
+
+  if (!student) return { ok: false, message: "Student profile not found in this organization." };
+
+  const untyped = db as unknown as UntypedDeleteBuilder;
+  await db.from("attendance_scan_requests").delete().eq("student_id", student.id).eq("organization_id", membership.businessId);
+  await db.from("attendance_flags").delete().eq("student_id", student.id).eq("organization_id", membership.businessId);
+  await db.from("attendance_records").delete().eq("student_id", student.id).eq("organization_id", membership.businessId);
+  await db.from("attendance_device_uses").delete().eq("student_id", student.id).eq("organization_id", membership.businessId);
+  await untyped.from("student_devices").delete().eq("student_id", student.id).eq("organization_id", membership.businessId);
+  await db.from("course_students").delete().eq("student_id", student.id).eq("organization_id", membership.businessId);
+  await untyped.from("attendance_identity_lookups").delete().eq("student_id", student.id).eq("organization_id", membership.businessId);
+
+  const { error } = await db
+    .from("school_profiles")
+    .delete()
+    .eq("id", student.id)
+    .eq("organization_id", membership.businessId);
+
+  if (error) return { ok: false, message: "Student profile could not be deleted right now. Try again." };
+
+  revalidatePath("/dashboard", "layout");
+  return { ok: true, message: `Deleted student profile (${student.matric_number}).` };
+}
+
+export async function deleteClassSession(classId: string): Promise<SchoolDeleteResult> {
+  const membership = await requireBusinessMembership();
+  const parsed = z.string().uuid().safeParse(classId);
+  if (!parsed.success) return { ok: false, message: "Invalid class session identifier." };
+
+  const allowed =
+    Boolean(membership.institutionType) || ["owner", "admin", "lecturer"].includes(membership.role);
+  if (!allowed) return { ok: false, message: "You do not have permission to delete class sessions." };
+
+  const db = createJoinSupabaseClient();
+  const { data: session } = await db
+    .from("class_sessions")
+    .select("id, organization_id")
+    .eq("id", parsed.data)
+    .eq("organization_id", membership.businessId)
+    .maybeSingle();
+
+  if (!session) return { ok: false, message: "Class session not found in this organization." };
+
+  await deleteSessionChildren(db, membership.businessId, [session.id]);
+
+  revalidatePath("/dashboard", "layout");
+  return { ok: true, message: "Class session and its attendance records were deleted." };
 }

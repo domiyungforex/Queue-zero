@@ -39,12 +39,12 @@ describe("education workspace pages", () => {
     expect(html).not.toContain("248");
   });
 
-  it("filters students using their latest real attendance status", async () => {
-    const present = renderToStaticMarkup(await StudentsPage({ searchParams: Promise.resolve({ filter: "present" }) }));
-    const absent = renderToStaticMarkup(await StudentsPage({ searchParams: Promise.resolve({ filter: "absent" }) }));
-    expect(present).toContain("Àkín Johnson");
-    expect(present).toContain("PHY/26/1");
-    expect(absent).toContain("No matching students");
+  it("renders student profile management and student records from snapshot", async () => {
+    const html = renderToStaticMarkup(await StudentsPage());
+    expect(html).toContain("Student Profile Management");
+    expect(html).toContain("Àkín Johnson");
+    expect(html).toContain("PHY/26/1");
+    expect(html).toContain("Student records");
   });
 
   it("lists only real finalized attendance reports", async () => {

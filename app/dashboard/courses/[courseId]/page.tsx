@@ -3,6 +3,7 @@ import { getSchoolSnapshot } from "@/lib/school/data";
 import { schoolTime, attendanceIsLate } from "@/lib/school/contracts";
 import { CreateClassForm, EnrollmentForm, SchoolForm, TextField } from "@/components/school/forms";
 import { CourseAudienceForm } from "@/components/school/course-audience-form";
+import { CourseDeleteBar } from "@/components/school/course-delete-bar";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { EmptyState, PageHeading } from "@/components/ui/workspace";
 import "@/components/school/school.css";
@@ -22,15 +23,15 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
     <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
     <h2 className="school-subheading">Class sessions</h2>
     {sessions.length ? <div className="school-table-wrap"><table className="school-table">
-      <thead><tr><th>Class start</th><th>Status</th><th>Attended</th><th>Absent</th><th>Late</th></tr></thead>
+      <thead><tr><th>Class start</th><th>Status</th><th data-numeric="true">Attended</th><th data-numeric="true">Absent</th><th data-numeric="true">Late</th></tr></thead>
       <tbody>{sessions.map((session) => {
         const records = data.attendance.filter((item) => item.class_session_id === session.id);
         return <tr key={session.id}>
           <td><Link href={`/dashboard/attendance/${session.id}`}>{schoolTime(session.starts_at)}</Link></td>
           <td>{session.status}</td>
-          <td>{records.filter((item) => item.check_in_at).length}</td>
-          <td>{records.filter((item) => item.status === "ABSENT").length}</td>
-          <td>{records.filter((item) => attendanceIsLate(item, data.classes)).length}</td>
+          <td data-numeric="true">{records.filter((item) => item.check_in_at).length}</td>
+          <td data-numeric="true">{records.filter((item) => item.status === "ABSENT").length}</td>
+          <td data-numeric="true">{records.filter((item) => attendanceIsLate(item, data.classes)).length}</td>
         </tr>;
       })}</tbody>
     </table></div> : <EmptyState title="No classes yet" description="Create a class and open attendance to display its stable QR." />}
@@ -60,5 +61,6 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
         </SchoolForm>
       </div>
     </details> : null}
+    <CourseDeleteBar courseId={courseId} courseCode={course.code} />
   </>;
 }

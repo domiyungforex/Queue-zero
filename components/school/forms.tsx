@@ -6,7 +6,9 @@ import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import Link from "next/link";
 import { ArrowRight, RefreshCw, MapPin } from "lucide-react";
 import { FeedbackNotice } from "./feedback-notice";
-import { importRoster, manageSchool } from "@/lib/school/actions";
+import { CustomDropdown } from "@/components/ui/custom-dropdown";
+import { DeleteConfirmButton } from "./delete-confirm-button";
+import { deleteClassSession, importRoster, manageSchool } from "@/lib/school/actions";
 import type { SchoolSnapshot } from "@/lib/school/contracts";
 
 export function SchoolForm({ action, title, children, submit = "Save", fields = {} }: { action: string; title?: string; children?: React.ReactNode; submit?: string; fields?: Record<string, string> }) {
@@ -39,7 +41,17 @@ export function SchoolForm({ action, title, children, submit = "Save", fields = 
   </form>;
 }
 export function TextField({ name, label, type = "text", maxLength = 160, required = true }: { name: string; label: string; type?: string; maxLength?: number; required?: boolean }) { return <label>{label}<input name={name} type={type} maxLength={maxLength} required={required} /></label>; }
-export function SelectField({ name, label, options }: { name: string; label: string; options: { id: string; name: string }[] }) { return <label>{label}<select name={name} required defaultValue=""><option value="" disabled>Select {label.toLowerCase()}</option>{options.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>; }
+export function SelectField({ name, label, options }: { name: string; label: string; options: { id: string; name: string }[] }) {
+  return (
+    <CustomDropdown
+      name={name}
+      label={label}
+      placeholder={`Select ${label.toLowerCase()}`}
+      options={options.map((option) => ({ value: option.id, label: option.name }))}
+      required
+    />
+  );
+}
 export function SetupForms({ snapshot, canManage = true }: { snapshot: SchoolSnapshot; canManage?: boolean }) { return <div className="school-grid">{canManage && <><SchoolForm action="faculty" title="Add faculty"><TextField name="name" label="Faculty name" /></SchoolForm><SchoolForm action="department" title="Add department"><SelectField name="faculty_id" label="Faculty" options={snapshot.faculties} /><TextField name="name" label="Department name" /></SchoolForm></>}<SchoolForm action="course" title="Create course"><SelectField name="department_id" label="Department" options={snapshot.departments} /><TextField name="code" label="Course code" maxLength={40} /><TextField name="title" label="Course title" /></SchoolForm></div>; }
 export function CreateClassForm({ courseId }: { courseId: string }) {
   const router = useRouter();
@@ -182,13 +194,16 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
 
           <fieldset>
             <legend>Verification</legend>
-            <label>
-              Attendance verification mode
-              <select name="verification_mode" value={verificationMode} onChange={(e) => setVerificationMode(e.target.value as "STANDARD" | "VERIFIED")}>
-                <option value="STANDARD">Standard mode (Default) — instant scanning, no advance CSV needed</option>
-                <option value="VERIFIED">Verified mode — validate against uploaded course roster</option>
-              </select>
-            </label>
+            <CustomDropdown
+              name="verification_mode"
+              label="Attendance verification mode"
+              value={verificationMode}
+              onChange={(val) => setVerificationMode(val as "STANDARD" | "VERIFIED")}
+              options={[
+                { value: "STANDARD", label: "Standard mode (default)", meta: "Instant scanning, no advance CSV" },
+                { value: "VERIFIED", label: "Verified mode", meta: "Validate against uploaded roster" },
+              ]}
+            />
             <p className="text-sm text-muted">Standard mode lets students sign in without a prior roster. Verified mode checks each student against the official roster.</p>
             <div className="school-geofence-card">
               <label className="school-geofence-toggle">
@@ -250,70 +265,77 @@ export function EnrollmentForm({ snapshot, courseId }: { snapshot: SchoolSnapsho
   const [fileName, setFileName] = useState("");
   const [state, run, pending] = useActionState(importRoster, { ok: false, message: "" });
 
+  const courseOptions = snapshot.courses.map((course) => ({
+    value: course.id,
+    label: `${course.code} — ${course.title}`,
+  }));
+
   return (
-    <form action={run} className="school-form" style={{ display: "grid", gap: "20px" }}>
-      <div style={{ borderBottom: "1px solid #f3ece8", paddingBottom: "14px" }}>
-        <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 850, color: "#111318" }}>Import Course Roster</h2>
-        <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#73788a" }}>
-          Batch enroll students from a spreadsheet or comma-separated list.
+    <form
+      action={run}
+      className="school-form"
+      style={{
+        display: "grid",
+        gap: "20px",
+        width: "100%",
+        minWidth: 0,
+        maxWidth: "100%",
+        boxSizing: "border-box",
+        padding: "24px",
+      }}
+    >
+      <div style={{ borderBottom: "1px solid #eef2f7", paddingBottom: "16px", minWidth: 0 }}>
+        <h2 style={{ margin: 0, fontSize: "19px", fontWeight: 700, color: "#111318", lineHeight: 1.15 }}>
+          Import course roster
+        </h2>
+        <p style={{ margin: "6px 0 0", fontSize: "13.5px", color: "#647087", lineHeight: 1.55, textAlign: "left" }}>
+          Batch enroll students from a CSV file or comma-separated list.
         </p>
       </div>
 
       {courseId ? (
         <input type="hidden" name="course_id" value={courseId} />
       ) : (
-        <label style={{ display: "grid", gap: "6px" }}>
-          <span style={{ fontSize: "12px", fontWeight: 750, color: "#111318" }}>
-            Course Roster Target
-          </span>
-          <select
-            name="course_id"
-            required
-            defaultValue=""
-            style={{
-              minHeight: "44px",
-              borderRadius: "12px",
-              border: "1.5px solid #e2dad5",
-              padding: "0 14px",
-              fontSize: "13px",
-              fontWeight: 650,
-              background: "#ffffff",
-              color: "#111318",
-            }}
-          >
-            <option value="" disabled>Choose the course to enroll students into…</option>
-            {snapshot.courses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.code} — {course.title}
-              </option>
-            ))}
-          </select>
-        </label>
+        <CustomDropdown
+          name="course_id"
+          label="Course roster target"
+          placeholder="Choose the course to enroll students into…"
+          options={courseOptions}
+          searchable={courseOptions.length > 5}
+          required
+        />
       )}
 
       {/* CSV upload card */}
       <div
         style={{
-          border: "2px dashed #e5ddd7",
+          width: "100%",
+          minWidth: 0,
+          maxWidth: "100%",
+          boxSizing: "border-box",
+          border: "2px dashed #dfe5ee",
           borderRadius: "16px",
-          padding: "20px",
-          background: "#fcfaf8",
+          padding: "20px 16px",
+          background: "#f8fafc",
           textAlign: "center",
           display: "grid",
-          gap: "10px",
+          gap: "12px",
           justifyItems: "center",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#d94b14" }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          <strong style={{ fontSize: "14px", color: "#111318" }}>Upload CSV Document</strong>
+          <strong style={{ fontSize: "14px", color: "#111318" }}>Upload CSV document</strong>
         </div>
-        <p style={{ margin: 0, fontSize: "12px", color: "#73788a", maxWidth: "420px" }}>
-          Upload a <code style={{ background: "#eee4df", padding: "2px 6px", borderRadius: "4px" }}>.csv</code> file with headers: <code style={{ color: "#d94b14" }}>matric_number, student_name, programme, level</code>
+        <p style={{ margin: 0, fontSize: "12.5px", color: "#647087", maxWidth: "100%", overflowWrap: "anywhere", lineHeight: 1.55 }}>
+          Upload a <code style={{ background: "#eef2f7", padding: "2px 6px", borderRadius: "4px" }}>.csv</code> file with headers:{" "}
+          <code style={{ color: "#d94b14", overflowWrap: "anywhere", wordBreak: "break-word" }}>
+            matric_number, student_name, programme, level
+          </code>
         </p>
         <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
           <label
@@ -390,13 +412,17 @@ export function EnrollmentForm({ snapshot, courseId }: { snapshot: SchoolSnapsho
           placeholder={"matric_number,student_name,programme,level\nCSC/2022/001,Dominion Akinyele,Computer Science,400L\nCSC/2022/002,Sarah Adebayo,Computer Science,400L"}
           style={{
             width: "100%",
+            minWidth: 0,
+            maxWidth: "100%",
+            boxSizing: "border-box",
+            resize: "vertical",
             fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-            fontSize: "12.5px",
+            fontSize: "13px",
             lineHeight: "1.5",
             padding: "12px 14px",
-            borderRadius: "12px",
-            border: "1.5px solid #e2dad5",
-            background: "#fffefd",
+            borderRadius: "13px",
+            border: "1.5px solid #dfe5ee",
+            background: "#ffffff",
           }}
         />
       </div>
@@ -455,5 +481,45 @@ export function EnrollmentForm({ snapshot, courseId }: { snapshot: SchoolSnapsho
 export function ClassControls({ session }: { session: SchoolSnapshot["classes"][number] }) {
   const [confirm, setConfirm] = useState(false);
   if (session.status === "COMPLETED") return <p role="status">This class has ended. The register is available to export.</p>;
-  return <div className="school-grid">{session.status === "DRAFT" && <SchoolForm action="open" title="Ready to begin?" submit="Open attendance" fields={{ class_id: session.id }} />}{session.status === "OPEN" && <>{session.arrival_open && <SchoolForm action="close_arrival" submit="Stop new check-ins" fields={{ class_id: session.id }}><p>This keeps the class open. Students can no longer check in, and the register is not finalized.</p></SchoolForm>}{session.arrival_open && <SchoolForm action="revoke_qr" submit="Revoke class QR" fields={{ class_id: session.id }}><p>Students can no longer use the displayed QR after revocation.</p></SchoolForm>}{confirm ? <SchoolForm action="finish" title="Close this class?" submit="Close class" fields={{ class_id: session.id }}><p>This ends the class, records students who did not check in as absent, and keeps every existing attendance record.</p><button type="button" onClick={() => setConfirm(false)} className="button-secondary">Keep class open</button></SchoolForm> : <button type="button" className="button-primary" onClick={() => setConfirm(true)}>Close class</button>}</>}</div>;
+  return (
+    <div style={{ display: "grid", gap: "18px" }}>
+      <div className="school-grid">
+        {session.status === "DRAFT" && <SchoolForm action="open" title="Ready to begin?" submit="Open attendance" fields={{ class_id: session.id }} />}
+        {session.status === "OPEN" && (
+          <>
+            {session.arrival_open && (
+              <SchoolForm action="close_arrival" submit="Stop new check-ins" fields={{ class_id: session.id }}>
+                <p>This keeps the class open. Students can no longer check in, and the register is not finalized.</p>
+              </SchoolForm>
+            )}
+            {session.arrival_open && (
+              <SchoolForm action="revoke_qr" submit="Revoke class QR" fields={{ class_id: session.id }}>
+                <p>Students can no longer use the displayed QR after revocation.</p>
+              </SchoolForm>
+            )}
+            {confirm ? (
+              <SchoolForm action="finish" title="Close this class?" submit="Close class" fields={{ class_id: session.id }}>
+                <p>This ends the class, records students who did not check in as absent, and keeps every existing attendance record.</p>
+                <button type="button" onClick={() => setConfirm(false)} className="button-secondary">
+                  Keep class open
+                </button>
+              </SchoolForm>
+            ) : (
+              <button type="button" className="button-primary" onClick={() => setConfirm(true)}>
+                Close class
+              </button>
+            )}
+          </>
+        )}
+      </div>
+      <div style={{ paddingTop: "14px", borderTop: "1px solid #eef2f7", display: "flex", justifyContent: "flex-end" }}>
+        <DeleteConfirmButton
+          label="Delete class session"
+          confirmLabel="Confirm delete class"
+          redirectTo="/dashboard/classes"
+          onDelete={() => deleteClassSession(session.id)}
+        />
+      </div>
+    </div>
+  );
 }

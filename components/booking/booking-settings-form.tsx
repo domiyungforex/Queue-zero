@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { FeedbackNotice } from "@/components/school/feedback-notice";
+import { CustomDropdown } from "@/components/ui/custom-dropdown";
 import type { BookingSettings } from "@/lib/booking/types";
 import { saveBookingSettings } from "@/lib/booking/staff-actions";
 
@@ -192,16 +193,16 @@ export function BookingSettingsForm({ initial }: Props) {
         {/* Booking Type + Allocation Mode */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
           <div style={{ display: "grid", gap: "6px" }}>
-            <label style={labelStyle}>Booking Type</label>
-            <select
+            <CustomDropdown
+              label="Booking type"
               value={bookingType}
-              onChange={(e) => setBookingType(e.target.value as typeof bookingType)}
-              style={inputStyle}
-            >
-              <option value="SCHEDULED_ARRIVAL">Scheduled Arrival Window</option>
-              <option value="SERVICE_APPOINTMENT">Specific Service Appointment</option>
-              <option value="FUTURE_QUEUE_RESERVATION">Advance Queue Place Reservation</option>
-            </select>
+              onChange={(val) => setBookingType(val as typeof bookingType)}
+              options={[
+                { value: "SCHEDULED_ARRIVAL", label: "Scheduled arrival window" },
+                { value: "SERVICE_APPOINTMENT", label: "Specific service appointment" },
+                { value: "FUTURE_QUEUE_RESERVATION", label: "Advance queue place reservation" },
+              ]}
+            />
             <span style={helpStyle}>
               {bookingType === "SCHEDULED_ARRIVAL" && "Customers pick an arrival time window and check in directly upon arrival."}
               {bookingType === "SERVICE_APPOINTMENT" && "Customers book a dedicated service duration with an assigned station or staff member."}
@@ -210,16 +211,16 @@ export function BookingSettingsForm({ initial }: Props) {
           </div>
 
           <div style={{ display: "grid", gap: "6px" }}>
-            <label style={labelStyle}>Capacity Allocation Mode</label>
-            <select
+            <CustomDropdown
+              label="Capacity allocation mode"
               value={allocationMode}
-              onChange={(e) => setAllocationMode(e.target.value as typeof allocationMode)}
-              style={inputStyle}
-            >
-              <option value="BOOKING_AND_WALK_IN">Hybrid: Advance Bookings + Walk-ins</option>
-              <option value="BOOKING_ONLY">Strict: Advance Bookings Only</option>
-              <option value="WALK_IN_ONLY">Walk-in Only (No Online Slots)</option>
-            </select>
+              onChange={(val) => setAllocationMode(val as typeof allocationMode)}
+              options={[
+                { value: "BOOKING_AND_WALK_IN", label: "Hybrid: advance bookings + walk-ins" },
+                { value: "BOOKING_ONLY", label: "Strict: advance bookings only" },
+                { value: "WALK_IN_ONLY", label: "Walk-in only (no online slots)" },
+              ]}
+            />
             <span style={helpStyle}>Choose whether on-site visitors can join queues alongside online bookings.</span>
           </div>
         </div>

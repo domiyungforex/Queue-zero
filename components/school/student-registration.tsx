@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { registerStudent } from "@/lib/school-student/registration";
 import { FaceCapture } from "./face-capture";
 import { FeedbackNotice } from "./feedback-notice";
+import { CustomDropdown } from "@/components/ui/custom-dropdown";
 
 type Department = { id: string; faculty_id: string; name: string };
 type Props = {
@@ -45,11 +46,25 @@ export function StudentRegistration(props: Props) {
       <p>Register once at {props.institution}. Enter the matriculation number issued by your institution. TuRnMaRk stores that number and does not create or replace it. Later attendance only needs the same number and a new photograph.</p>
       <label>Full name<input name="fullName" required maxLength={160} autoComplete="name" /></label>
       <label>Matriculation number<input name="matricNumber" required maxLength={80} autoComplete="off" /></label>
-      <label>Faculty<select name="facultyId" value={facultyId} onChange={(event) => setFacultyId(event.target.value)}>{props.faculties.map((faculty) => <option key={faculty.id} value={faculty.id}>{faculty.name}</option>)}</select></label>
-      <label>Department<select name="departmentId" required>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
-      <label>Academic level<input name="level" required maxLength={40} placeholder="e.g. 300" /></label>
-      <label>Email<input name="email" type="email" maxLength={254} autoComplete="email" /></label>
-      <label>Phone<input name="phone" type="tel" maxLength={20} autoComplete="tel" /></label>
+      <CustomDropdown
+        name="facultyId"
+        label="Faculty"
+        value={facultyId}
+        onChange={setFacultyId}
+        options={props.faculties.map((faculty) => ({ value: faculty.id, label: faculty.name }))}
+        required
+      />
+      <CustomDropdown
+        name="departmentId"
+        label="Department"
+        defaultValue={departments[0]?.id ?? ""}
+        key={facultyId}
+        options={departments.map((department) => ({ value: department.id, label: department.name }))}
+        required
+      />
+      <label>Academic level<input name="level" inputMode="numeric" required maxLength={40} placeholder="e.g. 300" /></label>
+      <label>Email<input name="email" type="email" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={254} autoComplete="email" /></label>
+      <label>Phone<input name="phone" type="tel" inputMode="tel" maxLength={20} autoComplete="tel" /></label>
       <p>Provide an email or a phone number. The reference photograph is not biometric proof of identity.</p>
       <label className="school-check"><input type="checkbox" name="consent" value="yes" required /> I agree that {props.institution} may store this photograph for attendance reference, and I understand it will not be compared by an automated biometric service.</label>
       <FaceCapture onAccept={setPhoto} busy={pending} />

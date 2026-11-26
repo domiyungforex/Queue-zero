@@ -8,9 +8,12 @@ import { QueueStatusControls } from "@/components/queue/queue-status-controls";
 import type { QueueState, QueueValues } from "@/lib/validation/queue";
 afterEach(cleanup);
 const locations = [{ id: "30000000-0000-4000-8000-000000000001", name: "Main Branch", is_active: true }, { id: "30000000-0000-4000-8000-000000000002", name: "Second Branch", is_active: true }];
-const values: QueueValues = { name: "Walk-in Queue", serviceName: "Consultation", description: "Helpful details", locationId: locations[1].id, serviceMinutes: "7.5", capacity: "30", opensAt: "08:00", closesAt: "17:00", status: "open", warningThreshold: "2", phoneMode: "required" };
+// CustomDropdown fields (locationId, status, phoneMode) are controlled via React state,
+// not via fireEvent.change on the hidden input. Only fill plain <input>/<textarea> fields.
+const plainFields = { name: "Walk-in Queue", serviceName: "Consultation", description: "Helpful details", serviceMinutes: "7.5", capacity: "30", opensAt: "08:00", closesAt: "17:00", warningThreshold: "2" };
+const values: QueueValues = { ...plainFields, locationId: locations[1].id, status: "open", phoneMode: "required" };
 function fill() {
-  for (const [field, value] of Object.entries(values)) fireEvent.change(document.getElementById(field)!, { target: { value } });
+  for (const [field, value] of Object.entries(plainFields)) fireEvent.change(document.getElementById(field)!, { target: { value } });
   return screen.getByRole("button", { name: "Create queue" }).closest("form")!;
 }
 describe("queue settings form", () => {

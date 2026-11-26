@@ -1,6 +1,7 @@
 "use server";
 
 import { createHash, randomUUID } from "node:crypto";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { createUserSupabaseClient } from "@/lib/db/server";
@@ -246,25 +247,181 @@ export async function correctStudentProfile(_previous: { ok: boolean; message: s
   if (membership.role !== "owner" && membership.role !== "admin") return { ok: false, message: "Only an owner or administrator can correct a student profile." };
   const parsed = z.object({
     student_id: orgId,
-    full_name: z.string().trim().min(1).max(160),
-    matric_number: z.string().trim().min(1).max(80),
+    full_name: z.string().trim().min(1, "Full legal name is required.").max(160),
+    matric_number: z.string().trim().min(1, "Matriculation number is required.").max(80),
     department_id: orgId,
-    level: z.string().trim().min(1).max(40),
-    phone: z.string().trim().max(20),
+    programme: z.string().trim().max(160).optional().default(""),
+    level: z.string().trim().min(1, "Academic level is required.").max(40),
+    phone: z.string().trim().max(20).optional().default(""),
+    email: z.string().trim().max(254).optional().default(""),
   }).safeParse({
     student_id: form.get("student_id"),
     full_name: form.get("full_name"),
     matric_number: form.get("matric_number"),
     department_id: form.get("department_id"),
+    programme: form.get("programme") ?? "",
     level: form.get("level"),
     phone: form.get("phone") ?? "",
+    email: form.get("email") ?? "",
   });
-  if (!parsed.success) return { ok: false, message: "Check the student details and try again." };
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the student details and try again." };
+  }
+  const cleanEmail = parsed.data.email ? parsed.data.email.toLowerCase() : null;
+  if (cleanEmail && !z.string().email().safeParse(cleanEmail).success) {
+    return { ok: false, message: "Enter a valid email address or leave it blank." };
+  }
+  const cleanPhone = parsed.data.phone.trim();
+  if (cleanPhone && (cleanPhone.length < 7 || cleanPhone.length > 20)) {
+    return { ok: false, message: "Phone number must be between 7 and 20 characters." };
+  }
+
   const db = await createUserSupabaseClient();
-  const result = await asRpc(db)("school_correct_student", { p_organization_id: membership.businessId, p_payload: parsed.data });
+  const result = await asRpc(db)("school_correct_student", {
+    p_organization_id: membership.businessId,
+    p_payload: {
+      student_id: parsed.data.student_id,
+      full_name: parsed.data.full_name,
+      matric_number: parsed.data.matric_number,
+      department_id: parsed.data.department_id,
+      level: parsed.data.level,
+      phone: cleanPhone,
+    },
+  });
   const body = z.object({ ok: z.boolean(), message: z.string() }).safeParse(result.data);
   if (result.error || !body.success) return { ok: false, message: "Student details could not be updated." };
-  return { ok: body.data.ok, message: body.data.message };
+  if (!body.data.ok) return { ok: false, message: body.data.message };
+
+  const adminDb = createJoinSupabaseClient();
+  const untypedProfiles = adminDb as unknown as {
+    from: (table: "school_profiles") => {
+      update: (values: Record<string, unknown>) => {
+        eq: (c1: string, v1: string) => { eq: (c2: string, v2: string) => Promise<unknown> };
+      };
+    };
+  };
+  await untypedProfiles
+    .from("school_profiles")
+    .update({
+      programme: parsed.data.programme || null,
+      phone: cleanPhone || null,
+    })
+    .eq("id", parsed.data.student_id)
+    .eq("organization_id", membership.businessId);
+
+  if (cleanEmail !== null) {
+    await adminDb
+      .from("people")
+      .update({ email: cleanEmail, updated_at: new Date().toISOString() })
+      .eq("id", parsed.data.student_id)
+      .eq("organization_id", membership.businessId);
+  }
+
+  revalidatePath("/dashboard/students");
+  return { ok: true, message: body.data.message };
+}
+
+export async function createStudentByAdmin(_previous: { ok: boolean; message: string }, form: FormData) {
+  const membership = await requireBusinessMembership();
+  const allowed = Boolean(membership.institutionType) || ["owner", "admin", "lecturer"].includes(membership.role);
+  if (!allowed) return { ok: false, message: "You do not have permission to add students." };
+
+  const parsed = z.object({
+    full_name: z.string().trim().min(1, "Full legal name is required.").max(160),
+    matric_number: z.string().trim().min(1, "Matriculation number is required.").max(80),
+    department_id: orgId,
+    programme: z.string().trim().max(160).optional().default(""),
+    level: z.string().trim().min(1, "Academic level is required.").max(40),
+    phone: z.string().trim().max(20).optional().default(""),
+    email: z.string().trim().max(254).optional().default(""),
+  }).safeParse({
+    full_name: form.get("full_name"),
+    matric_number: form.get("matric_number"),
+    department_id: form.get("department_id"),
+    programme: form.get("programme") ?? "",
+    level: form.get("level"),
+    phone: form.get("phone") ?? "",
+    email: form.get("email") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the required student fields and try again." };
+  }
+
+  const cleanMatric = parsed.data.matric_number.trim().toUpperCase();
+  const cleanEmail = parsed.data.email ? parsed.data.email.toLowerCase() : null;
+  if (cleanEmail && !z.string().email().safeParse(cleanEmail).success) {
+    return { ok: false, message: "Enter a valid email address or leave it blank." };
+  }
+  const cleanPhone = parsed.data.phone.trim();
+  if (cleanPhone && (cleanPhone.length < 7 || cleanPhone.length > 20)) {
+    return { ok: false, message: "Phone number must be between 7 and 20 characters." };
+  }
+
+  const db = createJoinSupabaseClient();
+  const { data: dept } = await db
+    .from("departments")
+    .select("id")
+    .eq("id", parsed.data.department_id)
+    .eq("organization_id", membership.businessId)
+    .maybeSingle();
+  if (!dept) return { ok: false, message: "Select a valid department in this institution." };
+
+  const { data: existing } = await db
+    .from("school_profiles")
+    .select("id")
+    .eq("organization_id", membership.businessId)
+    .ilike("matric_number", cleanMatric)
+    .maybeSingle();
+  if (existing) {
+    return { ok: false, message: `A student with matriculation number ${cleanMatric} is already registered.` };
+  }
+
+  const personId = randomUUID();
+  const { error: personError } = await db.from("people").insert({
+    id: personId,
+    organization_id: membership.businessId,
+    type: "STUDENT",
+    full_name: parsed.data.full_name,
+    email: cleanEmail,
+  });
+
+  if (personError) {
+    return {
+      ok: false,
+      message: personError.code === "23505"
+        ? "A student with that email address already exists in this institution."
+        : "Could not create student record. Try again.",
+    };
+  }
+
+  const untypedProfilesInsert = db as unknown as {
+    from: (table: "school_profiles") => {
+      insert: (values: Record<string, unknown>) => Promise<{ error: { code?: string } | null }>;
+    };
+  };
+  const { error: profileError } = await untypedProfilesInsert.from("school_profiles").insert({
+    id: personId,
+    organization_id: membership.businessId,
+    department_id: parsed.data.department_id,
+    matric_number: cleanMatric,
+    level: parsed.data.level,
+    programme: parsed.data.programme || null,
+    phone: cleanPhone || null,
+  });
+
+  if (profileError) {
+    await db.from("people").delete().eq("id", personId).eq("organization_id", membership.businessId);
+    return {
+      ok: false,
+      message: profileError.code === "23505"
+        ? `Matriculation number ${cleanMatric} is already registered.`
+        : "Could not save student profile. Try again.",
+    };
+  }
+
+  revalidatePath("/dashboard/students");
+  return { ok: true, message: `${parsed.data.full_name} (${cleanMatric}) has been registered.` };
 }
 
 export async function saveCourseAudience(_previous: { ok: boolean; message: string }, form: FormData) {

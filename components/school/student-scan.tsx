@@ -26,6 +26,7 @@ import {
 import { FaceCapture } from "./face-capture";
 import { DynamicCameraModal } from "./dynamic-camera-modal";
 import { FeedbackNotice } from "./feedback-notice";
+import { CustomDropdown } from "@/components/ui/custom-dropdown";
 import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import { assessAttendanceLocation, geolocationFailureMessage } from "@/lib/school/location";
@@ -627,16 +628,26 @@ export function StudentScan({
                       <input id="registerName" name="fullName" className={styles.textInput} required maxLength={160} autoComplete="name" />
                     </div>
                     <div className={styles.fieldGroup}>
-                      <label htmlFor="registerFaculty" className={styles.fieldLabel}>Faculty</label>
-                      <select id="registerFaculty" name="facultyId" className={styles.textInput} value={facultyId} onChange={(event) => setFacultyId(event.target.value)}>
-                        {directory.faculties.map((faculty) => <option key={faculty.id} value={faculty.id}>{faculty.name}</option>)}
-                      </select>
+                      <CustomDropdown
+                        name="facultyId"
+                        label="Faculty"
+                        value={facultyId}
+                        onChange={setFacultyId}
+                        options={directory.faculties.map((faculty) => ({ value: faculty.id, label: faculty.name }))}
+                        required
+                      />
                     </div>
                     <div className={styles.fieldGroup}>
-                      <label htmlFor="registerDepartment" className={styles.fieldLabel}>Department</label>
-                      <select id="registerDepartment" name="departmentId" className={styles.textInput} required>
-                        {directory.departments.filter((department) => department.faculty_id === facultyId).map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
-                      </select>
+                      <CustomDropdown
+                        name="departmentId"
+                        label="Department"
+                        key={facultyId}
+                        defaultValue={directory.departments.find((d) => d.faculty_id === facultyId)?.id ?? ""}
+                        options={directory.departments
+                          .filter((department) => department.faculty_id === facultyId)
+                          .map((department) => ({ value: department.id, label: department.name }))}
+                        required
+                      />
                     </div>
                     <div className={styles.fieldGroup}>
                       <label htmlFor="registerLevel" className={styles.fieldLabel}>Academic level</label>
