@@ -79,23 +79,37 @@ export async function verifyGuestStudentForAssignment(input: {
     if (!rawMatric) return { ok: false as const, error: "Enter your matriculation number." };
 
     const db = getDb();
-    const { data: orgProfiles } = await db
+    // 1. Fast indexed case-insensitive lookup
+    const { data: directProfile } = await db
       .from("school_profiles")
       .select("id,matric_number,level,department_id")
       .eq("organization_id", parsedToken.orgId)
-      .order("matric_number", { ascending: true });
+      .ilike("matric_number", rawMatric)
+      .maybeSingle();
 
-    let profile = (orgProfiles ?? []).find((row) =>
-      sameInstitutionalMatric(String(row.matric_number ?? ""), rawMatric),
-    );
+    let profile: Record<string, unknown> | undefined = directProfile ?? undefined;
 
     if (!profile?.id) {
-      // Fallback: check students who verified via standard attendance check-in in this institution
+      // 2. Normalized lookup across institution profiles (handles whitespace/formatting variants)
+      const { data: orgProfiles } = await db
+        .from("school_profiles")
+        .select("id,matric_number,level,department_id")
+        .eq("organization_id", parsedToken.orgId)
+        .order("matric_number", { ascending: true });
+
+      profile = (orgProfiles ?? []).find((row) =>
+        sameInstitutionalMatric(String(row.matric_number ?? ""), rawMatric),
+      );
+    }
+
+    if (!profile?.id) {
+      // Fallback: check students who verified via attendance check-in in this institution
+      // Note: attendance_records uses check_in_at (not created_at)
       const { data: attRows } = await db
         .from("attendance_records")
         .select("id,student_id,submitted_name,submitted_matric_number")
         .eq("organization_id", parsedToken.orgId)
-        .order("created_at", { ascending: false });
+        .order("check_in_at", { ascending: false });
 
       const attMatch = (attRows ?? []).find((row) =>
         sameInstitutionalMatric(String(row.submitted_matric_number ?? ""), rawMatric),
@@ -153,13 +167,67 @@ export async function verifyGuestStudentForAssignment(input: {
 
     const { data: assignment } = await db
       .from("assignments")
-      .select("id,title,fee_category,status")
+      .select("id,title,course_id,fee_category,status,target_audience,target_level,target_class_session_id")
       .eq("id", parsedToken.assignmentId)
       .eq("organization_id", parsedToken.orgId)
       .maybeSingle();
 
     if (!assignment || assignment.status !== "PUBLISHED") {
       return { ok: false as const, error: "This assignment is not currently accepting submissions." };
+    }
+
+    // Enforce lecturer-selected target audience if configured
+    const audience = String(assignment.target_audience ?? "ALL_INSTITUTION");
+    if (audience === "COURSE_ENROLLED" && assignment.course_id) {
+      const { data: enrolled } = await db
+        .from("course_enrollments")
+        .select("id")
+        .eq("course_id", assignment.course_id)
+        .eq("student_id", profile.id)
+        .maybeSingle();
+      if (!enrolled?.id) {
+        return {
+          ok: false as const,
+          error: "This assignment is restricted to students registered for this course.",
+        };
+      }
+    } else if (audience === "CLASS_ATTENDEES") {
+      if (assignment.target_class_session_id) {
+        const { data: attended } = await db
+          .from("attendance_records")
+          .select("id")
+          .eq("class_session_id", assignment.target_class_session_id)
+          .eq("student_id", profile.id)
+          .maybeSingle();
+        if (!attended?.id) {
+          return {
+            ok: false as const,
+            error: "This assignment is restricted to students who attended the class session.",
+          };
+        }
+      } else {
+        const { data: anyAttendance } = await db
+          .from("attendance_records")
+          .select("id")
+          .eq("organization_id", parsedToken.orgId)
+          .eq("student_id", profile.id)
+          .order("check_in_at", { ascending: false });
+        if (!anyAttendance || anyAttendance.length === 0) {
+          return {
+            ok: false as const,
+            error: "This assignment is restricted to students who attended class.",
+          };
+        }
+      }
+    } else if (audience === "DEPARTMENT_LEVEL" && assignment.target_level) {
+      const targetLvl = String(assignment.target_level).trim().toLowerCase();
+      const studentLvl = String(profile.level ?? "").trim().toLowerCase();
+      if (targetLvl && studentLvl && targetLvl !== studentLvl) {
+        return {
+          ok: false as const,
+          error: `This assignment is restricted to ${assignment.target_level} students.`,
+        };
+      }
     }
 
     // Record immutable referral attribution if valid code provided (never overwrite existing, never self-refer)

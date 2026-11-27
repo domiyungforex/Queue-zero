@@ -11,6 +11,7 @@ import { archiveAssignmentSchema, createAssignmentSchema, deleteAssignmentSchema
 import { signAssignmentGuestToken } from "./distribution";
 import { computeLetterGrade, gradeObjectiveSubmission, type ObjectiveQuestionKey } from "./marking";
 import { analyzeSubmissionSimilarity, assessAiWritingRisk } from "./integrity";
+import { evaluateSubjectiveAnswerWithClaude, generateQuestionsWithClaude } from "@/lib/ai/anthropic";
 
 type DbResult<T = unknown> = Promise<{ data: T | null; error: { message?: string } | null; count?: number | null }>;
 
@@ -125,6 +126,10 @@ export async function createAssignmentAction(input: unknown) {
       academic_session: v.academicSession || null,
       semester: v.semester || null,
       class_group: v.classGroup || null,
+      target_audience: v.targetAudience,
+      target_department: v.targetDepartment || null,
+      target_level: v.targetLevel || null,
+      target_class_session_id: v.targetClassSessionId || null,
       category: v.category,
       status,
       opens_at: v.opensAt || null,
@@ -772,6 +777,10 @@ export async function updateAssignmentAction(input: unknown) {
       academic_session: v.academicSession || null,
       semester: v.semester || null,
       class_group: v.classGroup || null,
+      target_audience: v.targetAudience,
+      target_department: v.targetDepartment || null,
+      target_level: v.targetLevel || null,
+      target_class_session_id: v.targetClassSessionId || null,
       category: v.category,
       status: nextStatus,
       opens_at: v.opensAt || null,
@@ -1021,4 +1030,119 @@ export async function getAssignmentShareLinkAction(assignmentId: string) {
     studentPortalPath: `/dashboard/academic/student/${assignmentId}`,
     status: String(existing.status ?? "DRAFT"),
   };
+}
+
+export async function generateAssignmentQuestionsAction(input: {
+  topic: string;
+  courseCode?: string;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  count: number;
+  questionTypes: Array<
+    "MCQ" | "TRUE_FALSE" | "SHORT_ANSWER" | "LONG_ANSWER" | "ESSAY" | "MATH"
+  >;
+}) {
+  const membership = await requireBusinessMembership();
+  if (!isStaffRole(membership.role)) {
+    return { ok: false as const, error: "Not authorized to generate questions." };
+  }
+  if (!input.topic?.trim()) {
+    return { ok: false as const, error: "Enter a topic for question generation." };
+  }
+
+  const res = await generateQuestionsWithClaude({
+    topic: input.topic.trim(),
+    courseCode: input.courseCode?.trim(),
+    difficulty: input.difficulty,
+    count: Math.min(20, Math.max(1, Number(input.count || 5))),
+    questionTypes: input.questionTypes.length > 0 ? input.questionTypes : ["SHORT_ANSWER"],
+  });
+
+  if (!res.ok) {
+    return { ok: false as const, error: res.error };
+  }
+  return { ok: true as const, questions: res.questions, usage: res.usage };
+}
+
+export async function suggestAiMarkingForSubmissionAction(input: {
+  assignmentId: string;
+  submissionId: string;
+}) {
+  const membership = await requireBusinessMembership();
+  if (!isStaffRole(membership.role)) {
+    return { ok: false as const, error: "Not authorized to run AI-assisted marking." };
+  }
+  if (!z.uuid().safeParse(input.assignmentId).success || !z.uuid().safeParse(input.submissionId).success) {
+    return { ok: false as const, error: "Invalid assignment or submission ID." };
+  }
+
+  const db = academicDb();
+  const [subRes, qRes, keysRes] = await Promise.all([
+    db
+      .from("assignment_submissions")
+      .select("id,answers,text_content")
+      .eq("id", input.submissionId)
+      .eq("organization_id", membership.businessId)
+      .maybeSingle(),
+    db
+      .from("assignment_questions")
+      .select("id,question_type,prompt,marks")
+      .eq("assignment_id", input.assignmentId)
+      .eq("organization_id", membership.businessId)
+      .order("position", { ascending: true }),
+    db
+      .from("answer_keys")
+      .select("question_id,model_answer,accepted_answers")
+      .eq("assignment_id", input.assignmentId)
+      .eq("organization_id", membership.businessId),
+  ]);
+
+  if (!subRes.data) return { ok: false as const, error: "Submission not found." };
+
+  const answers = (subRes.data.answers ?? {}) as Record<string, unknown>;
+  const keyMap = new Map<string, Record<string, unknown>>(
+    (keysRes.data ?? []).map((k) => [String(k.question_id), k]),
+  );
+
+  const suggestions: Array<{
+    questionId: string;
+    suggestedMarks: number;
+    maxMarks: number;
+    confidence: "HIGH" | "MEDIUM" | "LOW";
+    explanation: string;
+    criteriaSatisfied: string[];
+    criteriaMissing: string[];
+    requiresLecturerReview: boolean;
+  }> = [];
+
+  for (const q of qRes.data ?? []) {
+    const qId = String(q.id);
+    const key = keyMap.get(qId);
+    const responseRaw = answers[qId] ?? subRes.data.text_content ?? "";
+    const evalRes = await evaluateSubjectiveAnswerWithClaude({
+      questionPrompt: String(q.prompt ?? ""),
+      maxMarks: Number(q.marks ?? 10),
+      modelAnswer: key?.model_answer ? String(key.model_answer) : null,
+      rubricCriteria: Array.isArray(key?.accepted_answers)
+        ? key.accepted_answers.map(String)
+        : [],
+      studentResponse: typeof responseRaw === "string" ? responseRaw : JSON.stringify(responseRaw),
+    });
+
+    if (!evalRes.ok) {
+      return { ok: false as const, error: evalRes.error };
+    }
+
+    suggestions.push({
+      questionId: qId,
+      suggestedMarks: evalRes.suggestedMarks,
+      maxMarks: Number(q.marks ?? 10),
+      confidence: evalRes.confidence,
+      explanation: evalRes.explanation,
+      criteriaSatisfied: evalRes.criteriaSatisfied,
+      criteriaMissing: evalRes.criteriaMissing,
+      requiresLecturerReview: evalRes.requiresLecturerReview,
+    });
+  }
+
+  return { ok: true as const, suggestions };
 }

@@ -7,7 +7,14 @@ import { CustomDropdown } from "@/components/ui/custom-dropdown";
 import { DynamicCameraModal } from "@/components/school/dynamic-camera-modal";
 import { createAssignmentAction, updateAssignmentAction } from "@/lib/academic/actions";
 import type { SmartAssignmentExtraction } from "@/lib/academic/ingestion";
-import { ASSIGNMENT_CATEGORIES, MARKING_MODES, QUESTION_TYPES, type QuestionType } from "@/lib/academic/types";
+import {
+  ASSIGNMENT_CATEGORIES,
+  ASSIGNMENT_TARGET_AUDIENCES,
+  MARKING_MODES,
+  QUESTION_TYPES,
+  type AssignmentTargetAudience,
+  type QuestionType,
+} from "@/lib/academic/types";
 
 export interface InitialAssignmentQuestion {
   id: string;
@@ -164,6 +171,9 @@ export function AssignmentWizard({
   const [allowFileUpload, setAllowFileUpload] = useState(initialData?.allowFileUpload ?? true);
   const [allowPhotoSubmission, setAllowPhotoSubmission] = useState(initialData?.allowPhotoSubmission ?? true);
   const [maxAttempts, setMaxAttempts] = useState(initialData?.maxAttempts ?? 1);
+  const [targetAudience, setTargetAudience] = useState<AssignmentTargetAudience>("ALL_INSTITUTION");
+  const [targetDepartment, setTargetDepartment] = useState("");
+  const [targetLevel, setTargetLevel] = useState("");
 
   // Step 4: Marking Config
   const [markingMode, setMarkingMode] = useState<(typeof MARKING_MODES)[number]>(
@@ -290,6 +300,9 @@ export function AssignmentWizard({
         allowFileUpload,
         allowPhotoSubmission,
         maxAttempts,
+        targetAudience,
+        targetDepartment: targetDepartment.trim(),
+        targetLevel: targetLevel.trim(),
         markingMode,
         totalMarks,
         releaseMarksImmediately,
@@ -853,6 +866,41 @@ export function AssignmentWizard({
                 className="mt-1.5 min-h-12 w-full rounded-xl border border-black/15 px-3.5 text-base"
               />
             </label>
+            <div className="sm:col-span-2 rounded-2xl border border-black/10 bg-[#fffaf7] p-4 space-y-4">
+              <CustomDropdown
+                label="Who can answer this assignment?"
+                value={targetAudience}
+                onChange={(val) => setTargetAudience(val as AssignmentTargetAudience)}
+                options={[
+                  { value: "ALL_INSTITUTION", label: "All registered students in this institution" },
+                  { value: "COURSE_ENROLLED", label: "Only students registered for this course" },
+                  { value: "CLASS_ATTENDEES", label: "Only students who attended class" },
+                  { value: "DEPARTMENT_LEVEL", label: "Specific department / level" },
+                ]}
+              />
+              {targetAudience === "DEPARTMENT_LEVEL" ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm font-bold text-[#111318]">
+                    Target Department (optional)
+                    <input
+                      value={targetDepartment}
+                      onChange={(e) => setTargetDepartment(e.target.value)}
+                      placeholder="e.g. Computer Science"
+                      className="mt-1.5 min-h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-base"
+                    />
+                  </label>
+                  <label className="block text-sm font-bold text-[#111318]">
+                    Target Level (optional)
+                    <input
+                      value={targetLevel}
+                      onChange={(e) => setTargetLevel(e.target.value)}
+                      placeholder="e.g. 200 Level"
+                      className="mt-1.5 min-h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-base"
+                    />
+                  </label>
+                </div>
+              ) : null}
+            </div>
             <div className="sm:col-span-2 flex flex-wrap gap-6 pt-2">
               <label className="flex items-center gap-2 text-sm font-semibold">
                 <input type="checkbox" checked={allowTextAnswer} onChange={(e) => setAllowTextAnswer(e.target.checked)} />

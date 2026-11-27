@@ -5,12 +5,9 @@ import { requireUserId } from "@/lib/auth/server";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { createUserSupabaseClient } from "@/lib/db/server";
 import { storePrivateImage } from "@/lib/storage/store-image";
-import { extractTextFromDocxBuffer, parseAssignmentFromText } from "@/lib/academic/ingestion";
-import {
-  extractAssignmentWithMistralSmall,
-  isMistralConfigured,
-  runMistralOcr,
-} from "@/lib/ai/mistral";
+import { extractTextFromDocxBuffer } from "@/lib/academic/ingestion";
+import { getAiProviderStatus } from "@/lib/ai/provider";
+import { runSmartAssignmentExtraction } from "@/lib/ai/service";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -23,6 +20,18 @@ const ALLOWED_MIME = new Set([
   "image/webp",
   "text/plain",
 ]);
+
+export async function GET() {
+  try {
+    const membership = await requireBusinessMembership();
+    if (!["owner", "admin", "manager", "lecturer"].includes(membership.role)) {
+      return NextResponse.json({ error: "Not authorized." }, { status: 403 });
+    }
+    return NextResponse.json({ ok: true, status: getAiProviderStatus() });
+  } catch {
+    return NextResponse.json({ error: "Not authorized." }, { status: 401 });
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -45,7 +54,10 @@ export async function POST(request: Request) {
     const db = createJoinSupabaseClient();
     let extractedText = descriptionText;
     let originalPath: string | null = null;
-    const warnings: string[] = [];
+    let fileBuffer: Buffer | undefined;
+    let fileMimeType: string | undefined;
+    let contentHash: string | undefined;
+    const preWarnings: string[] = [];
 
     if (file instanceof File && file.size > 0) {
       if (!ALLOWED_MIME.has(file.type)) {
@@ -59,7 +71,7 @@ export async function POST(request: Request) {
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
-      const contentHash = createHash("sha256").update(buffer).digest("hex");
+      contentHash = createHash("sha256").update(buffer).digest("hex");
       const ext =
         file.type === "application/pdf"
           ? "pdf"
@@ -80,42 +92,33 @@ export async function POST(request: Request) {
       if (file.type.includes("wordprocessingml")) {
         const docxText = extractTextFromDocxBuffer(buffer);
         if (docxText) extractedText = docxText;
-        else warnings.push("Could not extract readable text from this DOCX file; please review manually.");
+        else preWarnings.push("Could not extract readable text from this DOCX file; please review manually.");
       } else if (file.type === "text/plain") {
         extractedText = buffer.toString("utf8");
       } else {
-        // PDF or Image -> Mistral OCR
-        if (!isMistralConfigured()) {
-          warnings.push(
-            "Original document/photo preserved privately. MISTRAL_API_KEY is not configured on the server, so automated OCR is unavailable — review or enter questions manually.",
-          );
-        } else {
-          const ocr = await runMistralOcr({ buffer, mimeType: file.type });
-          if (ocr.ok && ocr.text.trim()) {
-            extractedText = ocr.text;
-          } else {
-            warnings.push(ocr.ok ? "No readable text found in document; please review manually." : ocr.error);
-          }
-        }
+        fileBuffer = buffer;
+        fileMimeType = file.type;
       }
     }
 
-    let extraction = parseAssignmentFromText(extractedText, courses ?? []);
-    if (extractedText.trim() && isMistralConfigured()) {
-      const ai = await extractAssignmentWithMistralSmall({
-        text: extractedText,
-        authorizedCourses: courses ?? [],
-      });
-      if (ai.ok) {
-        extraction = ai.extraction;
-      } else {
-        warnings.push(ai.error);
-      }
-    }
+    const result = await runSmartAssignmentExtraction({
+      organizationId: membership.businessId,
+      authorizedCourses: courses ?? [],
+      buffer: fileBuffer,
+      mimeType: fileMimeType,
+      contentHash,
+      extractedText,
+    });
 
-    if (warnings.length > 0) {
-      extraction.warnings = [...warnings, ...extraction.warnings];
-    }
+    const extraction = {
+      ...result.extraction,
+      warnings: [...preWarnings, ...result.warnings],
+    };
+
+    const status =
+      result.providerUsed === "local_parser" || extraction.warnings.length > 0
+        ? "NEEDS_REVIEW"
+        : "COMPLETED";
 
     await (
       db as unknown as {
@@ -129,16 +132,22 @@ export async function POST(request: Request) {
         created_by: userId,
         source_method: method === "PHOTO" || method === "DOCUMENT" ? method : "DESCRIPTION",
         original_file_path: originalPath,
-        status: extraction.warnings.length > 0 ? "NEEDS_REVIEW" : "COMPLETED",
+        status,
         extracted_json: extraction,
         confidence_notes: extraction.warnings,
       });
 
+    const aiStatus = getAiProviderStatus();
     return NextResponse.json({
       ok: true,
       originalPath,
       extraction,
-      aiConfigured: isMistralConfigured(),
+      providerUsed: result.providerUsed,
+      usage: result.usage ?? null,
+      deduplicated: Boolean(result.deduplicated),
+      processingStatus: status,
+      aiConfigured: aiStatus.anyConfigured,
+      aiStatus,
     });
   } catch {
     return NextResponse.json(

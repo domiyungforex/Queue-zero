@@ -37,6 +37,14 @@ export type MarkingMode = (typeof MARKING_MODES)[number];
 export const LATE_POLICIES = ["BLOCK", "ALLOW_WITH_FLAG", "ALLOW_PENALTY"] as const;
 export type LatePolicy = (typeof LATE_POLICIES)[number];
 
+export const ASSIGNMENT_TARGET_AUDIENCES = [
+  "ALL_INSTITUTION",
+  "COURSE_ENROLLED",
+  "CLASS_ATTENDEES",
+  "DEPARTMENT_LEVEL",
+] as const;
+export type AssignmentTargetAudience = (typeof ASSIGNMENT_TARGET_AUDIENCES)[number];
+
 const optionalTrimmedString = (max: number) =>
   z
     .string()
@@ -93,6 +101,10 @@ const assignmentBaseFields = {
   academicSession: optionalTrimmedString(80),
   semester: optionalTrimmedString(40),
   classGroup: optionalTrimmedString(80),
+  targetAudience: z.enum(ASSIGNMENT_TARGET_AUDIENCES).default("ALL_INSTITUTION"),
+  targetDepartment: optionalTrimmedString(120),
+  targetLevel: optionalTrimmedString(40),
+  targetClassSessionId: optionalTimestampString(),
   category: z.enum(ASSIGNMENT_CATEGORIES).default("HOMEWORK"),
   opensAt: optionalTimestampString(),
   dueAt: optionalTimestampString(),
