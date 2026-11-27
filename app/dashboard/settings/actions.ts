@@ -19,11 +19,27 @@ export async function saveBusiness(_previous:FormResult,form:FormData):Promise<F
  try{const db=await createUserSupabaseClient();const {error}=await db.rpc('save_business',{p_business_id:m.businessId,p_name:input.data.name,p_industry:input.data.industry,p_timezone:input.data.timezone});if(error)throw new Error();revalidatePath('/dashboard','layout');return {ok:true,message:'Business details saved.'}}catch(e){unstable_rethrow(e);return {ok:false,message:'Could not save your business details. Please try again.'}}
 }
 export async function saveTeamMember(_previous:FormResult,form:FormData):Promise<FormResult>{
- const m=await requireBusinessManager();const parsed=z.object({email:z.email().max(254).optional(),userId:z.string().regex(/^user_[A-Za-z0-9]+$/).optional(),role:z.enum(['admin','staff']),queueIds:z.array(z.uuid()).max(100),remove:z.boolean()}).safeParse({email:form.get('email')||undefined,userId:form.get('userId')||undefined,role:form.get('role'),queueIds:form.getAll('queueIds'),remove:form.get('remove')==='true'});
+ const m=await requireBusinessManager();const parsed=z.object({email:z.email().max(254).optional(),userId:z.string().regex(/^user_[A-Za-z0-9]+$/).optional(),role:z.enum(['admin','manager','staff','viewer']),queueIds:z.array(z.uuid()).max(100),remove:z.boolean()}).safeParse({email:form.get('email')||undefined,userId:form.get('userId')||undefined,role:form.get('role'),queueIds:form.getAll('queueIds'),remove:form.get('remove')==='true'});
  if(!parsed.success)return {ok:false,message:'Enter a valid email, role and queue assignments.'};
  try{const v=parsed.data;let userId=v.userId;if(!v.remove){if(!v.email)return {ok:false,message:'Enter your teammate’s email.'};const client=await clerkClient();const users=await client.users.getUserList({emailAddress:[v.email],limit:1});const teammate=users.data[0];const verified=teammate?.emailAddresses.some(address=>address.emailAddress.toLowerCase()===v.email!.toLowerCase()&&address.verification?.status==='verified');userId=verified?teammate?.id:undefined;if(!userId)return {ok:false,message:'Ask this teammate to create a TuRnMaRk account and verify that email, then add them here.'}}
- if(!userId)return {ok:false,message:'Member unavailable.'};const db=await createUserSupabaseClient();const {error}=await db.rpc('save_staff',{p_business_id:m.businessId,p_user_id:userId,p_role:v.role,p_queue_ids:v.queueIds,p_remove:v.remove});if(error)throw new Error();revalidatePath('/dashboard/team');return {ok:true,message:v.remove?'Team access removed.':'Team member saved.'};
+ if(!userId)return {ok:false,message:'Member unavailable.'};const db=await createUserSupabaseClient();const {error}=await db.rpc('save_staff',{p_business_id:m.businessId,p_user_id:userId,p_role:v.role as 'admin'|'staff',p_queue_ids:v.queueIds,p_remove:v.remove});if(error)throw new Error();revalidatePath('/dashboard/team');return {ok:true,message:v.remove?'Team access removed.':'Team member saved.'};
  }catch(e){unstable_rethrow(e);return {ok:false,message:'Could not update team access. Check your permissions and authentication configuration.'}}
+}
+
+export async function revokeTeamInvitation(_previous: FormResult, form: FormData): Promise<FormResult> {
+  await requireBusinessManager();
+  const parsed = z.object({ invitationId: z.uuid() }).safeParse({ invitationId: form.get("invitationId") });
+  if (!parsed.success) return { ok: false, message: "Invalid invitation." };
+  try {
+    const db = await createUserSupabaseClient();
+    const { error } = await db.rpc("institution_revoke_invitation", { p_invitation_id: parsed.data.invitationId });
+    if (error) throw new Error();
+    revalidatePath("/dashboard/team");
+    return { ok: true, message: "Invitation revoked." };
+  } catch (e) {
+    unstable_rethrow(e);
+    return { ok: false, message: "Could not revoke invitation." };
+  }
 }
 
 export async function saveOrganizationMode(_previous:FormResult,form:FormData):Promise<FormResult>{

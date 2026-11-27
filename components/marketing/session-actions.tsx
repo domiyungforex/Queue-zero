@@ -9,10 +9,10 @@ import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 
 const navigationItems = [
-  { href: "/#product", label: "Product" },
-  { href: "/#solutions", label: "Solutions" },
+  { href: "/features", label: "Features" },
+  { href: "/solutions", label: "Solutions" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/how-it-works", label: "Resources" },
+  { href: "/help", label: "Help" },
   { href: "/contact", label: "Contact" },
 ];
 

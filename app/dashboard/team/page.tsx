@@ -3,9 +3,40 @@ import { UserPlus, UsersRound } from "lucide-react";
 import { requireBusinessManager } from "@/lib/business/membership";
 import { createUserSupabaseClient } from "@/lib/db/server";
 import { getDashboardQueues } from "@/lib/dashboard/data";
-import { TeamForm,RemoveMember } from "@/components/business/forms";
-import { EducationEmpty, EducationHeading, EducationStatus, initials } from "@/components/school/education-ui";
+import { TeamForm } from "@/components/business/forms";
+import { EducationHeading } from "@/components/school/education-ui";
+import { TeamWorkspace, type TeamInvitationItem, type TeamMemberItem } from "@/components/team/team-workspace";
 import styles from "@/components/school/education-pages.module.css";
+
+function mapInvitations(
+  rawInvitations: Array<{
+    id: string;
+    email: string;
+    role: string;
+    staff_title: string | null;
+    accepted_at: string | null;
+    revoked_at: string | null;
+    expires_at: string;
+    created_at: string;
+  }> | null,
+): TeamInvitationItem[] {
+  const now = Date.now();
+  return (rawInvitations ?? []).map((inv) => {
+    let status: TeamInvitationItem["status"] = "pending";
+    if (inv.revoked_at) status = "revoked";
+    else if (inv.accepted_at) status = "accepted";
+    else if (new Date(inv.expires_at).getTime() <= now) status = "expired";
+
+    return {
+      id: inv.id,
+      email: inv.email,
+      role: inv.role,
+      staffTitle: inv.staff_title,
+      status,
+      createdAt: inv.created_at,
+    };
+  });
+}
 
 export default async function TeamPage() {
   const membership = await requireBusinessManager();
@@ -18,28 +49,87 @@ export default async function TeamPage() {
     console.error("Team queue list failed", error);
     queuesFailed = true;
   }
-  const [{ data: members, error }] = await Promise.all([
-    db.from("business_members").select("id,clerk_user_id,role").eq("business_id", membership.businessId).order("created_at"),
+
+  const [{ data: members, error }, { data: rawInvitations }] = await Promise.all([
+    db
+      .from("business_members")
+      .select("id,clerk_user_id,role")
+      .eq("business_id", membership.businessId)
+      .order("created_at"),
+    db
+      .from("institution_invitations")
+      .select("id,email,role,staff_title,accepted_at,revoked_at,expires_at,created_at")
+      .eq("organization_id", membership.businessId)
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
+
   if (error) throw new Error("Team could not be loaded.");
-  const names = new Map<string, string>();
+
+  const userDetails = new Map<string, { name: string; email: string | null }>();
   try {
     const client = await clerkClient();
-    const users = await client.users.getUserList({ userId: (members ?? []).map((member) => member.clerk_user_id), limit: 100 });
-    for (const user of users.data) names.set(user.id, user.fullName ?? user.primaryEmailAddress?.emailAddress ?? "Team member");
+    const users = await client.users.getUserList({
+      userId: (members ?? []).map((member) => member.clerk_user_id),
+      limit: 100,
+    });
+    for (const user of users.data) {
+      userDetails.set(user.id, {
+        name: user.fullName ?? user.primaryEmailAddress?.emailAddress ?? "Team member",
+        email: user.primaryEmailAddress?.emailAddress ?? null,
+      });
+    }
   } catch {
     // Authorized memberships remain visible if Clerk is temporarily unavailable.
   }
 
-  return <main className={styles.page}>
-    <EducationHeading eyebrow="TEAM" title="Team members" description="Give each teammate the access they need." />
-    <section className={styles.summaryCard}><div className={styles.summaryCount}><span className={styles.icon}><UsersRound size={21} aria-hidden="true" /></span><span><strong>{members?.length ?? 0}</strong><span>{members?.length === 1 ? "Member" : "Members"}</span></span></div><a className={styles.primary} href="#invite-member"><UserPlus size={17} aria-hidden="true" />Invite member</a></section>
-    <section className={styles.twoColumn}>
-      <div className={styles.panel}><header className={styles.panelHeader}><div><h2>Members</h2><p>Authorized workspace access</p></div></header>{members?.length ? <ul className={styles.rows}>{members.map((member) => {
-        const name = names.get(member.clerk_user_id) ?? "Team member";
-        return <li key={member.id}><span className={styles.avatar}>{initials(name)}</span><span className={styles.rowMain}><strong>{name}</strong><span>{member.role === "owner" ? "Workspace owner" : "Education workspace member"}</span></span><span className={styles.rowEnd}><EducationStatus tone={member.role === "owner" ? "success" : "info"}>{member.role}</EducationStatus></span>{(member.role === "admin" || member.role === "staff") && (membership.role === "owner" || member.role === "staff") ? <RemoveMember userId={member.clerk_user_id} role={member.role} /> : <span />}</li>;
-      })}</ul> : <EducationEmpty title="No teammates yet" description="Add a verified TuRnMaRk user when you are ready to collaborate." icon={UsersRound} />}</div>
-      <section id="invite-member" className={`${styles.panel} ${styles.formWrap}`}>{queuesFailed ? <p role="alert">Queues could not be loaded, so a new member cannot be assigned yet. Try again in a moment.</p> : <TeamForm queues={queues} owner={membership.role === "owner"} />}</section>
-    </section>
-  </main>;
+  const teamMembers: TeamMemberItem[] = (members ?? []).map((member) => {
+    const detail = userDetails.get(member.clerk_user_id);
+    return {
+      id: member.id,
+      clerkUserId: member.clerk_user_id,
+      name: detail?.name ?? "Team member",
+      email: detail?.email ?? null,
+      role: member.role as TeamMemberItem["role"],
+    };
+  });
+
+  const invitations = mapInvitations(rawInvitations);
+
+  return (
+    <main className={styles.page}>
+      <EducationHeading
+        eyebrow="TEAM & RBAC"
+        title="Team members"
+        description="Manage workspace roles, queue assignments, and pending invitations."
+      />
+      <section className={styles.summaryCard}>
+        <div className={styles.summaryCount}>
+          <span className={styles.icon}>
+            <UsersRound size={21} aria-hidden="true" />
+          </span>
+          <span>
+            <strong>{teamMembers.length}</strong>
+            <span>{teamMembers.length === 1 ? "Member" : "Members"}</span>
+          </span>
+        </div>
+        <a className={styles.primary} href="#invite-member">
+          <UserPlus size={17} aria-hidden="true" />
+          Invite member
+        </a>
+      </section>
+      <section className={styles.twoColumn}>
+        <TeamWorkspace members={teamMembers} invitations={invitations} actorRole={membership.role} />
+        <section id="invite-member" className={`${styles.panel} ${styles.formWrap}`}>
+          {queuesFailed ? (
+            <p role="alert">
+              Queues could not be loaded, so a new member cannot be assigned yet. Try again in a moment.
+            </p>
+          ) : (
+            <TeamForm queues={queues} owner={membership.role === "owner"} />
+          )}
+        </section>
+      </section>
+    </main>
+  );
 }

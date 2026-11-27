@@ -17,7 +17,7 @@ export function MarketingHeader() {
   return <div className={styles.marketingNav}><MarketingSessionNavigation /></div>;
 }
 export function MarketingFooter() {
-  return <footer className={styles.footer}><div><Brand /><p>People flow better<br />with TuRnMaRk.</p></div><nav aria-label="Footer"><Link href="/#product">Product</Link><Link href="/#solutions">Solutions</Link><Link href="/how-it-works">How it works</Link><Link href="/pricing">Pricing</Link><Link href="/solutions/education">Education</Link><Link href="/contact">Contact</Link><MarketingAccountFooterLink /><Link href="/privacy">Privacy</Link></nav><p className={styles.footerNote}>Scan. Join.<br />Leave the line.</p><div className={styles.footerBottom}><span>© {new Date().getFullYear()} TuRnMaRk</span><span>Queues first. Better arrivals everywhere.</span></div></footer>;
+  return <footer className={styles.footer}><div><Brand /><p>People flow better<br />with TuRnMaRk.</p></div><nav aria-label="Footer"><Link href="/features">Features</Link><Link href="/solutions">Solutions</Link><Link href="/how-it-works">How it works</Link><Link href="/pricing">Pricing</Link><Link href="/solutions/education">Education</Link><Link href="/about">About</Link><Link href="/team">Team</Link><Link href="/help">Help</Link><Link href="/contact">Contact</Link><MarketingAccountFooterLink /><Link href="/privacy">Privacy</Link></nav><p className={styles.footerNote}>Scan. Join.<br />Leave the line.</p><div className={styles.footerBottom}><span>© {new Date().getFullYear()} TuRnMaRk</span><span>Queues first. Better arrivals everywhere.</span></div></footer>;
 }
 export function MarketingFrame({ children, stickyCta = true }: { children: React.ReactNode; stickyCta?: boolean }) {
   const details = siteDetails();
