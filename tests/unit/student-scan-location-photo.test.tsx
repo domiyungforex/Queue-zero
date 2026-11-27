@@ -202,4 +202,46 @@ describe("StudentScan GPS & photo workflow", () => {
     await screen.findByText("Photo storage is unavailable.");
     expect(recordAttendance).not.toHaveBeenCalled();
   });
+
+  it("disables submission button when photo route returns 410 session closed/expired", async () => {
+    Object.defineProperty(navigator, "geolocation", {
+      value: {
+        getCurrentPosition: vi.fn((ok) =>
+          ok({
+            coords: { latitude: 6.5244, longitude: 3.3792, accuracy: 20 },
+            timestamp: Date.now(),
+          }),
+        ),
+      },
+      configurable: true,
+    });
+
+    const sessionId = "11111111-1111-4111-8111-111111111111";
+    const nonce = "22222222-2222-4222-8222-222222222222";
+    const token = makeTwoPartToken(sessionId, nonce);
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+      status: 410,
+      json: async () => ({ error: "Attendance session is closed or QR has expired." }),
+    } as Response);
+
+    render(<StudentScan token={token} classInfo={baseClass} />);
+    await screen.findByText(/GPS reading accepted/i);
+
+    fireEvent.change(screen.getByLabelText(/Matriculation number/i), {
+      target: { value: "CSC/2022/045" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Find me/i }));
+    await screen.findByText("Ada Lovelace");
+
+    fireEvent.click(screen.getByRole("button", { name: /Continue to Selfie/i }));
+    fireEvent.click(await screen.findByRole("button", { name: "Confirm Mock Photo" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Confirm & Submit/i }));
+
+    await screen.findByText("Attendance session is closed or QR has expired.");
+    const closedBtn = screen.getByRole("button", { name: "Session Closed" }) as HTMLButtonElement;
+    expect(closedBtn.disabled).toBe(true);
+    expect(recordAttendance).not.toHaveBeenCalled();
+  });
 });

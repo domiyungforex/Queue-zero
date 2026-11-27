@@ -119,6 +119,7 @@ export function StudentScan({
 
   // Submission
   const [submitting, setSubmitting] = useState(false);
+  const [sessionRejected, setSessionRejected] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
 
   // Request location when required (with automatic low-accuracy fallback indoors on timeout/unavailable)
@@ -287,7 +288,7 @@ export function StudentScan({
     classId: string,
     nonce: string,
     photoDataUrl: string,
-  ): Promise<{ ok: true; path: string } | { ok: false; error: string }> => {
+  ): Promise<{ ok: true; path: string } | { ok: false; error: string; terminal?: boolean }> => {
     try {
       const res = await fetch(`/api/school/classes/${classId}/photo`, {
         method: "POST",
@@ -296,7 +297,8 @@ export function StudentScan({
       });
       const json = (await res.json().catch(() => ({}))) as { path?: string; url?: string; error?: string };
       if (!res.ok) {
-        return { ok: false, error: json.error || "Photograph upload failed. Please retry." };
+        const terminal = res.status === 410 || res.status === 401 || res.status === 403;
+        return { ok: false, error: json.error || "Photograph upload failed. Please retry.", terminal };
       }
       if (json.path && !json.path.startsWith("data:") && !json.path.includes("..")) {
         return { ok: true, path: json.path };
@@ -363,6 +365,7 @@ export function StudentScan({
 
       const uploaded = await uploadPhoto(sessionId, nonce, capturedPhoto);
       if (!uploaded.ok) {
+        if (uploaded.terminal) setSessionRejected(true);
         setLookupError(uploaded.error);
         setSubmitting(false);
         return;
@@ -926,6 +929,7 @@ export function StudentScan({
                   <button
                     type="button"
                     className={styles.secondaryButton}
+                    disabled={submitting || sessionRejected}
                     onClick={() => setCameraModalOpen(true)}
                   >
                     <RotateCcw size={16} /> Retake
@@ -933,10 +937,10 @@ export function StudentScan({
                   <button
                     type="button"
                     className={styles.primaryButton}
-                    disabled={submitting}
+                    disabled={submitting || sessionRejected}
                     onClick={handleFinalSubmit}
                   >
-                    {submitting ? "Submitting…" : "Confirm & Submit"}
+                    {submitting ? "Submitting…" : sessionRejected ? "Session Closed" : "Confirm & Submit"}
                   </button>
                 </div>
               </div>

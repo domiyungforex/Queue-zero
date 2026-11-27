@@ -87,18 +87,32 @@ export async function POST(
 
     const db = createJoinSupabaseClient();
 
-    // Verify the class is open and nonce is valid
-    const { data: nonceOk } = await db
-      .from("attendance_qr_nonces")
-      .select("class_session_id")
-      .eq("nonce", parsed.data.nonce)
-      .eq("class_session_id", classId)
-      .eq("organization_id", orgId)
-      .gt("expires_at", new Date().toISOString())
-      .maybeSingle();
+    // Verify the class is open and nonce is valid via the SECURITY DEFINER RPC
+    // (direct SELECT on attendance_qr_nonces is revoked from service_role by RLS hardening).
+    const { data: sessionInfo, error: sessionErr } = await db.rpc("school_public_class", {
+      p_organization_id: orgId,
+      p_class_id: classId,
+      p_nonce: parsed.data.nonce,
+    });
 
-    if (!nonceOk) {
-      return NextResponse.json({ error: "Attendance session is closed or QR has expired." }, { status: 410, headers });
+    if (sessionErr) {
+      return NextResponse.json(
+        { error: "Unable to verify attendance session right now. Please try again." },
+        { status: 503, headers },
+      );
+    }
+
+    const sessionOpen =
+      sessionInfo &&
+      typeof sessionInfo === "object" &&
+      "open" in sessionInfo &&
+      (sessionInfo as { open?: unknown }).open === true;
+
+    if (!sessionOpen) {
+      return NextResponse.json(
+        { error: "Attendance session is closed or QR has expired." },
+        { status: 410, headers },
+      );
     }
 
     const stored = await storePrivateImage(db, { key: fileName, body: photo.buffer, type: photo.mime });
