@@ -172,17 +172,17 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
             <legend>Schedule</legend>
             <div className="school-form-row">
               <label>
-                Class start (UTC)
+                Class start (Local time)
                 <input name="starts_at" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} required />
               </label>
               <label>
-                Attendance closes (UTC)
+                Attendance closes (Local time)
                 <input name="attendance_closes_at" type="datetime-local" value={attendanceClosesAt} onChange={(e) => setAttendanceClosesAt(e.target.value)} required />
               </label>
             </div>
             <div className="school-form-row">
               <label>
-                Class end (UTC, optional)
+                Class end (Local time, optional)
                 <input name="planned_ends_at" type="datetime-local" value={plannedEndsAt} onChange={(e) => setPlannedEndsAt(e.target.value)} />
               </label>
               <label>

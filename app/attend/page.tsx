@@ -96,6 +96,15 @@ async function resolveAttendanceClass(token: string) {
     (!cls.attendance_closes_at || new Date(cls.attendance_closes_at).getTime() > Date.now());
 
   if (!isOpen) {
+    if (cls.qr_revoked_at) {
+      return { classInfo: null, message: "This QR code was revoked by your lecturer. Scan the updated classroom QR." };
+    }
+    if (sessionRes.data?.status === "DRAFT") {
+      return { classInfo: null, message: "This attendance session has not been opened by your lecturer yet." };
+    }
+    if (cls.attendance_closes_at && new Date(cls.attendance_closes_at).getTime() <= Date.now()) {
+      return { classInfo: null, message: "The attendance window for this class has closed." };
+    }
     return { classInfo: null, message: "Attendance for this class is currently closed." };
   }
 
