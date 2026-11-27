@@ -858,7 +858,7 @@ export async function updateAssignmentAction(input: unknown) {
         type: "assignment_updated",
         title: `Assignment updated: ${v.title}`,
         message: v.changeSummary || "Assignment instructions or deadline were updated. Review before submitting.",
-        href: `/dashboard/academic/student/assignments/${v.assignmentId}`,
+        href: `/dashboard/academic/student/${v.assignmentId}`,
       });
     } catch {
       // Non-blocking notification
@@ -1017,8 +1017,8 @@ export async function getAssignmentShareLinkAction(assignmentId: string) {
 
   return {
     ok: true as const,
-    guestPath: `/submit/assignment?token=${encodeURIComponent(token)}`,
-    studentPortalPath: `/dashboard/academic/student/assignments/${assignmentId}`,
+    guestPath: `/submit/${encodeURIComponent(token)}`,
+    studentPortalPath: `/dashboard/academic/student/${assignmentId}`,
     status: String(existing.status ?? "DRAFT"),
   };
 }

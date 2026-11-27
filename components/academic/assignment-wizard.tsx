@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Camera, Check, Plus, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Camera, Check, CheckCircle2, FileText, Plus, Sparkles, X } from "lucide-react";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
 import { DynamicCameraModal } from "@/components/school/dynamic-camera-modal";
 import { createAssignmentAction, updateAssignmentAction } from "@/lib/academic/actions";
@@ -431,23 +431,41 @@ export function AssignmentWizard({
         />
       </section>
 
-      <div className="panel flex flex-wrap items-center gap-2 p-4" aria-label="Wizard steps">
-        {steps.map((label, idx) => {
-          const num = (idx + 1) as 1 | 2 | 3 | 4 | 5;
-          const active = step === num;
-          return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => setStep(num)}
-              className={`min-h-10 rounded-xl px-3.5 text-xs font-bold transition ${
-                active ? "bg-[#ff6b2b] text-white" : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-              }`}
-            >
-              {num}. {label}
-            </button>
-          );
-        })}
+      <div className="panel p-4 sm:p-5" aria-label="Wizard steps">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {steps.map((label, idx) => {
+            const num = (idx + 1) as 1 | 2 | 3 | 4 | 5;
+            const active = step === num;
+            const completed = step > num;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setStep(num)}
+                className={`group flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition ${
+                  active
+                    ? "border-[#ff6b2b] bg-[#fff5ef] text-[#111318] shadow-sm"
+                    : completed
+                      ? "border-emerald-200 bg-emerald-50/60 text-emerald-900 hover:bg-emerald-50"
+                      : "border-black/10 bg-white text-neutral-600 hover:border-black/20 hover:bg-neutral-50"
+                }`}
+              >
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${
+                    active
+                      ? "bg-[#ff6b2b] text-white"
+                      : completed
+                        ? "bg-emerald-600 text-white"
+                        : "bg-neutral-100 text-neutral-700"
+                  }`}
+                >
+                  {completed ? <Check size={13} aria-hidden="true" /> : num}
+                </span>
+                <span className="truncate text-xs font-bold">{label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {error ? (
@@ -456,9 +474,10 @@ export function AssignmentWizard({
         </p>
       ) : null}
 
-      <div className="panel p-6">
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
+      <div className="panel p-6 sm:p-8">
         {step === 1 ? (
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="block text-sm font-bold text-[#111318]">
                 Assignment title
@@ -478,31 +497,76 @@ export function AssignmentWizard({
               {fieldErrors.title ? <p className="mt-1 text-xs font-semibold text-red-600">{fieldErrors.title}</p> : null}
             </div>
 
-            <div className="sm:col-span-2 rounded-2xl border border-black/10 bg-[#fffaf7] p-4 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="sm:col-span-2 rounded-2xl border border-black/10 bg-[#fffaf7] p-5 space-y-4">
+              <div>
                 <span className="text-sm font-bold text-[#111318]">Course Information</span>
-                <div className="flex gap-2">
-                  {courses.length > 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => setCourseMode("catalog")}
-                      className={`min-h-9 rounded-lg px-3 text-xs font-bold ${
-                        courseMode === "catalog" ? "bg-[#111318] text-white" : "bg-white text-neutral-700 border border-black/10"
-                      }`}
-                    >
-                      Select existing course
-                    </button>
-                  ) : null}
+                <p className="mt-0.5 text-xs text-neutral-600">
+                  Link to an existing institutional course or enter course details manually.
+                </p>
+              </div>
+
+              <div className={`grid gap-3 ${courses.length > 0 ? "sm:grid-cols-2" : "grid-cols-1"}`}>
+                {courses.length > 0 ? (
                   <button
                     type="button"
-                    onClick={() => setCourseMode("manual")}
-                    className={`min-h-9 rounded-lg px-3 text-xs font-bold ${
-                      courseMode === "manual" ? "bg-[#111318] text-white" : "bg-white text-neutral-700 border border-black/10"
+                    onClick={() => setCourseMode("catalog")}
+                    aria-pressed={courseMode === "catalog"}
+                    className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition ${
+                      courseMode === "catalog"
+                        ? "border-[#ff6b2b] bg-white shadow-sm ring-2 ring-[#ff6b2b]/15"
+                        : "border-black/10 bg-white/60 hover:border-black/20 hover:bg-white"
                     }`}
                   >
-                    Enter course manually
+                    <span
+                      className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                        courseMode === "catalog" ? "bg-[#fff0e8] text-[#d94b14]" : "bg-neutral-100 text-neutral-600"
+                      }`}
+                    >
+                      <BookOpen size={18} aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2 text-sm font-bold text-[#111318]">
+                        Select existing course
+                        {courseMode === "catalog" ? (
+                          <CheckCircle2 size={16} className="shrink-0 text-[#ff6b2b]" aria-hidden="true" />
+                        ) : null}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-neutral-600">
+                        Choose from your institution&apos;s registered courses
+                      </span>
+                    </span>
                   </button>
-                </div>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => setCourseMode("manual")}
+                  aria-pressed={courseMode === "manual"}
+                  className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition ${
+                    courseMode === "manual"
+                      ? "border-[#ff6b2b] bg-white shadow-sm ring-2 ring-[#ff6b2b]/15"
+                      : "border-black/10 bg-white/60 hover:border-black/20 hover:bg-white"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                      courseMode === "manual" ? "bg-[#fff0e8] text-[#d94b14]" : "bg-neutral-100 text-neutral-600"
+                    }`}
+                  >
+                    <FileText size={18} aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2 text-sm font-bold text-[#111318]">
+                      Enter course manually
+                      {courseMode === "manual" ? (
+                        <CheckCircle2 size={16} className="shrink-0 text-[#ff6b2b]" aria-hidden="true" />
+                      ) : null}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-neutral-600">
+                      Type course name, code, department, and level directly
+                    </span>
+                  </span>
+                </button>
               </div>
 
               {courseMode === "catalog" && courses.length > 0 ? (
@@ -944,6 +1008,81 @@ export function AssignmentWizard({
             </button>
           ) : null}
         </div>
+      </div>
+
+      <aside className="panel p-5 space-y-4 lg:sticky lg:top-6" aria-label="Assignment Live Summary">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-neutral-500">Live Summary</span>
+          <span className="rounded-full bg-[#fff0e8] px-2.5 py-0.5 text-[11px] font-bold text-[#d94b14]">
+            {mode === "edit" ? initialData?.status ?? "EDIT" : "NEW DRAFT"}
+          </span>
+        </div>
+
+        <div>
+          <h3 className="text-base font-bold text-[#111318] leading-snug">
+            {title.trim() || "Untitled Assignment"}
+          </h3>
+          <p className="mt-1 text-xs font-semibold text-neutral-600">
+            {courseMode === "catalog"
+              ? (() => {
+                  const found = courses.find((c) => c.id === courseId);
+                  return found ? `${found.code} — ${found.title}` : "No course selected";
+                })()
+              : manualCourseName.trim() || manualCourseCode.trim()
+                ? `${manualCourseCode.trim() ? `${manualCourseCode.trim()} — ` : ""}${manualCourseName.trim()}`
+                : "Manual course not entered yet"}
+          </p>
+        </div>
+
+        <dl className="space-y-2.5 border-t border-black/10 pt-3 text-xs">
+          <div className="flex items-center justify-between">
+            <dt className="text-neutral-500">Category</dt>
+            <dd className="font-bold text-[#111318]">{category.replaceAll("_", " ")}</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <dt className="text-neutral-500">Questions</dt>
+            <dd className="font-bold text-[#111318]">{questions.filter((q) => q.prompt.trim()).length} active</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <dt className="text-neutral-500">Total Marks</dt>
+            <dd className="font-bold text-[#111318]">{totalMarks}</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <dt className="text-neutral-500">Marking</dt>
+            <dd className="font-bold text-[#111318]">{markingMode.replaceAll("_", " ")}</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <dt className="text-neutral-500">Deadline</dt>
+            <dd className="font-bold text-[#111318]">
+              {dueAt ? new Date(dueAt).toLocaleDateString() : "No deadline"}
+            </dd>
+          </div>
+        </dl>
+
+        <div className="space-y-2 border-t border-black/10 pt-4">
+          {mode === "edit" ? (
+            <button type="button" disabled={busy} onClick={() => void save(false)} className="button-primary w-full justify-center">
+              <Check size={16} aria-hidden="true" />
+              {busy ? "Saving…" : "Save Changes"}
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                disabled={busy || !title.trim()}
+                onClick={() => void save(true)}
+                className="button-primary w-full justify-center"
+              >
+                <Check size={16} aria-hidden="true" />
+                {busy ? "Publishing…" : "Publish Assignment"}
+              </button>
+              <button type="button" disabled={busy} onClick={() => void save(false)} className="button-secondary w-full justify-center">
+                {busy ? "Saving…" : "Save as Draft"}
+              </button>
+            </>
+          )}
+        </div>
+      </aside>
       </div>
     </div>
   );

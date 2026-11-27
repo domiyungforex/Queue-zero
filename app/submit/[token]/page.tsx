@@ -35,7 +35,11 @@ export default async function GuestAssignmentSubmitPage({
   };
 
   const [{ data: assignment }, { data: org }, { data: qRows }] = await Promise.all([
-    db.from("assignments").select("id,course_id,title,due_at,status").eq("id", parsedToken.assignmentId).maybeSingle(),
+    db
+      .from("assignments")
+      .select("id,course_id,manual_course_code,manual_course_name,title,due_at,status")
+      .eq("id", parsedToken.assignmentId)
+      .maybeSingle(),
     db.from("businesses").select("name").eq("id", parsedToken.orgId).maybeSingle(),
     db
       .from("assignment_questions")
@@ -46,11 +50,13 @@ export default async function GuestAssignmentSubmitPage({
 
   if (!assignment || assignment.status !== "PUBLISHED") notFound();
 
-  const { data: course } = await db
-    .from("courses")
-    .select("code")
-    .eq("id", String(assignment.course_id))
-    .maybeSingle();
+  const { data: course } = assignment.course_id
+    ? await db
+        .from("courses")
+        .select("code")
+        .eq("id", String(assignment.course_id))
+        .maybeSingle()
+    : { data: null };
 
   return (
     <main className="min-h-screen bg-[#fffaf7] px-4 py-10">
@@ -63,7 +69,7 @@ export default async function GuestAssignmentSubmitPage({
         <GuestSubmissionPortal
           token={decodeURIComponent(token)}
           assignmentTitle={String(assignment.title)}
-          courseCode={String(course?.code ?? "COURSE")}
+          courseCode={String(course?.code ?? assignment.manual_course_code ?? assignment.manual_course_name ?? "COURSE")}
           organizationName={String(org?.name ?? "Institution")}
           dueAt={assignment.due_at ? String(assignment.due_at) : null}
           questions={(qRows ?? []).map((q) => ({
