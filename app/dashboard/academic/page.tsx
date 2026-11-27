@@ -45,6 +45,20 @@ export default async function AcademicOverviewPage() {
       badge: "Reusable items",
     },
     {
+      href: "/dashboard/academic/earnings",
+      title: "Lecturer Earnings",
+      description: "Track paid submission revenue, commission allocations, and withdrawal balance.",
+      icon: BookOpen,
+      badge: "Revenue ledger",
+    },
+    {
+      href: "/dashboard/academic/referrals",
+      title: "Referral Programme",
+      description: "Share referral links and track 10% commission payouts on qualifying submissions.",
+      icon: UsersRound,
+      badge: "10% commission",
+    },
+    {
       href: "/dashboard/courses",
       title: "Courses & Classes",
       description: "Manage course rosters, lecturers, and class sessions.",
