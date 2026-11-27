@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Plus, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Check, Plus, Sparkles, X } from "lucide-react";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
+import { DynamicCameraModal } from "@/components/school/dynamic-camera-modal";
 import { createAssignmentAction } from "@/lib/academic/actions";
+import type { SmartAssignmentExtraction } from "@/lib/academic/ingestion";
 import { ASSIGNMENT_CATEGORIES, MARKING_MODES, QUESTION_TYPES, type QuestionType } from "@/lib/academic/types";
 
 interface QuestionDraft {
@@ -48,6 +50,10 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [ingesting, setIngesting] = useState(false);
+  const [smartPrompt, setSmartPrompt] = useState("");
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [extractionReport, setExtractionReport] = useState<SmartAssignmentExtraction | null>(null);
 
   // Step 1: Basic Info
   const [title, setTitle] = useState("");
@@ -79,6 +85,53 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
 
   function updateQuestion(id: string, patch: Partial<QuestionDraft>) {
     setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)));
+  }
+
+  async function runSmartIngest(formData: FormData) {
+    setIngesting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/academic/assignments/ingest", { method: "POST", body: formData });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        extraction?: SmartAssignmentExtraction;
+      };
+      if (!res.ok || !json.extraction) {
+        setError(json.error ?? "Could not extract assignment content.");
+        return;
+      }
+      const ex = json.extraction;
+      setExtractionReport(ex);
+      if (ex.title) setTitle(ex.title);
+      if (ex.matchedCourseId) setCourseId(ex.matchedCourseId);
+      if (ex.category) setCategory(ex.category);
+      if (ex.instructions) setInstructions(ex.instructions);
+      if (ex.questions.length > 0) {
+        setQuestions(
+          ex.questions.map((q) => ({
+            id: crypto.randomUUID(),
+            questionType: q.questionType,
+            prompt: q.prompt,
+            description: q.uncertain ? "Flagged as uncertain — please verify." : "",
+            formulaLatex: q.formulaLatex,
+            optionsText: q.options.join("\n"),
+            acceptedAnswersText: "",
+            modelAnswer: "",
+            expectedUnit: "",
+            numericTolerance: 0,
+            marks: q.marks,
+            negativeMarks: 0,
+            partialCredit: false,
+            caseSensitive: false,
+          })),
+        );
+      }
+    } catch {
+      setError("Smart autofill failed. You can continue manually.");
+    } finally {
+      setIngesting(false);
+    }
   }
 
   async function save(publishNow: boolean) {
@@ -145,6 +198,96 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
 
   return (
     <div className="space-y-6">
+      <section className="panel border-[#ffd9ca] bg-[#fffaf7] p-5 space-y-4" aria-label="Smart Assignment Creation">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 font-bold text-[#111318]">
+            <Sparkles size={18} className="text-[#ff6b2b]" aria-hidden="true" />
+            Smart Assignment Autofill
+          </div>
+          <span className="text-xs text-neutral-600">Upload a document, snap a photo, or describe it in plain text</span>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <label className="button-secondary cursor-pointer">
+            <Plus size={16} aria-hidden="true" />
+            {ingesting ? "Processing…" : "Upload Document (PDF / DOCX / Image)"}
+            <input
+              type="file"
+              accept=".pdf,.docx,.txt,image/jpeg,image/png,image/webp"
+              className="sr-only"
+              disabled={ingesting}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) {
+                  const fd = new FormData();
+                  fd.set("method", "DOCUMENT");
+                  fd.set("file", f);
+                  void runSmartIngest(fd);
+                }
+              }}
+            />
+          </label>
+          <button type="button" disabled={ingesting} onClick={() => setCameraOpen(true)} className="button-secondary">
+            <Camera size={16} aria-hidden="true" />
+            Take Photograph
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            value={smartPrompt}
+            onChange={(e) => setSmartPrompt(e.target.value)}
+            placeholder="Or paste/describe questions (e.g. 'CSC 301 Homework: 1. Explain Merge Sort [10 marks]...')"
+            className="min-h-11 flex-1 rounded-xl border border-black/15 bg-white px-3.5 text-sm"
+          />
+          <button
+            type="button"
+            disabled={ingesting || !smartPrompt.trim()}
+            onClick={() => {
+              const fd = new FormData();
+              fd.set("method", "DESCRIPTION");
+              fd.set("description", smartPrompt);
+              void runSmartIngest(fd);
+            }}
+            className="button-primary"
+          >
+            {ingesting ? "Extracting…" : "Autofill Form"}
+          </button>
+        </div>
+
+        {extractionReport ? (
+          <div className="rounded-xl border border-black/10 bg-white p-4 text-xs space-y-2">
+            <p className="font-bold text-[#111318]">
+              Smart Review: {extractionReport.questions.length} question(s) extracted
+              {extractionReport.matchedCourseCode ? ` · Matched ${extractionReport.matchedCourseCode}` : ""}
+            </p>
+            {extractionReport.missingFields.length > 0 ? (
+              <p className="text-amber-800">
+                <strong>Needs confirmation:</strong> {extractionReport.missingFields.join("; ")}
+              </p>
+            ) : null}
+            {extractionReport.warnings.map((w) => (
+              <p key={w} className="text-neutral-600">• {w}</p>
+            ))}
+          </div>
+        ) : null}
+
+        <DynamicCameraModal
+          isOpen={cameraOpen}
+          onClose={() => setCameraOpen(false)}
+          onConfirmPhoto={async (dataUrl) => {
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], "assignment-sheet.jpg", { type: "image/jpeg" });
+            const fd = new FormData();
+            fd.set("method", "PHOTO");
+            fd.set("file", file);
+            void runSmartIngest(fd);
+          }}
+          title="Photograph Assignment Sheet"
+          description="Capture a clear photograph of your printed or handwritten assignment."
+        />
+      </section>
+
       <div className="panel flex flex-wrap items-center gap-2 p-4" aria-label="Wizard steps">
         {steps.map((label, idx) => {
           const num = (idx + 1) as 1 | 2 | 3 | 4 | 5;
