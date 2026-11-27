@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAssignmentGuestToken } from "@/lib/academic/distribution";
-import { requireBusinessMembership, isStaffRole } from "@/lib/business/membership";
+import { requireBusinessMembership } from "@/lib/business/membership";
+import { requireUserId } from "@/lib/auth/server";
+
+/** Staff roles that may access restricted files and all submissions. */
+function isStaffRole(role: string): boolean {
+  return role === "owner" || role === "admin";
+}
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { readPrivateImage } from "@/lib/storage/store-image";
 
@@ -55,7 +61,7 @@ export async function GET(request: Request) {
       const membership = await requireBusinessMembership();
       orgId = membership.businessId;
       isStaff = isStaffRole(membership.role);
-      currentUserId = membership.userId;
+      currentUserId = await requireUserId();
     }
 
     let storagePath = "";

@@ -485,7 +485,7 @@ export async function evaluateSubjectiveAnswerWithClaude(input: {
   const model = getAnthropicMarkingModel();
   try {
     const client = createAnthropicClient();
-    const contentBlocks: Anthropic.MessageCreateParamsNonStreaming["messages"][0]["content"] = [
+    const contentBlocks: Anthropic.ContentBlockParam[] = [
       {
         type: "text",
         text: JSON.stringify({

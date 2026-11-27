@@ -124,7 +124,6 @@ export async function identifyStudent(organizationId: string, matricNumber: stri
   const normalizedMatric = matricMatchKey(matricNumber);
   // Parse inputs, using the normalized matric number for lookup
   const parsed = z.object({ organizationId: orgId, matricNumber: z.string().trim().min(1).max(80), deviceId: z.string().min(8).max(80) }).safeParse({ organizationId, matricNumber: normalizedMatric, deviceId });
-  const parsed = z.object({ organizationId: orgId, matricNumber: z.string().trim().min(1).max(80), deviceId: z.string().min(8).max(80) }).safeParse({ organizationId, matricNumber, deviceId });
   if (!parsed.success) return { ok: false as const, message: "Enter the matriculation number issued by your institution." };
   const db = createJoinSupabaseClient();
   const result = await asRpc(db)("school_identify_student", {

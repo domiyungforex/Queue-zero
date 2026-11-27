@@ -12,6 +12,8 @@ import { signAssignmentGuestToken } from "./distribution";
 import { computeLetterGrade, gradeObjectiveSubmission, type ObjectiveQuestionKey } from "./marking";
 import { analyzeSubmissionSimilarity, assessAiWritingRisk } from "./integrity";
 import { evaluateSubjectiveAnswerWithClaude, generateQuestionsWithClaude } from "@/lib/ai/anthropic";
+import { readPrivateImage } from "@/lib/storage/store-image";
+import { extractTextFromDocxBuffer } from "./ingestion";
 
 type DbResult<T = unknown> = Promise<{ data: T | null; error: { message?: string } | null; count?: number | null }>;
 
