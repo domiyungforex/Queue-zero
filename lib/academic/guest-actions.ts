@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { verifyAssignmentGuestToken } from "./distribution";
+import { institutionalMatric, sameInstitutionalMatric } from "@/lib/school/matric";
 import {
   DEFAULT_FEE_CONFIG,
   evaluateStudentAllowance,
@@ -74,16 +75,68 @@ export async function verifyGuestStudentForAssignment(input: {
 }) {
   try {
     const parsedToken = verifyAssignmentGuestToken(input.token);
-    const matric = input.matricNumber.trim().toUpperCase();
-    if (!matric) return { ok: false as const, error: "Enter your matriculation number." };
+    const rawMatric = institutionalMatric(input.matricNumber);
+    if (!rawMatric) return { ok: false as const, error: "Enter your matriculation number." };
 
     const db = getDb();
-    const { data: profile } = await db
+    const { data: orgProfiles } = await db
       .from("school_profiles")
       .select("id,matric_number,level,department_id")
       .eq("organization_id", parsedToken.orgId)
-      .ilike("matric_number", matric)
-      .maybeSingle();
+      .order("matric_number", { ascending: true });
+
+    let profile = (orgProfiles ?? []).find((row) =>
+      sameInstitutionalMatric(String(row.matric_number ?? ""), rawMatric),
+    );
+
+    if (!profile?.id) {
+      // Fallback: check students who verified via standard attendance check-in in this institution
+      const { data: attRows } = await db
+        .from("attendance_records")
+        .select("id,student_id,submitted_name,submitted_matric_number")
+        .eq("organization_id", parsedToken.orgId)
+        .order("created_at", { ascending: false });
+
+      const attMatch = (attRows ?? []).find((row) =>
+        sameInstitutionalMatric(String(row.submitted_matric_number ?? ""), rawMatric),
+      );
+
+      if (attMatch) {
+        if (attMatch.student_id) {
+          profile = {
+            id: String(attMatch.student_id),
+            matric_number: String(attMatch.submitted_matric_number ?? rawMatric),
+            level: "",
+            department_id: null,
+          };
+        } else {
+          const { data: createdPerson } = await db
+            .from("people")
+            .insert({
+              organization_id: parsedToken.orgId,
+              person_type: "STUDENT",
+              full_name: String(attMatch.submitted_name ?? rawMatric),
+            })
+            .select("id")
+            .single();
+
+          if (createdPerson?.id) {
+            await db.from("school_profiles").insert({
+              id: createdPerson.id,
+              organization_id: parsedToken.orgId,
+              matric_number: String(attMatch.submitted_matric_number ?? rawMatric),
+              level: "",
+            });
+            profile = {
+              id: String(createdPerson.id),
+              matric_number: String(attMatch.submitted_matric_number ?? rawMatric),
+              level: "",
+              department_id: null,
+            };
+          }
+        }
+      }
+    }
 
     if (!profile?.id) {
       return {

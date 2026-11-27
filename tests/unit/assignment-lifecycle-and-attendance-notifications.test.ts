@@ -9,6 +9,7 @@ import {
   deduplicateRecipients,
   formatAttendanceLocalTime,
 } from "@/lib/school/attendance-notification-format";
+import { sameInstitutionalMatric } from "@/lib/school/matric";
 
 describe("assignment creation & editing validation", () => {
   const validCourseId = "11111111-1111-4111-8111-111111111111";
@@ -181,5 +182,11 @@ describe("automated attendance session notifications", () => {
     });
     expect(scheduledMsg.body).toContain("has been scheduled");
     expect(scheduledMsg.body).not.toContain("https://turnmark.conchportal.com/attend/abc");
+  });
+
+  it("matches institutional matriculation numbers across case and whitespace variants", () => {
+    expect(sameInstitutionalMatric("EES/23/24/0191", "ees/23/24/0191")).toBe(true);
+    expect(sameInstitutionalMatric("EES/23/24/0191", " EES / 23 / 24 / 0191 ")).toBe(true);
+    expect(sameInstitutionalMatric("CSC/2023/001", "CSC/2023/002")).toBe(false);
   });
 });
