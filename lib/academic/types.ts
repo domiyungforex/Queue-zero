@@ -37,23 +37,70 @@ export type MarkingMode = (typeof MARKING_MODES)[number];
 export const LATE_POLICIES = ["BLOCK", "ALLOW_WITH_FLAG", "ALLOW_PENALTY"] as const;
 export type LatePolicy = (typeof LATE_POLICIES)[number];
 
-export const createAssignmentSchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  description: z.string().trim().max(4000).optional().default(""),
-  instructions: z.string().trim().max(10000).optional().default(""),
-  learningObjectives: z.string().trim().max(2000).optional().default(""),
-  courseId: z.uuid(),
-  academicSession: z.string().trim().max(80).optional().default(""),
-  semester: z.string().trim().max(40).optional().default(""),
-  classGroup: z.string().trim().max(80).optional().default(""),
+const optionalTrimmedString = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .nullable()
+    .transform((v) => v ?? "");
+
+const optionalTimestampString = () =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .transform((v) => (v && v.length > 0 ? v : null));
+
+export const assignmentQuestionInputSchema = z.object({
+  questionType: z.enum(QUESTION_TYPES).default("SHORT_ANSWER"),
+  prompt: z.string().trim().max(10000).optional().default(""),
+  description: optionalTrimmedString(2000),
+  formulaLatex: optionalTrimmedString(1000),
+  options: z.array(z.string()).default([]),
+  marks: z.number().min(0).max(1000).default(10),
+  negativeMarks: z.number().min(0).max(100).default(0),
+  partialCredit: z.boolean().default(false),
+  acceptedAnswers: z.array(z.string()).default([]),
+  modelAnswer: optionalTrimmedString(5000),
+  expectedFormula: optionalTrimmedString(1000),
+  expectedUnit: optionalTrimmedString(40),
+  numericTolerance: z.number().min(0).max(10000).default(0),
+  caseSensitive: z.boolean().default(false),
+});
+
+const assignmentBaseFields = {
+  title: z.string().trim().min(1, "Assignment title is required.").max(200),
+  description: optionalTrimmedString(4000),
+  instructions: optionalTrimmedString(10000),
+  learningObjectives: optionalTrimmedString(2000),
+  courseId: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .transform((v) => (v && v.length > 0 ? v : null))
+    .refine((v) => v === null || z.uuid().safeParse(v).success, {
+      message: "Selected course ID is invalid.",
+    }),
+  manualCourseCode: optionalTrimmedString(40),
+  manualCourseName: optionalTrimmedString(160),
+  manualDepartment: optionalTrimmedString(120),
+  manualFaculty: optionalTrimmedString(120),
+  manualLevel: optionalTrimmedString(40),
+  academicSession: optionalTrimmedString(80),
+  semester: optionalTrimmedString(40),
+  classGroup: optionalTrimmedString(80),
   category: z.enum(ASSIGNMENT_CATEGORIES).default("HOMEWORK"),
-  opensAt: z.string().optional().nullable(),
-  dueAt: z.string().optional().nullable(),
-  closesAt: z.string().optional().nullable(),
+  opensAt: optionalTimestampString(),
+  dueAt: optionalTimestampString(),
+  closesAt: optionalTimestampString(),
   maxAttempts: z.number().int().min(1).max(20).default(1),
   latePolicy: z.enum(LATE_POLICIES).default("ALLOW_WITH_FLAG"),
   latePenaltyPercent: z.number().int().min(0).max(100).default(0),
-  allowedFormats: z.array(z.string()).min(1).default(["TEXT", "PDF", "IMAGE", "CAMERA"]),
+  allowedFormats: z.array(z.string().min(1)).min(1, "Select at least one allowed submission format.").default(["TEXT", "PDF", "IMAGE", "CAMERA"]),
   maxUploadMb: z.number().int().min(1).max(50).default(10),
   submissionMode: z.enum(["INDIVIDUAL", "GROUP"]).default("INDIVIDUAL"),
   allowTextAnswer: z.boolean().default(true),
@@ -65,26 +112,75 @@ export const createAssignmentSchema = z.object({
   totalMarks: z.number().positive().max(10000).default(100),
   releaseMarksImmediately: z.boolean().default(false),
   publishNow: z.boolean().default(false),
-  questions: z
-    .array(
-      z.object({
-        questionType: z.enum(QUESTION_TYPES),
-        prompt: z.string().trim().min(1).max(10000),
-        description: z.string().trim().max(2000).optional().default(""),
-        formulaLatex: z.string().trim().max(1000).optional().default(""),
-        options: z.array(z.string()).default([]),
-        marks: z.number().min(0).max(1000).default(10),
-        negativeMarks: z.number().min(0).max(100).default(0),
-        partialCredit: z.boolean().default(false),
-        acceptedAnswers: z.array(z.string()).default([]),
-        modelAnswer: z.string().trim().max(5000).optional().default(""),
-        expectedFormula: z.string().trim().max(1000).optional().default(""),
-        expectedUnit: z.string().trim().max(40).optional().default(""),
-        numericTolerance: z.number().min(0).max(10000).default(0),
-        caseSensitive: z.boolean().default(false),
-      }),
-    )
-    .min(1),
+  questions: z.array(assignmentQuestionInputSchema).default([]),
+};
+
+function validateAssignmentBusinessRules(
+  value: {
+    courseId?: string | null;
+    manualCourseCode?: string;
+    manualCourseName?: string;
+    instructions?: string;
+    description?: string;
+    questions: Array<{ prompt?: string }>;
+  },
+  ctx: z.RefinementCtx,
+) {
+  const hasCatalogCourse = Boolean(value.courseId);
+  const hasManualCourseName = Boolean(value.manualCourseName?.trim());
+  const hasManualCourseCode = Boolean(value.manualCourseCode?.trim());
+  if (!hasCatalogCourse && !hasManualCourseName && !hasManualCourseCode) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["manualCourseName"],
+      message: "Select an existing course or enter a course name.",
+    });
+  }
+
+  const nonEmptyQuestions = value.questions.filter((q) => Boolean(q.prompt?.trim()));
+  const hasBlankQuestion = value.questions.some((q) => !q.prompt?.trim());
+  if (hasBlankQuestion && value.questions.length > 0 && nonEmptyQuestions.length > 0) {
+    value.questions.forEach((q, idx) => {
+      if (!q.prompt?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["questions", idx, "prompt"],
+          message: `Question ${idx + 1} prompt cannot be empty (or remove the blank question).`,
+        });
+      }
+    });
+  } else if (nonEmptyQuestions.length === 0 && !value.instructions?.trim() && !value.description?.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["questions", 0, "prompt"],
+      message: "Add at least one question prompt or provide assignment instructions.",
+    });
+  }
+}
+
+export const createAssignmentSchema = z
+  .object(assignmentBaseFields)
+  .superRefine(validateAssignmentBusinessRules);
+
+export const updateAssignmentSchema = z
+  .object({
+    assignmentId: z.uuid(),
+    ...assignmentBaseFields,
+    changeSummary: optionalTrimmedString(500),
+    notifyStudents: z.boolean().optional().default(true),
+  })
+  .superRefine(validateAssignmentBusinessRules);
+
+export const archiveAssignmentSchema = z.object({
+  assignmentId: z.uuid(),
+});
+
+export const deleteAssignmentSchema = z.object({
+  assignmentId: z.uuid(),
+  confirmed: z.literal(true, {
+    error: "Please confirm assignment deletion before proceeding.",
+  }),
 });
 
 export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>;
+export type UpdateAssignmentInput = z.infer<typeof updateAssignmentSchema>;

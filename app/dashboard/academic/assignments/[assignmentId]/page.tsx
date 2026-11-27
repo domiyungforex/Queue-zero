@@ -65,9 +65,14 @@ export default async function AssignmentDetailPage({
         title={String(assignment.title)}
         description={`Status: ${String(assignment.status)} · Total Marks: ${String(assignment.total_marks)}`}
         action={
-          <Link href="/dashboard/academic/assignments" className="button-secondary">
-            Back to assignments
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/dashboard/academic/assignments/${assignmentId}/edit`} className="button-secondary">
+              Edit assignment
+            </Link>
+            <Link href="/dashboard/academic/assignments" className="button-secondary">
+              Back to assignments
+            </Link>
+          </div>
         }
       />
 

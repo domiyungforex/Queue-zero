@@ -12,6 +12,12 @@ import { z } from "zod";
 import type { Json } from "@/lib/db/database.types";
 import { schoolActionErrorMessage } from "./action-errors";
 import { zonedWallTimeToUtc } from "./class-time";
+import {
+  cancelPendingAttendanceReminders,
+  dispatchAttendanceSessionNotifications,
+  retryFailedAttendanceNotifications,
+  type AttendanceRecipientMode,
+} from "./attendance-notifications";
 
 export async function manageSchool(_previous: SchoolActionState, form: FormData): Promise<SchoolActionState> {
   const membership = await requireBusinessMembership();
@@ -158,13 +164,57 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
     const response = z.object({ id: z.uuid().optional(), message: z.string() }).safeParse(result.data);
     if (!response.success) return { ok: false, message: "The response was unavailable. Reload to check before retrying." };
     if (action === "class" && response.data.id) {
+      let opened = false;
       try {
-        await db.rpc("school_manage", {
+        const openRes = await db.rpc("school_manage", {
           p_action: "open",
           p_payload: { class_id: response.data.id, organization_id: membership.businessId },
         });
+        opened = !openRes.error;
       } catch {
         // Lecturer can still open via controls if auto-open encounters edge state
+      }
+
+      if (opened) {
+        try {
+          const recipientMode = (typeof raw.recipient_mode === "string"
+            ? raw.recipient_mode
+            : "COURSE_ENROLLED") as AttendanceRecipientMode;
+          const departmentId = typeof raw.notification_department_id === "string" ? raw.notification_department_id : null;
+          const level = typeof raw.notification_level === "string" ? raw.notification_level : null;
+          const selectedStudentIds =
+            typeof raw.notification_student_ids === "string" && raw.notification_student_ids.trim()
+              ? raw.notification_student_ids.split(",").map((s) => s.trim()).filter(Boolean)
+              : undefined;
+          await dispatchAttendanceSessionNotifications({
+            organizationId: membership.businessId,
+            classSessionId: response.data.id,
+            eventType: "SESSION_OPENED",
+            recipientMode,
+            departmentId,
+            level,
+            selectedStudentIds,
+            venue: typeof raw.venue === "string" ? raw.venue : null,
+          });
+        } catch {
+          // Notification failure must never block attendance session creation or check-in
+        }
+      }
+    } else if (action === "open" && "class_id" in parsed.data) {
+      try {
+        await dispatchAttendanceSessionNotifications({
+          organizationId: membership.businessId,
+          classSessionId: String(parsed.data.class_id),
+          eventType: "SESSION_REOPENED",
+        });
+      } catch {
+        // Non-blocking
+      }
+    } else if (action === "finish" && "class_id" in parsed.data) {
+      try {
+        await cancelPendingAttendanceReminders(String(parsed.data.class_id));
+      } catch {
+        // Non-blocking
       }
     }
     revalidatePath("/dashboard", "layout");
@@ -356,4 +406,26 @@ export async function deleteClassSession(classId: string): Promise<SchoolDeleteR
 
   revalidatePath("/dashboard", "layout");
   return { ok: true, message: "Class session and its attendance records were deleted." };
+}
+
+export async function retryAttendanceNotificationsAction(
+  classId: string,
+): Promise<{ ok: boolean; message: string }> {
+  const membership = await requireBusinessMembership();
+  const allowed =
+    Boolean(membership.institutionType) || ["owner", "admin", "lecturer"].includes(membership.role);
+  if (!allowed) return { ok: false, message: "You do not have permission to retry notifications." };
+
+  const parsed = z.uuid().safeParse(classId);
+  if (!parsed.success) return { ok: false, message: "Invalid class session." };
+
+  const result = await retryFailedAttendanceNotifications(membership.businessId, parsed.data);
+  revalidatePath(`/dashboard/attendance/${parsed.data}`);
+  if (result.retried === 0) {
+    return { ok: true, message: "No failed notifications to retry." };
+  }
+  return {
+    ok: true,
+    message: `Retried ${result.retried} notification(s): ${result.succeeded} sent, ${result.failed} still failed.`,
+  };
 }

@@ -5,6 +5,8 @@ import { schoolTime, attendanceIsLate } from "@/lib/school/contracts";
 import { ClassControls, SchoolForm } from "@/components/school/forms";
 import { AttendanceQr } from "@/components/school/attendance-qr";
 import { AttendanceLocation } from "@/components/school/attendance-location";
+import { AttendanceNotificationsPanel } from "@/components/school/attendance-notifications-panel";
+import { getAttendanceNotificationSummary } from "@/lib/school/attendance-notifications";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { PageHeading, StatCard } from "@/components/ui/workspace";
 import "@/components/school/school.css";
@@ -13,6 +15,7 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
   const { classId } = await params;
   const query: { q?: string; department?: string } = searchParams ? await searchParams : {};
   const { snapshot: data } = await getSchoolSnapshot(undefined, classId);
+  const notifSummary = await getAttendanceNotificationSummary(data.organization.id, classId);
   const session = data.classes.find(item => item.id === classId)!;
   const course = data.courses.find(item => item.id === session.course_id)!;
   const records = data.attendance.filter(row => row.class_session_id === classId);
@@ -112,6 +115,8 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
       )}
 
       <ClassControls session={session} />
+
+      <AttendanceNotificationsPanel classId={classId} summary={notifSummary} />
 
       <section className="register-bar" aria-labelledby="student-register-heading">
         <div className="register-intro">

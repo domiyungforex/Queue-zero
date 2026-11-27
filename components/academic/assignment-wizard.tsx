@@ -5,9 +5,53 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Camera, Check, Plus, Sparkles, X } from "lucide-react";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
 import { DynamicCameraModal } from "@/components/school/dynamic-camera-modal";
-import { createAssignmentAction } from "@/lib/academic/actions";
+import { createAssignmentAction, updateAssignmentAction } from "@/lib/academic/actions";
 import type { SmartAssignmentExtraction } from "@/lib/academic/ingestion";
 import { ASSIGNMENT_CATEGORIES, MARKING_MODES, QUESTION_TYPES, type QuestionType } from "@/lib/academic/types";
+
+export interface InitialAssignmentQuestion {
+  id: string;
+  questionType: string;
+  prompt: string;
+  description: string;
+  formulaLatex: string;
+  optionsText: string;
+  acceptedAnswersText: string;
+  modelAnswer: string;
+  expectedUnit: string;
+  numericTolerance: number;
+  marks: number;
+  negativeMarks: number;
+  partialCredit: boolean;
+  caseSensitive: boolean;
+}
+
+export interface InitialAssignmentData {
+  id: string;
+  title: string;
+  courseId: string;
+  manualCourseCode: string;
+  manualCourseName: string;
+  manualDepartment: string;
+  manualFaculty: string;
+  manualLevel: string;
+  category: string;
+  academicSession: string;
+  semester: string;
+  description: string;
+  instructions: string;
+  dueAt: string;
+  latePolicy: string;
+  submissionMode: string;
+  allowTextAnswer: boolean;
+  allowFileUpload: boolean;
+  allowPhotoSubmission: boolean;
+  maxAttempts: number;
+  markingMode: string;
+  releaseMarksImmediately: boolean;
+  status: string;
+  questions: InitialAssignmentQuestion[];
+}
 
 interface QuestionDraft {
   id: string;
@@ -45,41 +89,91 @@ function emptyQuestion(): QuestionDraft {
   };
 }
 
-export function AssignmentWizard({ courses }: { courses: Array<{ id: string; code: string; title: string }> }) {
+function toDatetimeLocalValue(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function AssignmentWizard({
+  courses,
+  mode = "create",
+  initialData,
+}: {
+  courses: Array<{ id: string; code: string; title: string }>;
+  mode?: "create" | "edit";
+  initialData?: InitialAssignmentData;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [ingesting, setIngesting] = useState(false);
   const [smartPrompt, setSmartPrompt] = useState("");
   const [cameraOpen, setCameraOpen] = useState(false);
   const [extractionReport, setExtractionReport] = useState<SmartAssignmentExtraction | null>(null);
 
   // Step 1: Basic Info
-  const [title, setTitle] = useState("");
-  const [courseId, setCourseId] = useState(courses[0]?.id ?? "");
-  const [category, setCategory] = useState<(typeof ASSIGNMENT_CATEGORIES)[number]>("HOMEWORK");
-  const [academicSession, setAcademicSession] = useState("2025/2026");
-  const [semester, setSemester] = useState("First");
-  const [description, setDescription] = useState("");
-  const [instructions, setInstructions] = useState("");
+  const [title, setTitle] = useState(initialData?.title ?? "");
+  const [courseMode, setCourseMode] = useState<"catalog" | "manual">(
+    initialData
+      ? initialData.courseId
+        ? "catalog"
+        : "manual"
+      : courses.length > 0
+        ? "catalog"
+        : "manual",
+  );
+  const [courseId, setCourseId] = useState(initialData?.courseId || courses[0]?.id || "");
+  const [manualCourseCode, setManualCourseCode] = useState(initialData?.manualCourseCode ?? "");
+  const [manualCourseName, setManualCourseName] = useState(initialData?.manualCourseName ?? "");
+  const [manualDepartment, setManualDepartment] = useState(initialData?.manualDepartment ?? "");
+  const [manualFaculty, setManualFaculty] = useState(initialData?.manualFaculty ?? "");
+  const [manualLevel, setManualLevel] = useState(initialData?.manualLevel ?? "");
+  const [category, setCategory] = useState<(typeof ASSIGNMENT_CATEGORIES)[number]>(
+    (initialData?.category as (typeof ASSIGNMENT_CATEGORIES)[number]) ?? "HOMEWORK",
+  );
+  const [academicSession, setAcademicSession] = useState(initialData?.academicSession ?? "2025/2026");
+  const [semester, setSemester] = useState(initialData?.semester ?? "First");
+  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [instructions, setInstructions] = useState(initialData?.instructions ?? "");
   const [learningObjectives] = useState("");
 
   // Step 2: Questions
-  const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion()]);
+  const [questions, setQuestions] = useState<QuestionDraft[]>(
+    initialData && initialData.questions.length > 0
+      ? initialData.questions.map((q) => ({
+          ...q,
+          questionType: q.questionType as QuestionType,
+        }))
+      : [emptyQuestion()],
+  );
 
   // Step 3: Submission Config
-  const [dueAt, setDueAt] = useState("");
-  const [latePolicy, setLatePolicy] = useState<"BLOCK" | "ALLOW_WITH_FLAG" | "ALLOW_PENALTY">("ALLOW_WITH_FLAG");
-  const [submissionMode, setSubmissionMode] = useState<"INDIVIDUAL" | "GROUP">("INDIVIDUAL");
-  const [allowTextAnswer, setAllowTextAnswer] = useState(true);
-  const [allowFileUpload, setAllowFileUpload] = useState(true);
-  const [allowPhotoSubmission, setAllowPhotoSubmission] = useState(true);
-  const [maxAttempts, setMaxAttempts] = useState(1);
+  const [dueAt, setDueAt] = useState(toDatetimeLocalValue(initialData?.dueAt));
+  const [latePolicy, setLatePolicy] = useState<"BLOCK" | "ALLOW_WITH_FLAG" | "ALLOW_PENALTY">(
+    (initialData?.latePolicy as "BLOCK" | "ALLOW_WITH_FLAG" | "ALLOW_PENALTY") ?? "ALLOW_WITH_FLAG",
+  );
+  const [submissionMode, setSubmissionMode] = useState<"INDIVIDUAL" | "GROUP">(
+    (initialData?.submissionMode as "INDIVIDUAL" | "GROUP") ?? "INDIVIDUAL",
+  );
+  const [allowTextAnswer, setAllowTextAnswer] = useState(initialData?.allowTextAnswer ?? true);
+  const [allowFileUpload, setAllowFileUpload] = useState(initialData?.allowFileUpload ?? true);
+  const [allowPhotoSubmission, setAllowPhotoSubmission] = useState(initialData?.allowPhotoSubmission ?? true);
+  const [maxAttempts, setMaxAttempts] = useState(initialData?.maxAttempts ?? 1);
 
   // Step 4: Marking Config
-  const [markingMode, setMarkingMode] = useState<(typeof MARKING_MODES)[number]>("HYBRID");
-  const [releaseMarksImmediately, setReleaseMarksImmediately] = useState(false);
+  const [markingMode, setMarkingMode] = useState<(typeof MARKING_MODES)[number]>(
+    (initialData?.markingMode as (typeof MARKING_MODES)[number]) ?? "HYBRID",
+  );
+  const [releaseMarksImmediately, setReleaseMarksImmediately] = useState(
+    initialData?.releaseMarksImmediately ?? false,
+  );
+  const [changeSummary, setChangeSummary] = useState("");
+  const [notifyStudents, setNotifyStudents] = useState(true);
 
   const totalMarks = questions.reduce((sum, q) => sum + Number(q.marks || 0), 0) || 100;
 
@@ -90,6 +184,7 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
   async function runSmartIngest(formData: FormData) {
     setIngesting(true);
     setError("");
+    setFieldErrors({});
     try {
       const res = await fetch("/api/academic/assignments/ingest", { method: "POST", body: formData });
       const json = (await res.json().catch(() => ({}))) as {
@@ -104,7 +199,13 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
       const ex = json.extraction;
       setExtractionReport(ex);
       if (ex.title) setTitle(ex.title);
-      if (ex.matchedCourseId) setCourseId(ex.matchedCourseId);
+      if (ex.matchedCourseId) {
+        setCourseMode("catalog");
+        setCourseId(ex.matchedCourseId);
+      } else if (ex.matchedCourseCode) {
+        setCourseMode("manual");
+        setManualCourseCode(ex.matchedCourseCode);
+      }
       if (ex.category) setCategory(ex.category);
       if (ex.instructions) setInstructions(ex.instructions);
       if (ex.questions.length > 0) {
@@ -135,18 +236,53 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
   }
 
   async function save(publishNow: boolean) {
+    const nextFieldErrors: Record<string, string> = {};
+    if (!title.trim()) {
+      nextFieldErrors.title = "Assignment title is required.";
+    }
+    if (courseMode === "catalog" && !courseId) {
+      nextFieldErrors.courseId = "Select a course or switch to manual course entry.";
+    }
+    if (courseMode === "manual" && !manualCourseName.trim() && !manualCourseCode.trim()) {
+      nextFieldErrors.manualCourseName = "Enter a course name or course code.";
+    }
+
+    const nonEmptyQuestions = questions.filter((q) => Boolean(q.prompt.trim()));
+    if (nonEmptyQuestions.length === 0 && !instructions.trim() && !description.trim()) {
+      nextFieldErrors["questions.0.prompt"] = "Add at least one question prompt or provide assignment instructions.";
+    }
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      const firstMsg = Object.values(nextFieldErrors)[0];
+      setError(firstMsg);
+      if (nextFieldErrors.title || nextFieldErrors.courseId || nextFieldErrors.manualCourseName) {
+        setStep(1);
+      } else if (nextFieldErrors["questions.0.prompt"]) {
+        setStep(2);
+      }
+      return;
+    }
+
     setBusy(true);
     setError("");
+    setFieldErrors({});
     try {
       const payload = {
-        title,
-        courseId,
+        ...(mode === "edit" && initialData ? { assignmentId: initialData.id, changeSummary, notifyStudents } : {}),
+        title: title.trim(),
+        courseId: courseMode === "catalog" ? courseId || null : null,
+        manualCourseCode: courseMode === "manual" ? manualCourseCode.trim() : "",
+        manualCourseName: courseMode === "manual" ? manualCourseName.trim() : "",
+        manualDepartment: courseMode === "manual" ? manualDepartment.trim() : "",
+        manualFaculty: courseMode === "manual" ? manualFaculty.trim() : "",
+        manualLevel: courseMode === "manual" ? manualLevel.trim() : "",
         category,
-        academicSession,
-        semester,
-        description,
-        instructions,
-        learningObjectives,
+        academicSession: academicSession.trim(),
+        semester: semester.trim(),
+        description: description.trim(),
+        instructions: instructions.trim(),
+        learningObjectives: learningObjectives.trim(),
         dueAt: dueAt ? new Date(dueAt).toISOString() : null,
         latePolicy,
         submissionMode,
@@ -158,11 +294,11 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
         totalMarks,
         releaseMarksImmediately,
         publishNow,
-        questions: questions.map((q) => ({
+        questions: nonEmptyQuestions.map((q) => ({
           questionType: q.questionType,
-          prompt: q.prompt,
-          description: q.description,
-          formulaLatex: q.formulaLatex,
+          prompt: q.prompt.trim(),
+          description: q.description.trim(),
+          formulaLatex: q.formulaLatex.trim(),
           options: q.optionsText
             .split("\n")
             .map((s) => s.trim())
@@ -171,8 +307,8 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
             .split(",")
             .map((s) => s.trim())
             .filter(Boolean),
-          modelAnswer: q.modelAnswer,
-          expectedUnit: q.expectedUnit,
+          modelAnswer: q.modelAnswer.trim(),
+          expectedUnit: q.expectedUnit.trim(),
           numericTolerance: Number(q.numericTolerance || 0),
           marks: Number(q.marks || 0),
           negativeMarks: Number(q.negativeMarks || 0),
@@ -181,12 +317,19 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
         })),
       };
 
-      const res = await createAssignmentAction(payload);
+      const res =
+        mode === "edit"
+          ? await updateAssignmentAction(payload)
+          : await createAssignmentAction(payload);
       if (!res.ok) {
         setError(res.error);
+        if ("fieldErrors" in res && res.fieldErrors) {
+          setFieldErrors(res.fieldErrors);
+        }
         return;
       }
       router.push(`/dashboard/academic/assignments/${res.assignmentId}`);
+      router.refresh();
     } catch {
       setError("Could not save assignment. Check your inputs and try again.");
     } finally {
@@ -321,19 +464,120 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
                 Assignment title
                 <input
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (fieldErrors.title) setFieldErrors((prev) => ({ ...prev, title: "" }));
+                  }}
                   placeholder="e.g. Week 4 Algorithms Problem Set"
-                  className="mt-1.5 min-h-12 w-full rounded-xl border border-black/15 px-3.5 text-base"
+                  aria-invalid={Boolean(fieldErrors.title)}
+                  className={`mt-1.5 min-h-12 w-full rounded-xl border px-3.5 text-base ${
+                    fieldErrors.title ? "border-red-500 bg-red-50/40" : "border-black/15"
+                  }`}
                 />
               </label>
+              {fieldErrors.title ? <p className="mt-1 text-xs font-semibold text-red-600">{fieldErrors.title}</p> : null}
             </div>
-            <CustomDropdown
-              name="courseId"
-              label="Course"
-              value={courseId}
-              onChange={setCourseId}
-              options={courses.map((c) => ({ value: c.id, label: `${c.code} — ${c.title}` }))}
-            />
+
+            <div className="sm:col-span-2 rounded-2xl border border-black/10 bg-[#fffaf7] p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-bold text-[#111318]">Course Information</span>
+                <div className="flex gap-2">
+                  {courses.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setCourseMode("catalog")}
+                      className={`min-h-9 rounded-lg px-3 text-xs font-bold ${
+                        courseMode === "catalog" ? "bg-[#111318] text-white" : "bg-white text-neutral-700 border border-black/10"
+                      }`}
+                    >
+                      Select existing course
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setCourseMode("manual")}
+                    className={`min-h-9 rounded-lg px-3 text-xs font-bold ${
+                      courseMode === "manual" ? "bg-[#111318] text-white" : "bg-white text-neutral-700 border border-black/10"
+                    }`}
+                  >
+                    Enter course manually
+                  </button>
+                </div>
+              </div>
+
+              {courseMode === "catalog" && courses.length > 0 ? (
+                <div>
+                  <CustomDropdown
+                    name="courseId"
+                    label="Course"
+                    value={courseId}
+                    onChange={(val) => {
+                      setCourseId(val);
+                      if (fieldErrors.courseId) setFieldErrors((prev) => ({ ...prev, courseId: "" }));
+                    }}
+                    options={courses.map((c) => ({ value: c.id, label: `${c.code} — ${c.title}` }))}
+                  />
+                  {fieldErrors.courseId ? <p className="mt-1 text-xs font-semibold text-red-600">{fieldErrors.courseId}</p> : null}
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm font-bold text-[#111318]">
+                    Course name
+                    <input
+                      value={manualCourseName}
+                      onChange={(e) => {
+                        setManualCourseName(e.target.value);
+                        if (fieldErrors.manualCourseName) setFieldErrors((prev) => ({ ...prev, manualCourseName: "" }));
+                      }}
+                      placeholder="e.g. Introduction to Computer Science"
+                      aria-invalid={Boolean(fieldErrors.manualCourseName)}
+                      className={`mt-1.5 min-h-11 w-full rounded-xl border bg-white px-3.5 text-base ${
+                        fieldErrors.manualCourseName ? "border-red-500 bg-red-50/40" : "border-black/15"
+                      }`}
+                    />
+                    {fieldErrors.manualCourseName ? (
+                      <span className="mt-1 block text-xs font-semibold text-red-600">{fieldErrors.manualCourseName}</span>
+                    ) : null}
+                  </label>
+                  <label className="block text-sm font-bold text-[#111318]">
+                    Course code (optional)
+                    <input
+                      value={manualCourseCode}
+                      onChange={(e) => setManualCourseCode(e.target.value)}
+                      placeholder="e.g. CSC 101"
+                      className="mt-1.5 min-h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-base"
+                    />
+                  </label>
+                  <label className="block text-sm font-bold text-[#111318]">
+                    Department (optional)
+                    <input
+                      value={manualDepartment}
+                      onChange={(e) => setManualDepartment(e.target.value)}
+                      placeholder="e.g. Computer Science"
+                      className="mt-1.5 min-h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-base"
+                    />
+                  </label>
+                  <label className="block text-sm font-bold text-[#111318]">
+                    Faculty (optional)
+                    <input
+                      value={manualFaculty}
+                      onChange={(e) => setManualFaculty(e.target.value)}
+                      placeholder="e.g. Physical Sciences"
+                      className="mt-1.5 min-h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-base"
+                    />
+                  </label>
+                  <label className="block text-sm font-bold text-[#111318]">
+                    Academic level (optional)
+                    <input
+                      value={manualLevel}
+                      onChange={(e) => setManualLevel(e.target.value)}
+                      placeholder="e.g. 200 Level"
+                      className="mt-1.5 min-h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-base"
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
             <CustomDropdown
               name="category"
               label="Assignment category"
@@ -609,24 +853,74 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
                 <dd className="font-bold text-[#111318]">{markingMode.replaceAll("_", " ")}</dd>
               </div>
             </dl>
+            {mode === "edit" ? (
+              <div className="space-y-3 rounded-2xl border border-black/10 bg-white p-4">
+                <label className="block text-sm font-bold text-[#111318]">
+                  Change summary (optional, recorded in audit history)
+                  <input
+                    value={changeSummary}
+                    onChange={(e) => setChangeSummary(e.target.value)}
+                    placeholder="e.g. Extended deadline by 48 hours and clarified Question 2"
+                    className="mt-1.5 min-h-11 w-full rounded-xl border border-black/15 px-3.5 text-sm"
+                  />
+                </label>
+                {initialData?.status === "PUBLISHED" ? (
+                  <label className="flex items-center gap-2 text-sm font-semibold text-[#111318]">
+                    <input
+                      type="checkbox"
+                      checked={notifyStudents}
+                      onChange={(e) => setNotifyStudents(e.target.checked)}
+                    />
+                    Notify students of material updates (title, instructions, or deadline)
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="flex flex-wrap gap-3 pt-2">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void save(false)}
-                className="button-secondary"
-              >
-                {busy ? "Saving…" : "Save as Draft"}
-              </button>
-              <button
-                type="button"
-                disabled={busy || !title.trim() || !courseId}
-                onClick={() => void save(true)}
-                className="button-primary"
-              >
-                <Check size={16} aria-hidden="true" />
-                {busy ? "Publishing…" : "Publish Assignment"}
-              </button>
+              {mode === "edit" ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void save(false)}
+                    className="button-primary"
+                  >
+                    <Check size={16} aria-hidden="true" />
+                    {busy ? "Saving changes…" : "Save Changes"}
+                  </button>
+                  {initialData?.status === "DRAFT" ? (
+                    <button
+                      type="button"
+                      disabled={busy || !title.trim()}
+                      onClick={() => void save(true)}
+                      className="button-secondary"
+                    >
+                      {busy ? "Publishing…" : "Save & Publish"}
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void save(false)}
+                    className="button-secondary"
+                  >
+                    {busy ? "Saving…" : "Save as Draft"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || !title.trim()}
+                    onClick={() => void save(true)}
+                    className="button-primary"
+                  >
+                    <Check size={16} aria-hidden="true" />
+                    {busy ? "Publishing…" : "Publish Assignment"}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ) : null}
