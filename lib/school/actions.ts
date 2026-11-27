@@ -23,7 +23,17 @@ export async function manageSchool(_previous: SchoolActionState, form: FormData)
       raw.departure_required = false;
       const dbForZone = await createUserSupabaseClient();
       const zoneResult = await dbForZone.from("businesses").select("timezone").eq("id", membership.businessId).maybeSingle();
-      const timeZone = zoneResult.data?.timezone || "UTC";
+      const orgZone = zoneResult.data?.timezone || "UTC";
+      const browserZone = typeof raw.browser_timezone === "string" ? raw.browser_timezone.trim() : "";
+      let timeZone = orgZone;
+      if (orgZone === "UTC" && browserZone && browserZone !== "UTC") {
+        try {
+          new Intl.DateTimeFormat("en", { timeZone: browserZone });
+          timeZone = browserZone;
+        } catch {
+          timeZone = orgZone;
+        }
+      }
       for (const field of ["starts_at", "planned_ends_at", "attendance_closes_at"]) {
         const val = raw[field];
         if (!val || val === "") {

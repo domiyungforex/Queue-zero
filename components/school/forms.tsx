@@ -112,6 +112,10 @@ export function CreateClassForm({ courseId }: { courseId: string }) {
     if (plannedEndsAt) formData.set("planned_ends_at", plannedEndsAt);
     formData.set("late_after_minutes", lateAfterMinutes);
     formData.set("verification_mode", verificationMode);
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) formData.set("browser_timezone", tz);
+    } catch {}
 
     if (useGeofence && lat && lng) {
       formData.set("location_lat", lat);

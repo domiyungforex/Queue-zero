@@ -63,7 +63,7 @@ export function AssignmentWizard({ courses }: { courses: Array<{ id: string; cod
   const [semester, setSemester] = useState("First");
   const [description, setDescription] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [learningObjectives, setLearningObjectives] = useState("");
+  const [learningObjectives] = useState("");
 
   // Step 2: Questions
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion()]);
