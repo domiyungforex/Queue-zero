@@ -219,7 +219,7 @@ describe("Anthropic Claude primary AI provider", () => {
     });
     expect(authFail.ok).toBe(false);
     if (!authFail.ok) {
-      expect(authFail.error).toContain("authentication failed");
+      expect(authFail.error).toContain("TuRnMaRk AI is temporarily unavailable");
     }
 
     createMock.mockResolvedValueOnce({
@@ -251,5 +251,47 @@ describe("Anthropic Claude primary AI provider", () => {
     expect(first.providerUsed).toBe("anthropic");
     expect(second.deduplicated).toBe(true);
     expect(createMock).toHaveBeenCalledTimes(2); // 1 for authFail + 1 for first, 0 for deduplicated second
+  });
+
+  it("preserves valid questions when other questions are malformed or fields are null", async () => {
+    process.env.ANTHROPIC_API_KEY = "sk-ant-test-key";
+    createMock.mockResolvedValueOnce({
+      content: [
+        {
+          type: "text",
+          text: `Here is the extracted assignment:\n\`\`\`json
+          {
+            "title": "CSC 301 Quiz",
+            "courseCode": "CSC 301",
+            "courseName": null,
+            "category": "QUIZ",
+            "instructions": null,
+            "learningObjectives": null,
+            "dueAt": null,
+            "totalMarks": null,
+            "questions": [
+              { "questionType": "MULTIPLE_CHOICE", "prompt": "What is a stack?", "options": ["LIFO", "FIFO"], "marks": 5, "formulaLatex": null, "uncertain": false },
+              { "questionType": "SHORT_ANSWER", "prompt": "", "options": null, "marks": 5 },
+              { "questionType": "CALCULATION", "prompt": "Compute 2^10.", "options": null, "marks": "10", "formulaLatex": "2^{10}" }
+            ]
+          }
+          \`\`\``,
+        },
+      ],
+      usage: { input_tokens: 100, output_tokens: 90 },
+    });
+
+    const res = await extractAssignmentFromTextWithClaude({
+      text: "CSC 301 Quiz",
+      authorizedCourses: [],
+    });
+
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.extraction.questions).toHaveLength(2);
+      expect(res.extraction.questions[0]?.questionType).toBe("MCQ");
+      expect(res.extraction.questions[1]?.questionType).toBe("MATH");
+      expect(res.extraction.warnings.length).toBeGreaterThan(0);
+    }
   });
 });

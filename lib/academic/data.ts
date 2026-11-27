@@ -197,7 +197,7 @@ export async function getAssignmentForEdit(assignmentId: string) {
   const db = await createUserSupabaseClient();
   const udb = db as unknown as UntypedClient;
 
-  const [coursesRes, assignmentRes, questionsRes, keysRes] = await Promise.all([
+  const [coursesRes, assignmentRes, questionsRes, keysRes, attachmentsRes] = await Promise.all([
     db.from("courses").select("id,code,title,department_id").eq("organization_id", membership.businessId),
     udb
       .from("assignments")
@@ -217,6 +217,12 @@ export async function getAssignmentForEdit(assignmentId: string) {
       .select("*")
       .eq("assignment_id", assignmentId)
       .eq("organization_id", membership.businessId),
+    udb
+      .from("assignment_attachments")
+      .select("*")
+      .eq("assignment_id", assignmentId)
+      .eq("organization_id", membership.businessId)
+      .order("sort_order", { ascending: true }),
   ]);
 
   if (!assignmentRes.data) return null;
@@ -227,5 +233,6 @@ export async function getAssignmentForEdit(assignmentId: string) {
     assignment: assignmentRes.data as Record<string, unknown>,
     questions: (questionsRes.data ?? []) as Array<Record<string, unknown>>,
     answerKeys: (keysRes.data ?? []) as Array<Record<string, unknown>>,
+    attachments: (attachmentsRes.data ?? []) as Array<Record<string, unknown>>,
   };
 }

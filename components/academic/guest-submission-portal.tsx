@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowRight, Camera, CheckCircle2, CreditCard, Plus, ShieldCheck, UserCheck } from "lucide-react";
+import { ArrowRight, Camera, CheckCircle2, CreditCard, Download, Eye, FileText, Plus, ShieldCheck, Trash2, UserCheck } from "lucide-react";
 import { DynamicCameraModal } from "@/components/school/dynamic-camera-modal";
 import { submitGuestAssignmentAction, verifyGuestStudentForAssignment } from "@/lib/academic/guest-actions";
 import { formatNgnFromMinor } from "@/lib/academic/allowance-ledger";
@@ -23,12 +23,31 @@ interface UploadedFileItem {
   pageOrder: number;
 }
 
+interface GuestAttachmentItem {
+  id: string;
+  fileName: string;
+  displayTitle: string;
+  description: string;
+  mimeType: string;
+  sizeBytes: number;
+  attachmentRole: string;
+}
+
 export function GuestSubmissionPortal({
   token,
   assignmentTitle,
   courseCode,
   organizationName,
+  instructions = "",
+  totalMarks = 100,
+  opensAt = null,
   dueAt,
+  allowTextAnswer = true,
+  allowFileUpload = true,
+  allowPhotoSubmission = true,
+  maxUploadMb = 25,
+  maxAttachments = 5,
+  attachments = [],
   questions,
   referralCode,
 }: {
@@ -36,7 +55,16 @@ export function GuestSubmissionPortal({
   assignmentTitle: string;
   courseCode: string;
   organizationName: string;
+  instructions?: string;
+  totalMarks?: number;
+  opensAt?: string | null;
   dueAt: string | null;
+  allowTextAnswer?: boolean;
+  allowFileUpload?: boolean;
+  allowPhotoSubmission?: boolean;
+  maxUploadMb?: number;
+  maxAttachments?: number;
+  attachments?: GuestAttachmentItem[];
   questions: GuestQuestion[];
   referralCode?: string;
 }) {
@@ -54,6 +82,7 @@ export function GuestSubmissionPortal({
   const [textContent, setTextContent] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [files, setFiles] = useState<UploadedFileItem[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -77,16 +106,30 @@ export function GuestSubmissionPortal({
   }
 
   async function handleFileUpload(file: File) {
-    setError("");
-    const fd = new FormData();
-    fd.set("file", file);
-    const res = await fetch("/api/academic/files/upload", { method: "POST", body: fd });
-    const json = (await res.json().catch(() => ({}))) as UploadedFileItem & { error?: string };
-    if (!res.ok || !json.storagePath) {
-      setError(json.error ?? "File upload failed.");
+    if (!student) return;
+    if (files.length >= maxAttachments) {
+      setError(`Maximum of ${maxAttachments} attachments reached.`);
       return;
     }
-    setFiles((prev) => [...prev, { ...json, pageOrder: prev.length + 1 }]);
+    setError("");
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      fd.set("token", token);
+      fd.set("studentId", student.id);
+      const res = await fetch("/api/academic/files/upload", { method: "POST", body: fd });
+      const json = (await res.json().catch(() => ({}))) as UploadedFileItem & { error?: string };
+      if (!res.ok || !json.storagePath) {
+        setError(json.error ?? "File upload failed. Please retry.");
+        return;
+      }
+      setFiles((prev) => [...prev, { ...json, pageOrder: prev.length + 1 }]);
+    } catch {
+      setError("Network error while uploading file. Please retry.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function startPaystackPayment() {
@@ -158,8 +201,62 @@ export function GuestSubmissionPortal({
           {organizationName} · {courseCode}
         </p>
         <h1 className="text-2xl font-bold text-[#111318]">{assignmentTitle}</h1>
-        {dueAt ? (
-          <p className="text-xs text-neutral-600">Deadline: {new Date(dueAt).toLocaleString()}</p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-600">
+          <span>Total Marks: <strong>{totalMarks}</strong></span>
+          {opensAt ? <span>Opens: {new Date(opensAt).toLocaleString()}</span> : null}
+          {dueAt ? <span>Deadline: <strong>{new Date(dueAt).toLocaleString()}</strong></span> : null}
+        </div>
+        {instructions ? (
+          <div className="rounded-xl border border-black/10 bg-[#fffaf7] p-3.5 text-sm text-[#111318] whitespace-pre-wrap">
+            {instructions}
+          </div>
+        ) : null}
+        {attachments.length > 0 ? (
+          <div className="space-y-2 pt-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+              Assignment Documents ({attachments.length})
+            </p>
+            <ul className="space-y-2">
+              {attachments.map((att) => {
+                const canPreview =
+                  att.mimeType === "application/pdf" ||
+                  att.mimeType.startsWith("image/") ||
+                  att.mimeType.startsWith("text/plain");
+                return (
+                  <li
+                    key={att.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-black/10 bg-[#fffaf7] px-3 py-2.5 text-xs"
+                  >
+                    <div>
+                      <p className="flex items-center gap-1.5 font-bold text-[#111318]">
+                        <FileText size={13} className="text-[#ff6b2b]" aria-hidden="true" />
+                        {att.displayTitle}
+                      </p>
+                      {att.description ? <p className="text-neutral-600">{att.description}</p> : null}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {canPreview ? (
+                        <a
+                          href={`/api/academic/files/download?kind=attachment&id=${encodeURIComponent(att.id)}&token=${encodeURIComponent(token)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-2.5 py-1.5 font-semibold text-[#111318]"
+                        >
+                          <Eye size={12} /> Preview
+                        </a>
+                      ) : null}
+                      <a
+                        href={`/api/academic/files/download?kind=attachment&id=${encodeURIComponent(att.id)}&token=${encodeURIComponent(token)}&download=1`}
+                        className="inline-flex items-center gap-1 rounded-lg border border-black/15 bg-white px-2.5 py-1.5 font-semibold text-[#111318]"
+                      >
+                        <Download size={12} /> Download
+                      </a>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         ) : null}
 
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -246,44 +343,78 @@ export function GuestSubmissionPortal({
               </div>
             ))}
 
-            <label className="block text-sm font-bold text-[#111318]">
-              Written Notes / Project Explanation
-              <textarea
-                value={textContent}
-                onChange={(e) => setTextContent(e.target.value)}
-                rows={4}
-                className="mt-1.5 w-full rounded-xl border border-black/15 p-3 text-base"
-              />
-            </label>
-
-            <div className="flex flex-wrap gap-3">
-              <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-black/15 px-4 text-sm font-semibold">
-                <Plus size={16} aria-hidden="true" />
-                Upload PDF, Art, CAD (DWG/DXF/STL) or ZIP
-                <input
-                  type="file"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void handleFileUpload(f);
-                  }}
+            {allowTextAnswer ? (
+              <label className="block text-sm font-bold text-[#111318]">
+                Written Notes / Project Explanation
+                <textarea
+                  value={textContent}
+                  onChange={(e) => setTextContent(e.target.value)}
+                  rows={4}
+                  className="mt-1.5 w-full rounded-xl border border-black/15 p-3 text-base"
                 />
               </label>
-              <button
-                type="button"
-                onClick={() => setCameraOpen(true)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-black/15 px-4 text-sm font-semibold"
-              >
-                <Camera size={16} aria-hidden="true" />
-                Capture Photo
-              </button>
-            </div>
+            ) : null}
+
+            {(allowFileUpload || allowPhotoSubmission) ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                    File &amp; Photo Uploads ({files.length} / {maxAttachments} · Max {maxUploadMb} MB)
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {allowFileUpload ? (
+                    <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-black/15 px-4 text-sm font-semibold">
+                      <Plus size={16} aria-hidden="true" />
+                      {uploading ? "Uploading…" : "Upload PDF, DOCX, CAD, or ZIP"}
+                      <input
+                        type="file"
+                        disabled={uploading || files.length >= maxAttachments}
+                        className="sr-only"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = "";
+                          if (f) void handleFileUpload(f);
+                        }}
+                      />
+                    </label>
+                  ) : null}
+                  {allowPhotoSubmission ? (
+                    <button
+                      type="button"
+                      disabled={uploading || files.length >= maxAttachments}
+                      onClick={() => setCameraOpen(true)}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-black/15 px-4 text-sm font-semibold"
+                    >
+                      <Camera size={16} aria-hidden="true" />
+                      Capture Photo
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
 
             {files.length > 0 ? (
-              <ul className="space-y-1 text-xs text-neutral-700">
+              <ul className="space-y-1.5 text-xs text-neutral-700">
                 {files.map((f) => (
-                  <li key={f.storagePath}>
-                    Page {f.pageOrder}: <strong>{f.fileName}</strong> ({Math.round(f.sizeBytes / 1024)} KB)
+                  <li key={f.storagePath} className="flex items-center justify-between rounded-lg bg-[#fffaf7] px-3 py-2">
+                    <span>
+                      Page {f.pageOrder}: <strong>{f.fileName}</strong> ({Math.round(f.sizeBytes / 1024)} KB)
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${f.fileName}`}
+                      onClick={() =>
+                        setFiles((prev) =>
+                          prev
+                            .filter((item) => item.storagePath !== f.storagePath)
+                            .map((item, idx) => ({ ...item, pageOrder: idx + 1 })),
+                        )
+                      }
+                      className="rounded p-1 text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </li>
                 ))}
               </ul>

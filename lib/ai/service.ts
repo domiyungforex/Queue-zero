@@ -6,22 +6,16 @@ import {
   extractAssignmentFromTextWithClaude,
   type AiUsageMetrics,
 } from "./anthropic";
-import {
-  extractAssignmentWithMistralSmall,
-  isMistralConfigured,
-  runMistralOcr,
-} from "./mistral";
-import { getAiProviderStatus, isAnthropicConfigured } from "./provider";
+import { isAnthropicConfigured } from "./provider";
 
 export interface SmartExtractionResult {
   extraction: SmartAssignmentExtraction;
-  providerUsed: "anthropic" | "mistral" | "local_parser";
+  providerUsed: "anthropic" | "local_parser";
   usage?: AiUsageMetrics;
   warnings: string[];
   deduplicated?: boolean;
 }
 
-// Bounded in-memory idempotency cache (prevents duplicate AI API spend on double-clicks/refreshes)
 const recentExtractionCache = new Map<string, { expiresAt: number; result: SmartExtractionResult }>();
 
 function makeIdempotencyKey(params: {
@@ -41,7 +35,6 @@ export async function runSmartAssignmentExtraction(input: {
   contentHash?: string;
   extractedText?: string;
 }): Promise<SmartExtractionResult> {
-  const status = getAiProviderStatus();
   const warnings: string[] = [];
 
   const cacheKey = makeIdempotencyKey({
@@ -54,20 +47,17 @@ export async function runSmartAssignmentExtraction(input: {
     return { ...cached.result, deduplicated: true };
   }
 
-  const isBinaryMedia =
+  const isSupportedVisionOrPdf =
     Boolean(input.buffer) &&
     Boolean(input.mimeType) &&
     (input.mimeType === "application/pdf" ||
       input.mimeType === "image/jpeg" ||
       input.mimeType === "image/png" ||
-      input.mimeType === "image/webp");
+      input.mimeType === "image/webp" ||
+      input.mimeType === "image/gif");
 
-  const tryAnthropicFirst = status.primaryProvider === "anthropic" && isAnthropicConfigured();
-  const tryMistral = isMistralConfigured();
-
-  // 1. Primary: Anthropic Claude
-  if (tryAnthropicFirst) {
-    if (isBinaryMedia && input.buffer && input.mimeType) {
+  if (isAnthropicConfigured()) {
+    if (isSupportedVisionOrPdf && input.buffer && input.mimeType) {
       const res = await extractAssignmentFromDocumentWithClaude({
         buffer: input.buffer,
         mimeType: input.mimeType,
@@ -101,40 +91,10 @@ export async function runSmartAssignmentExtraction(input: {
       }
       warnings.push(res.error);
     }
-  } else if (status.primaryProvider === "anthropic" && !isAnthropicConfigured()) {
-    warnings.push("TuRnMaRk AI is not configured on the server.");
+  } else {
+    warnings.push("TuRnMaRk AI is temporarily unavailable. You can continue creating your assignment manually.");
   }
 
-  // 2. Secondary fallback: Mistral AI (preserved existing integration)
-  if (tryMistral) {
-    let textForMistral = input.extractedText?.trim() ?? "";
-    if (!textForMistral && isBinaryMedia && input.buffer && input.mimeType) {
-      const ocr = await runMistralOcr({ buffer: input.buffer, mimeType: input.mimeType });
-      if (ocr.ok && ocr.text.trim()) {
-        textForMistral = ocr.text;
-      } else {
-        warnings.push(ocr.ok ? "No readable text found in document." : ocr.error);
-      }
-    }
-    if (textForMistral) {
-      const ai = await extractAssignmentWithMistralSmall({
-        text: textForMistral,
-        authorizedCourses: input.authorizedCourses,
-      });
-      if (ai.ok) {
-        const out: SmartExtractionResult = {
-          extraction: ai.extraction,
-          providerUsed: "mistral",
-          warnings: [...warnings, ...ai.extraction.warnings],
-        };
-        recentExtractionCache.set(cacheKey, { expiresAt: Date.now() + 5 * 60_000, result: out });
-        return out;
-      }
-      warnings.push(ai.error);
-    }
-  }
-
-  // 3. Deterministic local fallback (never fabricates results)
   const localExtraction = parseAssignmentFromText(input.extractedText ?? "", input.authorizedCourses);
   return {
     extraction: localExtraction,

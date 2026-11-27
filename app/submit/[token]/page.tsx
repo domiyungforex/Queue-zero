@@ -34,10 +34,12 @@ export default async function GuestAssignmentSubmitPage({
     };
   };
 
-  const [{ data: assignment }, { data: org }, { data: qRows }] = await Promise.all([
+  const [{ data: assignment }, { data: org }, { data: qRows }, { data: attRows }] = await Promise.all([
     db
       .from("assignments")
-      .select("id,course_id,manual_course_code,manual_course_name,title,due_at,status")
+      .select(
+        "id,course_id,manual_course_code,manual_course_name,title,instructions,total_marks,opens_at,due_at,status,allow_text_answer,allow_file_upload,allow_photo_submission,max_upload_mb,max_attachments",
+      )
       .eq("id", parsedToken.assignmentId)
       .maybeSingle(),
     db.from("businesses").select("name").eq("id", parsedToken.orgId).maybeSingle(),
@@ -46,6 +48,11 @@ export default async function GuestAssignmentSubmitPage({
       .select("id,position,question_type,prompt,options,marks")
       .eq("assignment_id", parsedToken.assignmentId)
       .order("position", { ascending: true }),
+    db
+      .from("assignment_attachments")
+      .select("id,file_name,display_title,description,mime_type,size_bytes,attachment_role,sort_order")
+      .eq("assignment_id", parsedToken.assignmentId)
+      .order("sort_order", { ascending: true }),
   ]);
 
   if (!assignment || assignment.status !== "PUBLISHED") notFound();
@@ -57,6 +64,18 @@ export default async function GuestAssignmentSubmitPage({
         .eq("id", String(assignment.course_id))
         .maybeSingle()
     : { data: null };
+
+  const attachments = (attRows ?? [])
+    .filter((att) => String(att.attachment_role ?? "ASSIGNMENT_MAIN") !== "LECTURER_ONLY")
+    .map((att) => ({
+      id: String(att.id),
+      fileName: String(att.file_name ?? "document"),
+      displayTitle: String(att.display_title ?? att.file_name ?? "Document"),
+      description: att.description ? String(att.description) : "",
+      mimeType: String(att.mime_type ?? "application/octet-stream"),
+      sizeBytes: Number(att.size_bytes ?? 0),
+      attachmentRole: String(att.attachment_role ?? "ASSIGNMENT_MAIN"),
+    }));
 
   return (
     <main className="min-h-screen bg-[#fffaf7] px-4 py-10">
@@ -71,7 +90,16 @@ export default async function GuestAssignmentSubmitPage({
           assignmentTitle={String(assignment.title)}
           courseCode={String(course?.code ?? assignment.manual_course_code ?? assignment.manual_course_name ?? "COURSE")}
           organizationName={String(org?.name ?? "Institution")}
+          instructions={assignment.instructions ? String(assignment.instructions) : ""}
+          totalMarks={Number(assignment.total_marks ?? 100)}
+          opensAt={assignment.opens_at ? String(assignment.opens_at) : null}
           dueAt={assignment.due_at ? String(assignment.due_at) : null}
+          allowTextAnswer={assignment.allow_text_answer !== false}
+          allowFileUpload={assignment.allow_file_upload !== false}
+          allowPhotoSubmission={assignment.allow_photo_submission !== false}
+          maxUploadMb={Number(assignment.max_upload_mb ?? 25)}
+          maxAttachments={Number(assignment.max_attachments ?? 5)}
+          attachments={attachments}
           questions={(qRows ?? []).map((q) => ({
             id: String(q.id),
             position: Number(q.position),

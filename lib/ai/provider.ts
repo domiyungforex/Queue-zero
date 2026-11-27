@@ -1,15 +1,11 @@
 import "server-only";
 
-export type AiProviderName = "anthropic" | "mistral";
+export type AiProviderName = "anthropic";
 
 export const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 
 export function isAnthropicConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
-}
-
-export function isMistralConfiguredServer(): boolean {
-  return Boolean(process.env.MISTRAL_API_KEY?.trim());
 }
 
 export function getAnthropicModel(): string {
@@ -21,33 +17,16 @@ export function getAnthropicMarkingModel(): string {
 }
 
 export function getPrimaryAiProvider(): AiProviderName {
-  const configured = process.env.AI_PRIMARY_PROVIDER?.trim().toLowerCase();
-  if (configured === "mistral") return "mistral";
   return "anthropic";
 }
 
 export function getAiProviderStatus() {
-  const primary = getPrimaryAiProvider();
   const anthropicConfigured = isAnthropicConfigured();
-  const mistralConfigured = isMistralConfiguredServer();
-
   return {
-    primaryProvider: primary,
+    primaryProvider: "anthropic" as const,
     anthropicConfigured,
-    mistralConfigured,
     anthropicModel: getAnthropicModel(),
-    anyConfigured: anthropicConfigured || mistralConfigured,
-    activeProvider:
-      primary === "anthropic"
-        ? anthropicConfigured
-          ? "anthropic"
-          : mistralConfigured
-            ? "mistral"
-            : null
-        : mistralConfigured
-          ? "mistral"
-          : anthropicConfigured
-            ? "anthropic"
-            : null,
+    anyConfigured: anthropicConfigured,
+    activeProvider: anthropicConfigured ? ("anthropic" as const) : null,
   };
 }

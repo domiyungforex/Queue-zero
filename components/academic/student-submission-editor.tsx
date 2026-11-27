@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Camera, CheckCircle2, Plus, RefreshCw, Save, ShieldAlert } from "lucide-react";
+import { ArrowRight, Camera, CheckCircle2, Plus, RefreshCw, Save, ShieldAlert, Trash2 } from "lucide-react";
 import { DynamicCameraModal } from "@/components/school/dynamic-camera-modal";
 import { saveSubmissionDraftAction, submitAssignmentAction } from "@/lib/academic/actions";
 
@@ -32,6 +32,8 @@ export function StudentSubmissionEditor({
   allowTextAnswer,
   allowFileUpload,
   allowPhotoSubmission,
+  maxUploadMb = 25,
+  maxAttachments = 5,
   initialText,
   initialAnswers,
   existingSubmission,
@@ -43,6 +45,8 @@ export function StudentSubmissionEditor({
   allowTextAnswer: boolean;
   allowFileUpload: boolean;
   allowPhotoSubmission: boolean;
+  maxUploadMb?: number;
+  maxAttachments?: number;
   initialText: string;
   initialAnswers: Record<string, string>;
   existingSubmission: {
@@ -58,6 +62,7 @@ export function StudentSubmissionEditor({
   const [textContent, setTextContent] = useState(initialText);
   const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
   const [files, setFiles] = useState<UploadedDoc[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "offline" | "failed">("idle");
   const [cameraOpen, setCameraOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -96,29 +101,40 @@ export function StudentSubmissionEditor({
   }, [textContent, answers, assignmentId, studentId, isLocked]);
 
   async function handleFileSelect(file: File, isHandwritten = false) {
-    setError("");
-    const form = new FormData();
-    form.set("file", file);
-    form.set("assignmentId", assignmentId);
-
-    const res = await fetch("/api/academic/files/upload", { method: "POST", body: form });
-    const json = (await res.json().catch(() => ({}))) as UploadedDoc & { error?: string };
-    if (!res.ok || !json.storagePath) {
-      setError(json.error || "File upload failed.");
+    if (files.length >= maxAttachments) {
+      setError(`Maximum of ${maxAttachments} attachments reached for this assignment.`);
       return;
     }
+    setError("");
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.set("file", file);
+      form.set("assignmentId", assignmentId);
 
-    setFiles((prev) => [
-      ...prev,
-      {
-        fileName: json.fileName,
-        mimeType: json.mimeType,
-        sizeBytes: json.sizeBytes,
-        storagePath: json.storagePath,
-        pageOrder: prev.length + 1,
-        isHandwritten,
-      },
-    ]);
+      const res = await fetch("/api/academic/files/upload", { method: "POST", body: form });
+      const json = (await res.json().catch(() => ({}))) as UploadedDoc & { error?: string };
+      if (!res.ok || !json.storagePath) {
+        setError(json.error || "File upload failed. You can retry.");
+        return;
+      }
+
+      setFiles((prev) => [
+        ...prev,
+        {
+          fileName: json.fileName,
+          mimeType: json.mimeType,
+          sizeBytes: json.sizeBytes,
+          storagePath: json.storagePath,
+          pageOrder: prev.length + 1,
+          isHandwritten,
+        },
+      ]);
+    } catch {
+      setError("Network error during upload. Please retry.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleCameraCapture(dataUrl: string) {
@@ -290,25 +306,37 @@ export function StudentSubmissionEditor({
 
       {(allowFileUpload || allowPhotoSubmission) ? (
         <div className="panel p-5 space-y-4">
-          <h3 className="text-sm font-bold text-[#111318]">Attachments &amp; Handwritten Pages</h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-bold text-[#111318]">Attachments &amp; Handwritten Pages</h3>
+            <span className="text-xs text-neutral-500">
+              {files.length} / {maxAttachments} files · Max {maxUploadMb} MB each
+            </span>
+          </div>
           <div className="flex flex-wrap gap-3">
             {allowFileUpload ? (
               <label className="button-secondary cursor-pointer">
                 <Plus size={16} aria-hidden="true" />
-                Upload PDF / DOCX / Image
+                {uploading ? "Uploading…" : "Upload Document / File"}
                 <input
                   type="file"
-                  accept=".pdf,.docx,image/jpeg,image/png,image/webp"
+                  disabled={uploading || files.length >= maxAttachments}
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.rtf,.md,.csv,.jpg,.jpeg,.png,.webp,.heic,.zip,.dwg,.dxf,.step,.stp,.stl,.obj,.xlsx,.py,.js,.ts,.c,.cpp,.java"
                   className="sr-only"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
+                    e.target.value = "";
                     if (f) void handleFileSelect(f, false);
                   }}
                 />
               </label>
             ) : null}
             {allowPhotoSubmission ? (
-              <button type="button" onClick={() => setCameraOpen(true)} className="button-secondary">
+              <button
+                type="button"
+                disabled={uploading || files.length >= maxAttachments}
+                onClick={() => setCameraOpen(true)}
+                className="button-secondary"
+              >
                 <Camera size={16} aria-hidden="true" />
                 Capture Handwritten Page
               </button>
@@ -321,6 +349,20 @@ export function StudentSubmissionEditor({
                   <span>
                     Page {f.pageOrder}: <strong>{f.fileName}</strong> ({Math.round(f.sizeBytes / 1024)} KB)
                   </span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${f.fileName}`}
+                    onClick={() =>
+                      setFiles((prev) =>
+                        prev
+                          .filter((item) => item.storagePath !== f.storagePath)
+                          .map((item, idx) => ({ ...item, pageOrder: idx + 1 })),
+                      )
+                    }
+                    className="rounded-lg p-1 text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </li>
               ))}
             </ul>

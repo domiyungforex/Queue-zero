@@ -45,6 +45,19 @@ export const ASSIGNMENT_TARGET_AUDIENCES = [
 ] as const;
 export type AssignmentTargetAudience = (typeof ASSIGNMENT_TARGET_AUDIENCES)[number];
 
+export const ATTACHMENT_ROLES = ["ASSIGNMENT_MAIN", "REFERENCE", "LECTURER_ONLY"] as const;
+export type AttachmentRole = (typeof ATTACHMENT_ROLES)[number];
+
+export const SUBJECT_DOMAINS = [
+  "GENERAL",
+  "MATHEMATICS_PHYSICS",
+  "ENGINEERING",
+  "COMPUTER_SCIENCE",
+  "HUMANITIES_SOCIAL",
+  "FINE_ART_DESIGN",
+] as const;
+export type SubjectDomain = (typeof SUBJECT_DOMAINS)[number];
+
 const optionalTrimmedString = (max: number) =>
   z
     .string()
@@ -78,6 +91,19 @@ export const assignmentQuestionInputSchema = z.object({
   numericTolerance: z.number().min(0).max(10000).default(0),
   caseSensitive: z.boolean().default(false),
 });
+
+export const assignmentAttachmentInputSchema = z.object({
+  fileName: z.string().trim().min(1).max(200),
+  displayTitle: optionalTrimmedString(200),
+  description: optionalTrimmedString(500),
+  mimeType: z.string().trim().min(1).max(160),
+  sizeBytes: z.number().int().positive().max(50 * 1024 * 1024),
+  storagePath: z.string().trim().min(1).max(500),
+  attachmentRole: z.enum(ATTACHMENT_ROLES).default("ASSIGNMENT_MAIN"),
+  sortOrder: z.number().int().min(1).max(100).default(1),
+});
+
+export type AssignmentAttachmentInput = z.infer<typeof assignmentAttachmentInputSchema>;
 
 const assignmentBaseFields = {
   title: z.string().trim().min(1, "Assignment title is required.").max(200),
@@ -121,10 +147,14 @@ const assignmentBaseFields = {
   allowEditAfterSubmit: z.boolean().default(false),
   allowResubmission: z.boolean().default(false),
   markingMode: z.enum(MARKING_MODES).default("HYBRID"),
+  subjectDomain: z.enum(SUBJECT_DOMAINS).default("GENERAL"),
+  markingInstructions: optionalTrimmedString(10000),
+  maxAttachments: z.number().int().min(1).max(20).default(5),
   totalMarks: z.number().positive().max(10000).default(100),
   releaseMarksImmediately: z.boolean().default(false),
   publishNow: z.boolean().default(false),
   questions: z.array(assignmentQuestionInputSchema).default([]),
+  attachments: z.array(assignmentAttachmentInputSchema).default([]),
 };
 
 function validateAssignmentBusinessRules(
@@ -135,6 +165,7 @@ function validateAssignmentBusinessRules(
     instructions?: string;
     description?: string;
     questions: Array<{ prompt?: string }>;
+    attachments?: Array<{ attachmentRole?: string }>;
   },
   ctx: z.RefinementCtx,
 ) {
@@ -150,6 +181,7 @@ function validateAssignmentBusinessRules(
   }
 
   const nonEmptyQuestions = value.questions.filter((q) => Boolean(q.prompt?.trim()));
+  const hasStudentAttachment = (value.attachments ?? []).some((a) => a.attachmentRole !== "LECTURER_ONLY");
   const hasBlankQuestion = value.questions.some((q) => !q.prompt?.trim());
   if (hasBlankQuestion && value.questions.length > 0 && nonEmptyQuestions.length > 0) {
     value.questions.forEach((q, idx) => {
@@ -161,11 +193,16 @@ function validateAssignmentBusinessRules(
         });
       }
     });
-  } else if (nonEmptyQuestions.length === 0 && !value.instructions?.trim() && !value.description?.trim()) {
+  } else if (
+    nonEmptyQuestions.length === 0 &&
+    !value.instructions?.trim() &&
+    !value.description?.trim() &&
+    !hasStudentAttachment
+  ) {
     ctx.addIssue({
       code: "custom",
       path: ["questions", 0, "prompt"],
-      message: "Add at least one question prompt or provide assignment instructions.",
+      message: "Upload an assignment document, add instructions, or add at least one question.",
     });
   }
 }

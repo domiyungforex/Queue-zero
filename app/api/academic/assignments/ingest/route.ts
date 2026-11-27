@@ -18,6 +18,8 @@ const ALLOWED_MIME = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/heic",
+  "image/heif",
   "text/plain",
 ]);
 
@@ -27,7 +29,14 @@ export async function GET() {
     if (!["owner", "admin", "manager", "lecturer"].includes(membership.role)) {
       return NextResponse.json({ error: "Not authorized." }, { status: 403 });
     }
-    return NextResponse.json({ ok: true, status: getAiProviderStatus() });
+    const status = getAiProviderStatus();
+    return NextResponse.json({
+      ok: true,
+      available: status.anyConfigured,
+      message: status.anyConfigured
+        ? "TuRnMaRk AI is ready."
+        : "TuRnMaRk AI is temporarily unavailable.",
+    });
   } catch {
     return NextResponse.json({ error: "Not authorized." }, { status: 401 });
   }
@@ -62,7 +71,7 @@ export async function POST(request: Request) {
     if (file instanceof File && file.size > 0) {
       if (!ALLOWED_MIME.has(file.type)) {
         return NextResponse.json(
-          { error: "Unsupported file format. Use PDF, DOCX, TXT, JPEG, PNG, or WebP." },
+          { error: "Unsupported file format. Use PDF, DOCX, TXT, JPEG, PNG, WebP, or HEIC." },
           { status: 400 },
         );
       }
@@ -83,7 +92,9 @@ export async function POST(request: Request) {
                 ? "png"
                 : file.type === "image/webp"
                   ? "webp"
-                  : "jpg";
+                  : file.type === "image/heic" || file.type === "image/heif"
+                    ? "heic"
+                    : "jpg";
 
       const key = `academic-sources/${membership.businessId}/${contentHash.slice(0, 24)}.${ext}`;
       const stored = await storePrivateImage(db, { key, body: buffer, type: file.type });
@@ -95,6 +106,10 @@ export async function POST(request: Request) {
         else preWarnings.push("Could not extract readable text from this DOCX file; please review manually.");
       } else if (file.type === "text/plain") {
         extractedText = buffer.toString("utf8");
+      } else if (file.type === "image/heic" || file.type === "image/heif") {
+        preWarnings.push(
+          "Original HEIC photo preserved privately. For automated question extraction, upload JPEG, PNG, WebP, or PDF, or enter questions manually.",
+        );
       } else {
         fileBuffer = buffer;
         fileMimeType = file.type;
@@ -115,8 +130,9 @@ export async function POST(request: Request) {
       warnings: [...preWarnings, ...result.warnings],
     };
 
+    const hasQuestions = extraction.questions.length > 0;
     const status =
-      result.providerUsed === "local_parser" || extraction.warnings.length > 0
+      result.providerUsed === "local_parser" || !hasQuestions || extraction.warnings.length > 0
         ? "NEEDS_REVIEW"
         : "COMPLETED";
 
@@ -138,20 +154,24 @@ export async function POST(request: Request) {
       });
 
     const aiStatus = getAiProviderStatus();
+    const userMessage = !hasQuestions
+      ? "We couldn't identify assignment questions in this document. Try a clearer document or add your questions manually."
+      : extraction.warnings.length > 0
+        ? "We extracted some of your assignment content. A few sections may need your attention."
+        : "Your assignment has been analysed. Review the extracted questions below.";
+
     return NextResponse.json({
       ok: true,
       originalPath,
       extraction,
-      providerUsed: result.providerUsed,
-      usage: result.usage ?? null,
+      message: userMessage,
       deduplicated: Boolean(result.deduplicated),
       processingStatus: status,
       aiConfigured: aiStatus.anyConfigured,
-      aiStatus,
     });
   } catch {
     return NextResponse.json(
-      { error: "Smart extraction failed. You can still create the assignment manually." },
+      { error: "Something interrupted document processing. Your original document is safe. Please try again or enter questions manually." },
       { status: 500 },
     );
   }

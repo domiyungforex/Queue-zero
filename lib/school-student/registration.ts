@@ -117,7 +117,13 @@ export async function registerStudent(form: FormData) {
   return { ok: true as const, message: body.data.message, matricNumber: body.data.matric_number };
 }
 
+import { matricMatchKey } from "@/lib/school/matric";
+
 export async function identifyStudent(organizationId: string, matricNumber: string, deviceId: string) {
+  // Normalize matriculation number to ignore case and whitespace differences
+  const normalizedMatric = matricMatchKey(matricNumber);
+  // Parse inputs, using the normalized matric number for lookup
+  const parsed = z.object({ organizationId: orgId, matricNumber: z.string().trim().min(1).max(80), deviceId: z.string().min(8).max(80) }).safeParse({ organizationId, matricNumber: normalizedMatric, deviceId });
   const parsed = z.object({ organizationId: orgId, matricNumber: z.string().trim().min(1).max(80), deviceId: z.string().min(8).max(80) }).safeParse({ organizationId, matricNumber, deviceId });
   if (!parsed.success) return { ok: false as const, message: "Enter the matriculation number issued by your institution." };
   const db = createJoinSupabaseClient();

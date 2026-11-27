@@ -77,11 +77,12 @@ export async function createAssignmentAction(input: unknown) {
 
   const v = parsed.data;
   const activeQuestions = v.questions.filter((q) => Boolean(q.prompt?.trim()));
-  if (v.publishNow && activeQuestions.length === 0 && !v.instructions?.trim()) {
+  const hasStudentAttachment = v.attachments.some((a) => a.attachmentRole !== "LECTURER_ONLY");
+  if (v.publishNow && activeQuestions.length === 0 && !v.instructions?.trim() && !hasStudentAttachment) {
     return {
       ok: false as const,
-      error: "Add at least one question or instructions before publishing.",
-      fieldErrors: { "questions.0.prompt": "Add at least one question or instructions before publishing." },
+      error: "Upload a document, add instructions, or add at least one question before publishing.",
+      fieldErrors: { "questions.0.prompt": "Upload a document, add instructions, or add at least one question before publishing." },
     };
   }
 
@@ -148,6 +149,9 @@ export async function createAssignmentAction(input: unknown) {
       allow_edit_after_submit: v.allowEditAfterSubmit,
       allow_resubmission: v.allowResubmission,
       marking_mode: v.markingMode,
+      subject_domain: v.subjectDomain,
+      marking_instructions: v.markingInstructions || null,
+      max_attachments: v.maxAttachments,
       total_marks: v.totalMarks,
       release_marks_immediately: v.releaseMarksImmediately,
     })
@@ -192,6 +196,24 @@ export async function createAssignmentAction(input: unknown) {
         case_sensitive: q.caseSensitive,
       });
     }
+  }
+
+  if (v.attachments.length > 0) {
+    await db.from("assignment_attachments").insert(
+      v.attachments.map((att, idx) => ({
+        organization_id: membership.businessId,
+        assignment_id: assignmentId,
+        file_name: att.fileName,
+        display_title: att.displayTitle || att.fileName,
+        description: att.description || null,
+        mime_type: att.mimeType,
+        size_bytes: att.sizeBytes,
+        storage_path: att.storagePath,
+        attachment_role: att.attachmentRole,
+        sort_order: att.sortOrder || idx + 1,
+        uploaded_by: userId,
+      })),
+    );
   }
 
   revalidatePath("/dashboard/academic");
@@ -505,7 +527,7 @@ export async function gradeSubmissionAction(input: {
   const db = academicDb();
   const { data: sub } = await db
     .from("assignment_submissions")
-    .select("id,student_id,assignment_id")
+    .select("id,student_id,assignment_id,final_score,auto_score")
     .eq("id", input.submissionId)
     .eq("organization_id", membership.businessId)
     .maybeSingle();
@@ -527,6 +549,29 @@ export async function gradeSubmissionAction(input: {
     })
     .eq("id", input.submissionId)
     .eq("organization_id", membership.businessId);
+
+  const prevScore = sub.final_score != null ? Number(sub.final_score) : sub.auto_score != null ? Number(sub.auto_score) : null;
+  const auditAction = input.returnForCorrection
+    ? "RETURNED_FOR_RESUBMISSION"
+    : input.releaseNow
+      ? "GRADE_RELEASED"
+      : prevScore != null && prevScore !== input.score
+        ? "LECTURER_OVERRIDE"
+        : "GRADE_APPROVED";
+  try {
+    await db.from("grading_audit_logs").insert({
+      organization_id: membership.businessId,
+      assignment_id: input.assignmentId,
+      submission_id: input.submissionId,
+      actor_id: userId,
+      action_type: auditAction,
+      previous_score: prevScore,
+      new_score: input.score,
+      notes: input.remarks || null,
+    });
+  } catch {
+    // Non-blocking audit log insert
+  }
 
   // Update gradebook entry
   const { data: assignment } = await db
@@ -713,11 +758,12 @@ export async function updateAssignmentAction(input: unknown) {
   }
 
   const activeQuestions = v.questions.filter((q) => Boolean(q.prompt?.trim()));
-  if ((existing.status === "PUBLISHED" || v.publishNow) && activeQuestions.length === 0 && !v.instructions?.trim()) {
+  const hasStudentAttachment = v.attachments.some((a) => a.attachmentRole !== "LECTURER_ONLY");
+  if ((existing.status === "PUBLISHED" || v.publishNow) && activeQuestions.length === 0 && !v.instructions?.trim() && !hasStudentAttachment) {
     return {
       ok: false as const,
-      error: "Published assignments must include at least one question or instructions.",
-      fieldErrors: { "questions.0.prompt": "Add at least one question or instructions." },
+      error: "Published assignments must include a document, instructions, or at least one question.",
+      fieldErrors: { "questions.0.prompt": "Add a document, instructions, or at least one question." },
     };
   }
 
@@ -799,6 +845,9 @@ export async function updateAssignmentAction(input: unknown) {
       allow_edit_after_submit: v.allowEditAfterSubmit,
       allow_resubmission: v.allowResubmission,
       marking_mode: v.markingMode,
+      subject_domain: v.subjectDomain,
+      marking_instructions: v.markingInstructions || null,
+      max_attachments: v.maxAttachments,
       total_marks: v.totalMarks,
       release_marks_immediately: v.releaseMarksImmediately,
       edited_by: userId,
@@ -850,6 +899,26 @@ export async function updateAssignmentAction(input: unknown) {
         case_sensitive: q.caseSensitive,
       });
     }
+  }
+
+  // Replace attachments cleanly
+  await db.from("assignment_attachments").delete().eq("assignment_id", v.assignmentId).eq("organization_id", membership.businessId);
+  if (v.attachments.length > 0) {
+    await db.from("assignment_attachments").insert(
+      v.attachments.map((att, idx) => ({
+        organization_id: membership.businessId,
+        assignment_id: v.assignmentId,
+        file_name: att.fileName,
+        display_title: att.displayTitle || att.fileName,
+        description: att.description || null,
+        mime_type: att.mimeType,
+        size_bytes: att.sizeBytes,
+        storage_path: att.storagePath,
+        attachment_role: att.attachmentRole,
+        sort_order: att.sortOrder || idx + 1,
+        uploaded_by: userId,
+      })),
+    );
   }
 
   // Notify affected recipients if published and material fields changed
@@ -1069,17 +1138,25 @@ export async function suggestAiMarkingForSubmissionAction(input: {
 }) {
   const membership = await requireBusinessMembership();
   if (!isStaffRole(membership.role)) {
-    return { ok: false as const, error: "Not authorized to run AI-assisted marking." };
+    return { ok: false as const, error: "Not authorized to run TuRnMaRk AI marking." };
   }
   if (!z.uuid().safeParse(input.assignmentId).success || !z.uuid().safeParse(input.submissionId).success) {
     return { ok: false as const, error: "Invalid assignment or submission ID." };
   }
 
+  const userId = await requireUserId();
   const db = academicDb();
-  const [subRes, qRes, keysRes] = await Promise.all([
+  const rawStorageDb = createJoinSupabaseClient();
+  const [assignRes, subRes, qRes, keysRes, filesRes] = await Promise.all([
+    db
+      .from("assignments")
+      .select("id,title,instructions,marking_instructions,subject_domain,total_marks,marking_mode")
+      .eq("id", input.assignmentId)
+      .eq("organization_id", membership.businessId)
+      .maybeSingle(),
     db
       .from("assignment_submissions")
-      .select("id,answers,text_content")
+      .select("id,answers_json,text_content,auto_score")
       .eq("id", input.submissionId)
       .eq("organization_id", membership.businessId)
       .maybeSingle(),
@@ -1094,14 +1171,75 @@ export async function suggestAiMarkingForSubmissionAction(input: {
       .select("question_id,model_answer,accepted_answers")
       .eq("assignment_id", input.assignmentId)
       .eq("organization_id", membership.businessId),
+    db
+      .from("submission_files")
+      .select("id,file_name,mime_type,storage_path,question_id")
+      .eq("submission_id", input.submissionId)
+      .eq("organization_id", membership.businessId)
+      .order("page_order", { ascending: true }),
   ]);
 
-  if (!subRes.data) return { ok: false as const, error: "Submission not found." };
+  if (!assignRes.data || !subRes.data) return { ok: false as const, error: "Submission not found." };
 
-  const answers = (subRes.data.answers ?? {}) as Record<string, unknown>;
+  const answers = (subRes.data.answers_json ?? {}) as Record<string, unknown>;
   const keyMap = new Map<string, Record<string, unknown>>(
     (keysRes.data ?? []).map((k) => [String(k.question_id), k]),
   );
+
+  // Load readable submission attachments from private storage
+  const loadedFiles: Array<{ fileName: string; mimeType: string; buffer: Buffer; docxText?: string }> = [];
+  let hasUnsupportedFile = false;
+  for (const f of (filesRes.data ?? []).slice(0, 6)) {
+    const mime = String(f.mime_type ?? "").toLowerCase();
+    const fileName = String(f.file_name ?? "submission-file");
+    const isAiReadable =
+      mime === "application/pdf" ||
+      mime === "image/jpeg" ||
+      mime === "image/png" ||
+      mime === "image/webp" ||
+      mime === "image/gif" ||
+      mime.startsWith("text/") ||
+      mime.includes("wordprocessingml") ||
+      fileName.toLowerCase().endsWith(".docx");
+
+    if (!isAiReadable) {
+      hasUnsupportedFile = true;
+      await db
+        .from("submission_files")
+        .update({ processing_status: "UNSUPPORTED" })
+        .eq("id", String(f.id))
+        .eq("organization_id", membership.businessId);
+      continue;
+    }
+
+    const stored = await readPrivateImage(rawStorageDb, String(f.storage_path), "full");
+    if (!stored) {
+      hasUnsupportedFile = true;
+      await db
+        .from("submission_files")
+        .update({ processing_status: "UNREADABLE" })
+        .eq("id", String(f.id))
+        .eq("organization_id", membership.businessId);
+      continue;
+    }
+
+    const buf = Buffer.from(stored.body);
+    let docxText: string | undefined;
+    if (mime.includes("wordprocessingml") || fileName.toLowerCase().endsWith(".docx")) {
+      docxText = (await extractTextFromDocxBuffer(buf)) ?? "";
+    }
+    loadedFiles.push({ fileName, mimeType: mime, buffer: buf, docxText });
+    await db
+      .from("submission_files")
+      .update({ processing_status: "PROCESSED" })
+      .eq("id", String(f.id))
+      .eq("organization_id", membership.businessId);
+  }
+
+  const extraDocxText = loadedFiles
+    .map((f) => (f.docxText ? `\n[${f.fileName}]:\n${f.docxText}` : ""))
+    .filter(Boolean)
+    .join("\n");
 
   const suggestions: Array<{
     questionId: string;
@@ -1114,35 +1252,161 @@ export async function suggestAiMarkingForSubmissionAction(input: {
     requiresLecturerReview: boolean;
   }> = [];
 
-  for (const q of qRes.data ?? []) {
+  const questionsList = qRes.data ?? [];
+  const totalMaxMarks = Math.max(1, Number(assignRes.data.total_marks ?? 100));
+
+  if (questionsList.length === 0) {
+    // Document-based assignment without structured questions: assess overall submission
+    const combinedResponse = [String(subRes.data.text_content ?? ""), extraDocxText].filter(Boolean).join("\n");
+    const evalRes = await evaluateSubjectiveAnswerWithClaude({
+      questionPrompt: String(assignRes.data.title ?? "Assignment Submission"),
+      assignmentInstructions: assignRes.data.instructions ? String(assignRes.data.instructions) : null,
+      markingInstructions: assignRes.data.marking_instructions ? String(assignRes.data.marking_instructions) : null,
+      subjectDomain: assignRes.data.subject_domain ? String(assignRes.data.subject_domain) : "GENERAL",
+      maxMarks: totalMaxMarks,
+      studentResponse: combinedResponse,
+      attachments: loadedFiles.filter((f) => !f.docxText),
+    });
+    if (!evalRes.ok) return { ok: false as const, error: evalRes.error };
+
+    const boundedTotal = Math.min(totalMaxMarks, Math.max(0, evalRes.suggestedMarks));
+    const needsReview = hasUnsupportedFile || evalRes.requiresLecturerReview || evalRes.confidence === "LOW";
+    await db
+      .from("assignment_submissions")
+      .update({
+        auto_score: boundedTotal,
+        status: needsReview || assignRes.data.marking_mode !== "AUTO_OBJECTIVE" ? "UNDER_REVIEW" : "AUTO_MARKED",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", input.submissionId)
+      .eq("organization_id", membership.businessId);
+
+    try {
+      await db.from("grading_audit_logs").insert({
+        organization_id: membership.businessId,
+        assignment_id: input.assignmentId,
+        submission_id: input.submissionId,
+        actor_id: userId,
+        action_type: "AI_MARKED",
+        previous_score: subRes.data.auto_score != null ? Number(subRes.data.auto_score) : null,
+        new_score: boundedTotal,
+        notes: evalRes.explanation,
+      });
+    } catch {}
+
+    revalidatePath(`/dashboard/academic/assignments/${input.assignmentId}`);
+    return {
+      ok: true as const,
+      totalSuggested: boundedTotal,
+      requiresLecturerReview: needsReview,
+      suggestions: [
+        {
+          questionId: "overall",
+          suggestedMarks: boundedTotal,
+          maxMarks: totalMaxMarks,
+          confidence: evalRes.confidence,
+          explanation: hasUnsupportedFile
+            ? `${evalRes.explanation} (Note: Some attached technical/binary files require manual lecturer inspection.)`
+            : evalRes.explanation,
+          criteriaSatisfied: evalRes.criteriaSatisfied,
+          criteriaMissing: evalRes.criteriaMissing,
+          requiresLecturerReview: needsReview,
+        },
+      ],
+    };
+  }
+
+  for (const q of questionsList) {
     const qId = String(q.id);
+    const qMax = Math.max(0, Number(q.marks ?? 10));
     const key = keyMap.get(qId);
     const responseRaw = answers[qId] ?? subRes.data.text_content ?? "";
+    const responseStr = [typeof responseRaw === "string" ? responseRaw : JSON.stringify(responseRaw), extraDocxText]
+      .filter(Boolean)
+      .join("\n");
+
     const evalRes = await evaluateSubjectiveAnswerWithClaude({
       questionPrompt: String(q.prompt ?? ""),
-      maxMarks: Number(q.marks ?? 10),
+      assignmentInstructions: assignRes.data.instructions ? String(assignRes.data.instructions) : null,
+      markingInstructions: assignRes.data.marking_instructions ? String(assignRes.data.marking_instructions) : null,
+      subjectDomain: assignRes.data.subject_domain ? String(assignRes.data.subject_domain) : "GENERAL",
+      maxMarks: qMax,
       modelAnswer: key?.model_answer ? String(key.model_answer) : null,
-      rubricCriteria: Array.isArray(key?.accepted_answers)
-        ? key.accepted_answers.map(String)
-        : [],
-      studentResponse: typeof responseRaw === "string" ? responseRaw : JSON.stringify(responseRaw),
+      rubricCriteria: Array.isArray(key?.accepted_answers) ? key.accepted_answers.map(String) : [],
+      studentResponse: responseStr,
+      attachments: loadedFiles.filter((f) => !f.docxText),
     });
 
     if (!evalRes.ok) {
       return { ok: false as const, error: evalRes.error };
     }
 
+    const boundedMarks = Math.min(qMax, Math.max(0, evalRes.suggestedMarks));
+    const needsReview = hasUnsupportedFile || evalRes.requiresLecturerReview;
+
+    await db.from("grading_results").upsert(
+      {
+        organization_id: membership.businessId,
+        submission_id: input.submissionId,
+        question_id: qId,
+        awarded_marks: boundedMarks,
+        max_marks: qMax,
+        marking_source: "AI_SUGGESTED",
+        ai_suggested_marks: boundedMarks,
+        ai_explanation: evalRes.explanation,
+        ai_confidence: evalRes.confidence,
+        criteria_satisfied: evalRes.criteriaSatisfied,
+        criteria_missing: evalRes.criteriaMissing,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "submission_id,question_id" },
+    );
+
     suggestions.push({
       questionId: qId,
-      suggestedMarks: evalRes.suggestedMarks,
-      maxMarks: Number(q.marks ?? 10),
+      suggestedMarks: boundedMarks,
+      maxMarks: qMax,
       confidence: evalRes.confidence,
       explanation: evalRes.explanation,
       criteriaSatisfied: evalRes.criteriaSatisfied,
       criteriaMissing: evalRes.criteriaMissing,
-      requiresLecturerReview: evalRes.requiresLecturerReview,
+      requiresLecturerReview: needsReview,
     });
   }
 
-  return { ok: true as const, suggestions };
+  // Application calculates validated total from question-level marks
+  const rawSum = suggestions.reduce((sum, s) => sum + s.suggestedMarks, 0);
+  const validatedTotal = Math.min(totalMaxMarks, Math.round(rawSum * 100) / 100);
+  const anyReviewRequired = hasUnsupportedFile || suggestions.some((s) => s.requiresLecturerReview || s.confidence === "LOW");
+
+  await db
+    .from("assignment_submissions")
+    .update({
+      auto_score: validatedTotal,
+      status: anyReviewRequired || assignRes.data.marking_mode !== "AUTO_OBJECTIVE" ? "UNDER_REVIEW" : "AUTO_MARKED",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.submissionId)
+    .eq("organization_id", membership.businessId);
+
+  try {
+    await db.from("grading_audit_logs").insert({
+      organization_id: membership.businessId,
+      assignment_id: input.assignmentId,
+      submission_id: input.submissionId,
+      actor_id: userId,
+      action_type: "AI_MARKED",
+      previous_score: subRes.data.auto_score != null ? Number(subRes.data.auto_score) : null,
+      new_score: validatedTotal,
+      notes: `TuRnMaRk AI evaluated ${suggestions.length} question(s).`,
+    });
+  } catch {}
+
+  revalidatePath(`/dashboard/academic/assignments/${input.assignmentId}`);
+  return {
+    ok: true as const,
+    totalSuggested: validatedTotal,
+    requiresLecturerReview: anyReviewRequired,
+    suggestions,
+  };
 }

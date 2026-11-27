@@ -40,9 +40,23 @@ export default async function EditAssignmentPage({
     allowFileUpload: Boolean(a.allow_file_upload ?? true),
     allowPhotoSubmission: Boolean(a.allow_photo_submission ?? true),
     maxAttempts: Number(a.max_attempts ?? 1),
+    maxAttachments: Number(a.max_attachments ?? 5),
     markingMode: String(a.marking_mode ?? "HYBRID"),
+    subjectDomain: String(a.subject_domain ?? "GENERAL"),
+    markingInstructions: String(a.marking_instructions ?? ""),
     releaseMarksImmediately: Boolean(a.release_marks_immediately ?? false),
     status: String(a.status ?? "DRAFT"),
+    attachments: data.attachments.map((att, idx) => ({
+      id: String(att.id ?? crypto.randomUUID()),
+      fileName: String(att.file_name ?? "document"),
+      displayTitle: String(att.display_title ?? att.file_name ?? "Document"),
+      description: String(att.description ?? ""),
+      mimeType: String(att.mime_type ?? "application/octet-stream"),
+      sizeBytes: Number(att.size_bytes ?? 0),
+      storagePath: String(att.storage_path ?? ""),
+      attachmentRole: (String(att.attachment_role ?? "ASSIGNMENT_MAIN") as "ASSIGNMENT_MAIN" | "REFERENCE" | "LECTURER_ONLY"),
+      sortOrder: Number(att.sort_order ?? idx + 1),
+    })),
     questions: data.questions.map((q) => {
       const key = keyByQuestion.get(String(q.id));
       return {

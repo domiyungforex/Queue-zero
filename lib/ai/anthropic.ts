@@ -2,7 +2,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { parseAssignmentFromText, type SmartAssignmentExtraction } from "@/lib/academic/ingestion";
-import { ASSIGNMENT_CATEGORIES, QUESTION_TYPES } from "@/lib/academic/types";
+import { ASSIGNMENT_CATEGORIES, QUESTION_TYPES, type AssignmentCategory, type QuestionType } from "@/lib/academic/types";
 import { getAnthropicMarkingModel, getAnthropicModel, isAnthropicConfigured } from "./provider";
 
 export interface AiUsageMetrics {
@@ -12,52 +12,86 @@ export interface AiUsageMetrics {
   outputTokens: number;
 }
 
-const claudeExtractionSchema = z.object({
-  title: z.string().optional().default(""),
-  courseCode: z.string().nullable().optional().default(null),
-  courseName: z.string().nullable().optional().default(null),
-  category: z.enum(ASSIGNMENT_CATEGORIES).optional().default("HOMEWORK"),
-  instructions: z.string().optional().default(""),
-  learningObjectives: z.string().optional().default(""),
-  dueAt: z.string().nullable().optional().default(null),
-  totalMarks: z.number().min(0).max(10000).nullable().optional().default(null),
-  submissionRequirements: z.string().optional().default(""),
-  questions: z
-    .array(
-      z.object({
-        questionType: z.enum(QUESTION_TYPES).optional().default("SHORT_ANSWER"),
-        prompt: z.string().min(1),
-        options: z.array(z.string()).optional().default([]),
-        marks: z.number().min(0).max(1000).optional().default(10),
-        formulaLatex: z.string().optional().default(""),
-        modelAnswer: z.string().optional().default(""),
-        uncertain: z.boolean().optional().default(false),
-      }),
-    )
-    .default([]),
+const nullToEmpty = z
+  .string()
+  .nullish()
+  .transform((v) => (v ?? "").trim());
+
+function normalizeCategory(raw: unknown): AssignmentCategory {
+  if (typeof raw !== "string") return "HOMEWORK";
+  const upper = raw.trim().toUpperCase().replace(/[\s-]+/g, "_");
+  if ((ASSIGNMENT_CATEGORIES as readonly string[]).includes(upper)) {
+    return upper as AssignmentCategory;
+  }
+  if (upper.includes("EXAM") || upper.includes("TEST")) return "EXAM";
+  if (upper.includes("QUIZ") || upper.includes("CA")) return "CONTINUOUS_ASSESSMENT";
+  if (upper.includes("LAB")) return "LAB_REPORT";
+  if (upper.includes("ESSAY")) return "ESSAY";
+  if (upper.includes("PROJECT")) return "INDIVIDUAL_PROJECT";
+  if (upper.includes("PRACTICAL")) return "PRACTICAL";
+  return "HOMEWORK";
+}
+
+function normalizeQuestionType(raw: unknown): QuestionType {
+  if (typeof raw !== "string") return "SHORT_ANSWER";
+  const upper = raw.trim().toUpperCase().replace(/[\s-]+/g, "_");
+  if ((QUESTION_TYPES as readonly string[]).includes(upper)) {
+    return upper as QuestionType;
+  }
+  if (upper.includes("MCQ") || upper.includes("MULTIPLE") || upper.includes("CHOICE")) return "MCQ";
+  if (upper.includes("TRUE") || upper.includes("FALSE") || upper.includes("BOOL")) return "TRUE_FALSE";
+  if (upper.includes("ESSAY")) return "ESSAY";
+  if (upper.includes("LONG") || upper.includes("THEORY") || upper.includes("DERIV")) return "LONG_ANSWER";
+  if (upper.includes("MATH") || upper.includes("CALC") || upper.includes("NUMER")) return "MATH";
+  if (upper.includes("FILL") || upper.includes("GAP") || upper.includes("BLANK")) return "FILL_GAP";
+  if (upper.includes("MATCH")) return "MATCHING";
+  return "SHORT_ANSWER";
+}
+
+const rawQuestionSchema = z.object({
+  questionType: z.unknown().optional(),
+  prompt: z.string().nullish(),
+  options: z.array(z.unknown()).nullish(),
+  marks: z.union([z.number(), z.string()]).nullish(),
+  formulaLatex: nullToEmpty,
+  modelAnswer: nullToEmpty,
+  uncertain: z.boolean().nullish(),
+});
+
+const claudeExtractionEnvelopeSchema = z.object({
+  title: nullToEmpty,
+  courseCode: z.string().nullish().transform((v) => (v && v.trim() ? v.trim() : null)),
+  courseName: z.string().nullish().transform((v) => (v && v.trim() ? v.trim() : null)),
+  category: z.unknown().optional(),
+  instructions: nullToEmpty,
+  learningObjectives: nullToEmpty,
+  dueAt: z.string().nullish().transform((v) => (v && v.trim() ? v.trim() : null)),
+  totalMarks: z.union([z.number(), z.string()]).nullish(),
+  submissionRequirements: nullToEmpty,
+  questions: z.array(z.unknown()).nullish().transform((v) => v ?? []),
 });
 
 const claudeMarkingSchema = z.object({
   suggestedMarks: z.number().min(0),
   confidence: z.enum(["HIGH", "MEDIUM", "LOW"]).default("MEDIUM"),
   explanation: z.string().min(1),
-  criteriaSatisfied: z.array(z.string()).default([]),
-  criteriaMissing: z.array(z.string()).default([]),
-  requiresLecturerReview: z.boolean().default(true),
+  criteriaSatisfied: z.array(z.string()).nullish().transform((v) => v ?? []),
+  criteriaMissing: z.array(z.string()).nullish().transform((v) => v ?? []),
+  requiresLecturerReview: z.boolean().nullish().transform((v) => v ?? true),
 });
 
 const claudeQuestionGenSchema = z.object({
   questions: z
     .array(
       z.object({
-        questionType: z.enum(QUESTION_TYPES).default("SHORT_ANSWER"),
+        questionType: z.unknown().transform(normalizeQuestionType),
         prompt: z.string().min(1),
-        options: z.array(z.string()).default([]),
-        marks: z.number().min(1).max(100).default(10),
-        formulaLatex: z.string().default(""),
-        acceptedAnswers: z.array(z.string()).default([]),
-        modelAnswer: z.string().default(""),
-        markingGuide: z.string().default(""),
+        options: z.array(z.string()).nullish().transform((v) => v ?? []),
+        marks: z.number().min(1).max(100).nullish().transform((v) => v ?? 10),
+        formulaLatex: nullToEmpty,
+        acceptedAnswers: z.array(z.string()).nullish().transform((v) => v ?? []),
+        modelAnswer: nullToEmpty,
+        markingGuide: nullToEmpty,
       }),
     )
     .min(1),
@@ -66,12 +100,12 @@ const claudeQuestionGenSchema = z.object({
 function createAnthropicClient(): Anthropic {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
-    throw new Error("TuRnMaRk AI is not configured on the server.");
+    throw new Error("TuRnMaRk AI is temporarily unavailable. You can continue creating your assignment manually.");
   }
   return new Anthropic({
     apiKey,
     timeout: 25_000,
-    maxRetries: 0, // Managed explicitly below with bounded exponential backoff
+    maxRetries: 0,
   });
 }
 
@@ -81,31 +115,31 @@ function classifyAnthropicError(err: unknown): { message: string; retryable: boo
     const name = "name" in err ? String((err as { name?: string }).name) : "";
     if (status === 401 || status === 403) {
       return {
-        message: "TuRnMaRk AI authentication failed. Check server AI configuration.",
+        message: "TuRnMaRk AI is temporarily unavailable. Please contact your institution administrator or continue manually.",
         retryable: false,
       };
     }
     if (status === 429) {
       return {
-        message: "TuRnMaRk AI is busy right now. Please retry shortly or complete manually.",
+        message: "TuRnMaRk AI is busy right now. Your original document is safe — please try again shortly or continue manually.",
         retryable: true,
       };
     }
     if (status && status >= 500) {
       return {
-        message: "TuRnMaRk AI is temporarily unavailable.",
+        message: "TuRnMaRk AI is temporarily unavailable. Your original document is safe.",
         retryable: true,
       };
     }
     if (name === "APIConnectionTimeoutError" || name === "AbortError") {
       return {
-        message: "TuRnMaRk AI request timed out.",
+        message: "Document processing timed out. Your original document is safe — please retry or enter questions manually.",
         retryable: true,
       };
     }
   }
   return {
-    message: "TuRnMaRk AI could not complete processing. You can continue manually.",
+    message: "Something interrupted document processing. Your original document is safe. Please try again or enter questions manually.",
     retryable: false,
   };
 }
@@ -135,11 +169,14 @@ function extractJsonObject(raw: string): unknown {
     .replace(/^```\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
-  return JSON.parse(cleaned);
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  const slice = start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned;
+  return JSON.parse(slice);
 }
 
 function normalizeExtractedAssignment(
-  raw: z.infer<typeof claudeExtractionSchema>,
+  raw: z.infer<typeof claudeExtractionEnvelopeSchema>,
   authorizedCourses: Array<{ id: string; code: string; title: string }>,
   fallbackText: string,
 ): SmartAssignmentExtraction {
@@ -151,45 +188,63 @@ function normalizeExtractedAssignment(
       ? authorizedCourses.find((c) => c.id === base.matchedCourseId) ?? null
       : null;
 
+  // Validate each question individually so 1 malformed item never discards the rest
+  const validQuestions: SmartAssignmentExtraction["questions"] = [];
+  let droppedQuestions = 0;
+  for (const item of raw.questions) {
+    const qParsed = rawQuestionSchema.safeParse(item);
+    if (!qParsed.success || !qParsed.data.prompt?.trim()) {
+      droppedQuestions += 1;
+      continue;
+    }
+    const q = qParsed.data;
+    const qPrompt = (q.prompt ?? "").trim();
+    if (!qPrompt) {
+      droppedQuestions += 1;
+      continue;
+    }
+    const numericMarks = Number(q.marks);
+    const marks = Number.isFinite(numericMarks) && numericMarks >= 0 && numericMarks <= 1000 ? numericMarks : 10;
+    validQuestions.push({
+      questionType: normalizeQuestionType(q.questionType),
+      prompt: qPrompt,
+      options: (q.options ?? []).map((o) => String(o ?? "").trim()).filter(Boolean),
+      marks,
+      formulaLatex: q.formulaLatex,
+      uncertain: Boolean(q.uncertain),
+    });
+  }
+
+  const mappedQuestions = validQuestions.length > 0 ? validQuestions : base.questions;
+
   const missingFields: string[] = [];
   if (!raw.title && !base.title) missingFields.push("Assignment title");
-  if (!matchedCourse && !raw.courseCode && !raw.courseName) {
-    missingFields.push("Course (select an existing course or enter manually)");
-  }
-  if (!raw.dueAt) missingFields.push("Submission deadline (optional — not stated in document)");
-  if (raw.questions.length === 0) missingFields.push("Questions");
+  if (mappedQuestions.length === 0) missingFields.push("Questions");
 
   const warnings: string[] = [];
-  if (raw.questions.some((q) => q.uncertain)) {
-    warnings.push("Some extracted questions were marked uncertain — review before publishing.");
+  if (droppedQuestions > 0) {
+    warnings.push("We extracted some of your assignment content. A few sections may need your attention.");
+  }
+  if (mappedQuestions.some((q) => q.uncertain)) {
+    warnings.push("Some extracted questions were flagged for your review before publishing.");
   }
   if (!matchedCourse && (raw.courseCode || raw.courseName)) {
     warnings.push(
-      `Extracted course "${[raw.courseCode, raw.courseName].filter(Boolean).join(" — ")}" is not in the catalog; prefilled as manual course.`,
+      `Extracted course "${[raw.courseCode, raw.courseName].filter(Boolean).join(" — ")}" was prefilled as a manual course.`,
     );
   }
 
-  const mappedQuestions =
-    raw.questions.length > 0
-      ? raw.questions.map((q) => ({
-          questionType: q.questionType,
-          prompt: q.prompt,
-          options: q.options,
-          marks: q.marks,
-          formulaLatex: q.formulaLatex,
-          uncertain: q.uncertain,
-        }))
-      : base.questions;
-
+  const parsedTotalMarks = Number(raw.totalMarks);
   const computedTotalMarks =
-    raw.totalMarks ??
-    (mappedQuestions.reduce((sum, q) => sum + Number(q.marks || 0), 0) || base.totalMarks);
+    Number.isFinite(parsedTotalMarks) && parsedTotalMarks > 0
+      ? parsedTotalMarks
+      : mappedQuestions.reduce((sum, q) => sum + Number(q.marks || 0), 0) || base.totalMarks;
 
   return {
     title: raw.title || base.title,
     matchedCourseId: matchedCourse?.id ?? null,
     matchedCourseCode: matchedCourse?.code ?? raw.courseCode ?? null,
-    category: raw.category ?? base.category,
+    category: normalizeCategory(raw.category),
     instructions: raw.instructions || base.instructions,
     learningObjectives: raw.learningObjectives || base.learningObjectives,
     dueAt: raw.dueAt || null,
@@ -231,6 +286,7 @@ Return ONLY valid JSON with keys:
   ]
 }
 Strict rules:
+- Extract every visible question and subquestion accurately, preserving numbering and wording.
 - Never invent missing deadlines, course codes, or questions.
 - Preserve mathematical/scientific notation in prompt or formulaLatex.
 - Set uncertain=true if handwriting/scan quality makes a question ambiguous.`;
@@ -243,7 +299,10 @@ export async function extractAssignmentFromTextWithClaude(input: {
   | { ok: false; error: string }
 > {
   if (!isAnthropicConfigured()) {
-    return { ok: false, error: "TuRnMaRk AI is not configured on the server." };
+    return {
+      ok: false,
+      error: "TuRnMaRk AI is not configured. Please contact your institution administrator or continue manually.",
+    };
   }
   const model = getAnthropicModel();
   try {
@@ -252,7 +311,7 @@ export async function extractAssignmentFromTextWithClaude(input: {
     const msg = await withBackoff(() =>
       client.messages.create({
         model,
-        max_tokens: 2400,
+        max_tokens: 4096,
         system: EXTRACTION_SYSTEM_PROMPT,
         messages: [
           {
@@ -265,11 +324,11 @@ export async function extractAssignmentFromTextWithClaude(input: {
 
     const textBlock = msg.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      return { ok: false, error: "Claude returned no structured text output." };
+      return { ok: false, error: "We couldn't identify assignment questions in this document. Try a clearer document or add your questions manually." };
     }
-    const parsed = claudeExtractionSchema.safeParse(extractJsonObject(textBlock.text));
+    const parsed = claudeExtractionEnvelopeSchema.safeParse(extractJsonObject(textBlock.text));
     if (!parsed.success) {
-      return { ok: false, error: "Claude returned incomplete extraction output; please review manually." };
+      return { ok: false, error: "TuRnMaRk could not extract all assignment questions. Please review or add questions manually." };
     }
 
     return {
@@ -296,7 +355,10 @@ export async function extractAssignmentFromDocumentWithClaude(input: {
   | { ok: false; error: string }
 > {
   if (!isAnthropicConfigured()) {
-    return { ok: false, error: "TuRnMaRk AI is not configured on the server." };
+    return {
+      ok: false,
+      error: "TuRnMaRk AI is not configured. Please contact your institution administrator or continue manually.",
+    };
   }
   const model = getAnthropicModel();
   const base64 = input.buffer.toString("base64");
@@ -322,7 +384,7 @@ export async function extractAssignmentFromDocumentWithClaude(input: {
     const msg = await withBackoff(() =>
       client.messages.create({
         model,
-        max_tokens: 2800,
+        max_tokens: 4096,
         system: EXTRACTION_SYSTEM_PROMPT,
         messages: [
           {
@@ -331,7 +393,7 @@ export async function extractAssignmentFromDocumentWithClaude(input: {
               mediaBlock,
               {
                 type: "text",
-                text: `Extract the assignment from this document/image. Authorized courses: ${courseList || "None"}. Return ONLY valid JSON.`,
+                text: `Extract all assignment details and questions from this document/image. Authorized courses: ${courseList || "None"}. Return ONLY valid JSON.`,
               },
             ],
           },
@@ -341,11 +403,11 @@ export async function extractAssignmentFromDocumentWithClaude(input: {
 
     const textBlock = msg.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      return { ok: false, error: "Claude could not read structured content from this document." };
+      return { ok: false, error: "We couldn't identify assignment questions in this document. Try a clearer document or add your questions manually." };
     }
-    const parsed = claudeExtractionSchema.safeParse(extractJsonObject(textBlock.text));
+    const parsed = claudeExtractionEnvelopeSchema.safeParse(extractJsonObject(textBlock.text));
     if (!parsed.success) {
-      return { ok: false, error: "Claude returned partial extraction; please review manually." };
+      return { ok: false, error: "TuRnMaRk could not extract all assignment questions. Please review or add questions manually." };
     }
 
     return {
@@ -363,12 +425,33 @@ export async function extractAssignmentFromDocumentWithClaude(input: {
   }
 }
 
+function subjectDomainGuidance(domain?: string): string {
+  switch (domain) {
+    case "MATHEMATICS_PHYSICS":
+      return "Subject domain: Mathematics & Physics. Assess formula selection, step-by-step workings, equivalent mathematical expressions, numerical accuracy, units, and significant figures. Award partial credit for valid method steps even if a final arithmetic slip occurs.";
+    case "ENGINEERING":
+      return "Subject domain: Engineering. Assess technical reasoning, design decisions, calculations, units, standards, and practical correctness. Flag complex CAD/technical drawings for lecturer review if visual inspection is insufficient.";
+    case "COMPUTER_SCIENCE":
+      return "Subject domain: Computer Science. Assess algorithmic reasoning, code correctness, edge-case handling, time/space complexity, and output accuracy rather than minor syntax style.";
+    case "HUMANITIES_SOCIAL":
+      return "Subject domain: Humanities & Social Sciences. Assess argument quality, supporting evidence, relevance to prompt, critical reasoning, structure, and referencing.";
+    case "FINE_ART_DESIGN":
+      return "Subject domain: Fine Art & Design. Assess against lecturer-defined criteria, composition, technique, execution, originality, and supporting artist/design explanations. Flag visual studio work for lecturer review.";
+    default:
+      return "Subject domain: General Academic. Assess accuracy, completeness, reasoning, and adherence to the lecturer's rubric.";
+  }
+}
+
 export async function evaluateSubjectiveAnswerWithClaude(input: {
   questionPrompt: string;
   maxMarks: number;
   modelAnswer?: string | null;
   rubricCriteria?: string[];
+  markingInstructions?: string | null;
+  assignmentInstructions?: string | null;
+  subjectDomain?: string;
   studentResponse: string;
+  attachments?: Array<{ fileName: string; mimeType: string; buffer: Buffer }>;
 }): Promise<
   | {
       ok: true;
@@ -383,9 +466,10 @@ export async function evaluateSubjectiveAnswerWithClaude(input: {
   | { ok: false; error: string }
 > {
   if (!isAnthropicConfigured()) {
-    return { ok: false, error: "Anthropic Claude is not configured." };
+    return { ok: false, error: "TuRnMaRk AI is temporarily unavailable." };
   }
-  if (!input.studentResponse.trim()) {
+  const hasAttachments = (input.attachments?.length ?? 0) > 0;
+  if (!input.studentResponse.trim() && !hasAttachments) {
     return {
       ok: true,
       suggestedMarks: 0,
@@ -401,11 +485,62 @@ export async function evaluateSubjectiveAnswerWithClaude(input: {
   const model = getAnthropicMarkingModel();
   try {
     const client = createAnthropicClient();
+    const contentBlocks: Anthropic.MessageCreateParamsNonStreaming["messages"][0]["content"] = [
+      {
+        type: "text",
+        text: JSON.stringify({
+          questionPrompt: input.questionPrompt,
+          maxMarks: input.maxMarks,
+          assignmentInstructions: input.assignmentInstructions ?? "",
+          lecturerMarkingInstructions: input.markingInstructions ?? "",
+          modelAnswer: input.modelAnswer ?? "",
+          rubricCriteria: input.rubricCriteria ?? [],
+          studentResponse: input.studentResponse.slice(0, 8000),
+          attachedFiles: (input.attachments ?? []).map((a) => a.fileName),
+        }),
+      },
+    ];
+
+    for (const att of (input.attachments ?? []).slice(0, 4)) {
+      const mime = att.mimeType.toLowerCase();
+      if (mime === "application/pdf") {
+        contentBlocks.push({
+          type: "document",
+          source: {
+            type: "base64",
+            media_type: "application/pdf",
+            data: att.buffer.toString("base64"),
+          },
+        });
+      } else if (mime === "image/jpeg" || mime === "image/png" || mime === "image/webp" || mime === "image/gif") {
+        contentBlocks.push({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: mime,
+            data: att.buffer.toString("base64"),
+          },
+        });
+      } else if (mime.startsWith("text/")) {
+        contentBlocks.push({
+          type: "text",
+          text: `Attached file (${att.fileName}):\n${att.buffer.toString("utf8").slice(0, 6000)}`,
+        });
+      }
+    }
+
     const msg = await withBackoff(() =>
       client.messages.create({
         model,
-        max_tokens: 900,
+        max_tokens: 1100,
         system: `You are an academic marking assistant for TuRnMaRk. Your marks are strictly SUGGESTIONS for the lecturer.
+${subjectDomainGuidance(input.subjectDomain)}
+Rules:
+- Lecturer's explicit marking instructions and rubric always take priority.
+- Accept valid alternative approaches and equivalent mathematical/scientific expressions; never require word-for-word reproduction.
+- Award partial marks fairly when partial reasoning or steps are correct.
+- Never invent student responses or fabricate assessment evidence.
+- Set requiresLecturerReview=true if handwriting/scan is ambiguous, a file is unreadable, or complex diagrams/technical files need human inspection.
 Return ONLY valid JSON:
 {
   "suggestedMarks": number (between 0 and maxMarks),
@@ -418,13 +553,7 @@ Return ONLY valid JSON:
         messages: [
           {
             role: "user",
-            content: JSON.stringify({
-              questionPrompt: input.questionPrompt,
-              maxMarks: input.maxMarks,
-              modelAnswer: input.modelAnswer ?? "",
-              rubricCriteria: input.rubricCriteria ?? [],
-              studentResponse: input.studentResponse.slice(0, 8000),
-            }),
+            content: contentBlocks,
           },
         ],
       }),
@@ -432,11 +561,11 @@ Return ONLY valid JSON:
 
     const textBlock = msg.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      return { ok: false, error: "Claude returned no marking output." };
+      return { ok: false, error: "TuRnMaRk AI returned no marking suggestion." };
     }
     const parsed = claudeMarkingSchema.safeParse(extractJsonObject(textBlock.text));
     if (!parsed.success) {
-      return { ok: false, error: "Claude marking output could not be parsed." };
+      return { ok: false, error: "TuRnMaRk AI marking suggestion could not be parsed." };
     }
 
     const boundedMarks = Math.min(input.maxMarks, Math.max(0, Math.round(parsed.data.suggestedMarks * 100) / 100));
@@ -475,7 +604,7 @@ export async function generateQuestionsWithClaude(input: {
   | { ok: false; error: string }
 > {
   if (!isAnthropicConfigured()) {
-    return { ok: false, error: "Anthropic Claude is not configured." };
+    return { ok: false, error: "TuRnMaRk AI is temporarily unavailable." };
   }
   const model = getAnthropicModel();
   try {
@@ -517,11 +646,11 @@ Return ONLY valid JSON:
 
     const textBlock = msg.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      return { ok: false, error: "Claude returned no generated questions." };
+      return { ok: false, error: "TuRnMaRk AI could not generate questions right now." };
     }
     const parsed = claudeQuestionGenSchema.safeParse(extractJsonObject(textBlock.text));
     if (!parsed.success) {
-      return { ok: false, error: "Claude returned invalid question generation format." };
+      return { ok: false, error: "TuRnMaRk AI returned an incomplete question set." };
     }
 
     return {

@@ -2,7 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, BookOpen, Camera, Check, CheckCircle2, FileText, Plus, Sparkles, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  BookOpen,
+  Camera,
+  Check,
+  CheckCircle2,
+  FileText,
+  Plus,
+  Sparkles,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
 import { DynamicCameraModal } from "@/components/school/dynamic-camera-modal";
 import { createAssignmentAction, updateAssignmentAction } from "@/lib/academic/actions";
@@ -12,9 +27,24 @@ import {
   ASSIGNMENT_TARGET_AUDIENCES,
   MARKING_MODES,
   QUESTION_TYPES,
+  SUBJECT_DOMAINS,
   type AssignmentTargetAudience,
+  type AttachmentRole,
   type QuestionType,
+  type SubjectDomain,
 } from "@/lib/academic/types";
+
+export interface InitialAssignmentAttachment {
+  id: string;
+  fileName: string;
+  displayTitle: string;
+  description: string;
+  mimeType: string;
+  sizeBytes: number;
+  storagePath: string;
+  attachmentRole: AttachmentRole;
+  sortOrder: number;
+}
 
 export interface InitialAssignmentQuestion {
   id: string;
@@ -54,10 +84,14 @@ export interface InitialAssignmentData {
   allowFileUpload: boolean;
   allowPhotoSubmission: boolean;
   maxAttempts: number;
+  maxAttachments?: number;
   markingMode: string;
+  subjectDomain?: string;
+  markingInstructions?: string;
   releaseMarksImmediately: boolean;
   status: string;
   questions: InitialAssignmentQuestion[];
+  attachments?: InitialAssignmentAttachment[];
 }
 
 interface QuestionDraft {
@@ -147,7 +181,7 @@ export function AssignmentWizard({
   const [semester, setSemester] = useState(initialData?.semester ?? "First");
   const [description, setDescription] = useState(initialData?.description ?? "");
   const [instructions, setInstructions] = useState(initialData?.instructions ?? "");
-  const [learningObjectives] = useState("");
+  const [learningObjectives, setLearningObjectives] = useState("");
 
   // Step 2: Questions
   const [questions, setQuestions] = useState<QuestionDraft[]>(
@@ -171,14 +205,23 @@ export function AssignmentWizard({
   const [allowFileUpload, setAllowFileUpload] = useState(initialData?.allowFileUpload ?? true);
   const [allowPhotoSubmission, setAllowPhotoSubmission] = useState(initialData?.allowPhotoSubmission ?? true);
   const [maxAttempts, setMaxAttempts] = useState(initialData?.maxAttempts ?? 1);
+  const [maxAttachments, setMaxAttachments] = useState(initialData?.maxAttachments ?? 5);
   const [targetAudience, setTargetAudience] = useState<AssignmentTargetAudience>("ALL_INSTITUTION");
   const [targetDepartment, setTargetDepartment] = useState("");
   const [targetLevel, setTargetLevel] = useState("");
+
+  // Attachments (uploaded directly without requiring extraction)
+  const [attachments, setAttachments] = useState<InitialAssignmentAttachment[]>(initialData?.attachments ?? []);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   // Step 4: Marking Config
   const [markingMode, setMarkingMode] = useState<(typeof MARKING_MODES)[number]>(
     (initialData?.markingMode as (typeof MARKING_MODES)[number]) ?? "HYBRID",
   );
+  const [subjectDomain, setSubjectDomain] = useState<SubjectDomain>(
+    (initialData?.subjectDomain as SubjectDomain) ?? "GENERAL",
+  );
+  const [markingInstructions, setMarkingInstructions] = useState(initialData?.markingInstructions ?? "");
   const [releaseMarksImmediately, setReleaseMarksImmediately] = useState(
     initialData?.releaseMarksImmediately ?? false,
   );
@@ -189,6 +232,57 @@ export function AssignmentWizard({
 
   function updateQuestion(id: string, patch: Partial<QuestionDraft>) {
     setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)));
+  }
+
+  async function uploadAssignmentDocument(file: File, role: AttachmentRole = "ASSIGNMENT_MAIN") {
+    setUploadingAttachment(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      if (initialData?.id) fd.set("assignmentId", initialData.id);
+      const res = await fetch("/api/academic/files/upload", { method: "POST", body: fd });
+      const json = (await res.json().catch(() => ({}))) as {
+        storagePath?: string;
+        fileName?: string;
+        mimeType?: string;
+        sizeBytes?: number;
+        error?: string;
+      };
+      if (!res.ok || !json.storagePath) {
+        setError(json.error ?? "Document upload failed.");
+        return;
+      }
+      setAttachments((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          fileName: json.fileName ?? file.name,
+          displayTitle: file.name.replace(/\.[^.]+$/, ""),
+          description: "",
+          mimeType: json.mimeType ?? (file.type || "application/octet-stream"),
+          sizeBytes: json.sizeBytes ?? file.size,
+          storagePath: json.storagePath!,
+          attachmentRole: role,
+          sortOrder: prev.length + 1,
+        },
+      ]);
+    } catch {
+      setError("Network error while uploading document.");
+    } finally {
+      setUploadingAttachment(false);
+    }
+  }
+
+  function moveAttachment(index: number, delta: -1 | 1) {
+    setAttachments((prev) => {
+      const next = [...prev];
+      const target = index + delta;
+      if (target < 0 || target >= next.length) return prev;
+      const [item] = next.splice(index, 1);
+      next.splice(target, 0, item);
+      return next.map((a, i) => ({ ...a, sortOrder: i + 1 }));
+    });
   }
 
   async function runSmartIngest(formData: FormData) {
@@ -212,12 +306,20 @@ export function AssignmentWizard({
       if (ex.matchedCourseId) {
         setCourseMode("catalog");
         setCourseId(ex.matchedCourseId);
-      } else if (ex.matchedCourseCode) {
-        setCourseMode("manual");
-        setManualCourseCode(ex.matchedCourseCode);
+      } else {
+        // Populate manual course fields from extracted course info
+        const rawEx = ex as unknown as { courseCode?: string | null; courseName?: string | null };
+        if (rawEx.courseCode || rawEx.courseName) {
+          setCourseMode("manual");
+          if (rawEx.courseCode) setManualCourseCode(rawEx.courseCode);
+          if (rawEx.courseName) setManualCourseName(rawEx.courseName);
+        }
       }
       if (ex.category) setCategory(ex.category);
       if (ex.instructions) setInstructions(ex.instructions);
+      const rawEx2 = ex as unknown as { learningObjectives?: string };
+      if (rawEx2.learningObjectives) setLearningObjectives(rawEx2.learningObjectives);
+      if (ex.dueAt) setDueAt(ex.dueAt);
       if (ex.questions.length > 0) {
         setQuestions(
           ex.questions.map((q) => ({
@@ -258,8 +360,9 @@ export function AssignmentWizard({
     }
 
     const nonEmptyQuestions = questions.filter((q) => Boolean(q.prompt.trim()));
-    if (nonEmptyQuestions.length === 0 && !instructions.trim() && !description.trim()) {
-      nextFieldErrors["questions.0.prompt"] = "Add at least one question prompt or provide assignment instructions.";
+    const hasStudentAttachment = attachments.some((a) => a.attachmentRole !== "LECTURER_ONLY");
+    if (nonEmptyQuestions.length === 0 && !instructions.trim() && !description.trim() && !hasStudentAttachment) {
+      nextFieldErrors["questions.0.prompt"] = "Upload an assignment document, add instructions, or add at least one question.";
     }
 
     if (Object.keys(nextFieldErrors).length > 0) {
@@ -300,13 +403,26 @@ export function AssignmentWizard({
         allowFileUpload,
         allowPhotoSubmission,
         maxAttempts,
+        maxAttachments,
         targetAudience,
         targetDepartment: targetDepartment.trim(),
         targetLevel: targetLevel.trim(),
         markingMode,
+        subjectDomain,
+        markingInstructions: markingInstructions.trim(),
         totalMarks,
         releaseMarksImmediately,
         publishNow,
+        attachments: attachments.map((a, idx) => ({
+          fileName: a.fileName,
+          displayTitle: a.displayTitle.trim() || a.fileName,
+          description: a.description.trim(),
+          mimeType: a.mimeType,
+          sizeBytes: a.sizeBytes,
+          storagePath: a.storagePath,
+          attachmentRole: a.attachmentRole,
+          sortOrder: idx + 1,
+        })),
         questions: nonEmptyQuestions.map((q) => ({
           questionType: q.questionType,
           prompt: q.prompt.trim(),
@@ -366,10 +482,10 @@ export function AssignmentWizard({
         <div className="flex flex-wrap gap-3">
           <label className="button-secondary cursor-pointer">
             <Plus size={16} aria-hidden="true" />
-            {ingesting ? "Processing…" : "Upload Document (PDF / DOCX / Image)"}
+            {ingesting ? "TuRnMaRk is analysing…" : "Upload Document (PDF / DOCX / Image)"}
             <input
               type="file"
-              accept=".pdf,.docx,.txt,image/jpeg,image/png,image/webp"
+              accept=".pdf,.docx,.txt,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif"
               className="sr-only"
               disabled={ingesting}
               onChange={(e) => {
@@ -407,24 +523,55 @@ export function AssignmentWizard({
             }}
             className="button-primary"
           >
-            {ingesting ? "Extracting…" : "Autofill Form"}
+            {ingesting ? "TuRnMaRk is analysing…" : "Autofill Form"}
           </button>
         </div>
 
+        {ingesting ? (
+          <p className="text-xs font-semibold text-[#d94b14]" role="status">
+            TuRnMaRk is analysing your assignment…
+          </p>
+        ) : null}
+
         {extractionReport ? (
-          <div className="rounded-xl border border-black/10 bg-white p-4 text-xs space-y-2">
-            <p className="font-bold text-[#111318]">
-              Smart Review: {extractionReport.questions.length} question(s) extracted
-              {extractionReport.matchedCourseCode ? ` · Matched ${extractionReport.matchedCourseCode}` : ""}
-            </p>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-bold">✓</span>
+              <p className="font-bold text-emerald-900">
+                TuRnMaRk has analysed your document
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-emerald-800">
+              <span className="font-medium">Questions extracted:</span>
+              <span>{extractionReport.questions.length}</span>
+              {extractionReport.totalMarks ? (
+                <>
+                  <span className="font-medium">Total marks:</span>
+                  <span>{extractionReport.totalMarks}</span>
+                </>
+              ) : null}
+              {extractionReport.matchedCourseCode ? (
+                <>
+                  <span className="font-medium">Course:</span>
+                  <span>{extractionReport.matchedCourseCode}</span>
+                </>
+              ) : null}
+              {extractionReport.dueAt ? (
+                <>
+                  <span className="font-medium">Deadline:</span>
+                  <span>{new Date(extractionReport.dueAt).toLocaleString()}</span>
+                </>
+              ) : null}
+            </div>
             {extractionReport.missingFields.length > 0 ? (
-              <p className="text-amber-800">
-                <strong>Needs confirmation:</strong> {extractionReport.missingFields.join("; ")}
+              <p className="text-amber-700 font-medium">
+                ⚠ Please check: {extractionReport.missingFields.join("; ")}
               </p>
             ) : null}
             {extractionReport.warnings.map((w) => (
-              <p key={w} className="text-neutral-600">• {w}</p>
+              <p key={w} className="text-emerald-700">• {w}</p>
             ))}
+            <p className="text-emerald-700 italic">Review the populated fields below and make any necessary edits before saving.</p>
           </div>
         ) : null}
 
@@ -701,6 +848,122 @@ export function AssignmentWizard({
                 />
               </label>
             </div>
+
+            <div className="sm:col-span-2 rounded-2xl border border-black/10 bg-[#fffaf7] p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-[#111318]">Assignment Documents &amp; Materials</h3>
+                  <p className="text-xs text-neutral-600">
+                    Attach PDF, Word, PowerPoint, images, CAD/technical files, or lecturer-only rubrics directly—no AI extraction required.
+                  </p>
+                </div>
+                <label className="button-secondary cursor-pointer">
+                  <Upload size={15} aria-hidden="true" />
+                  {uploadingAttachment ? "Uploading…" : "Attach Document"}
+                  <input
+                    type="file"
+                    multiple
+                    disabled={uploadingAttachment}
+                    className="sr-only"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.rtf,.md,.csv,.jpg,.jpeg,.png,.webp,.heic,.zip,.dwg,.dxf,.step,.stp,.stl,.obj,.xlsx,.py,.js,.ts,.c,.cpp,.java"
+                    onChange={(e) => {
+                      const list = Array.from(e.target.files ?? []);
+                      e.target.value = "";
+                      for (const f of list) {
+                        void uploadAssignmentDocument(f, "ASSIGNMENT_MAIN");
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              {attachments.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-black/15 bg-white px-4 py-3 text-xs text-neutral-500">
+                  No documents attached yet. You can publish a document-only assignment, add structured questions in Step 2, or both.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {attachments.map((att, idx) => (
+                    <li key={att.id} className="rounded-xl border border-black/10 bg-white p-3.5 space-y-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#111318]">
+                          <FileText size={14} className="text-[#ff6b2b]" aria-hidden="true" />
+                          <span>{att.fileName}</span>
+                          <span className="text-neutral-500 font-normal">
+                            ({(att.sizeBytes / 1024).toFixed(1)} KB)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => moveAttachment(idx, -1)}
+                            disabled={idx === 0}
+                            aria-label="Move document up"
+                            className="rounded-lg p-1.5 text-neutral-600 hover:bg-neutral-100 disabled:opacity-30"
+                          >
+                            <ArrowUp size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveAttachment(idx, 1)}
+                            disabled={idx === attachments.length - 1}
+                            aria-label="Move document down"
+                            className="rounded-lg p-1.5 text-neutral-600 hover:bg-neutral-100 disabled:opacity-30"
+                          >
+                            <ArrowDown size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAttachments((prev) => prev.filter((item) => item.id !== att.id))}
+                            aria-label={`Remove ${att.fileName}`}
+                            className="rounded-lg p-1.5 text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid gap-2.5 sm:grid-cols-3">
+                        <input
+                          value={att.displayTitle}
+                          onChange={(e) =>
+                            setAttachments((prev) =>
+                              prev.map((item) => (item.id === att.id ? { ...item, displayTitle: e.target.value } : item)),
+                            )
+                          }
+                          placeholder="Display title"
+                          className="min-h-9 rounded-lg border border-black/15 px-2.5 text-xs"
+                        />
+                        <input
+                          value={att.description}
+                          onChange={(e) =>
+                            setAttachments((prev) =>
+                              prev.map((item) => (item.id === att.id ? { ...item, description: e.target.value } : item)),
+                            )
+                          }
+                          placeholder="Short description (optional)"
+                          className="min-h-9 rounded-lg border border-black/15 px-2.5 text-xs"
+                        />
+                        <select
+                          value={att.attachmentRole}
+                          onChange={(e) =>
+                            setAttachments((prev) =>
+                              prev.map((item) =>
+                                item.id === att.id ? { ...item, attachmentRole: e.target.value as AttachmentRole } : item,
+                              ),
+                            )
+                          }
+                          className="min-h-9 rounded-lg border border-black/15 bg-white px-2.5 text-xs font-semibold"
+                        >
+                          <option value="ASSIGNMENT_MAIN">Main Assignment Document (Students)</option>
+                          <option value="REFERENCE">Reference Material (Students)</option>
+                          <option value="LECTURER_ONLY">Lecturer-Only Marking Resource</option>
+                        </select>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         ) : null}
 
@@ -866,6 +1129,17 @@ export function AssignmentWizard({
                 className="mt-1.5 min-h-12 w-full rounded-xl border border-black/15 px-3.5 text-base"
               />
             </label>
+            <label className="block text-sm font-bold text-[#111318]">
+              Maximum attachments per submission
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={maxAttachments}
+                onChange={(e) => setMaxAttachments(Number(e.target.value))}
+                className="mt-1.5 min-h-12 w-full rounded-xl border border-black/15 px-3.5 text-base"
+              />
+            </label>
             <div className="sm:col-span-2 rounded-2xl border border-black/10 bg-[#fffaf7] p-4 space-y-4">
               <CustomDropdown
                 label="Who can answer this assignment?"
@@ -928,17 +1202,49 @@ export function AssignmentWizard({
                 { value: "HYBRID", label: "Hybrid (Auto objective + Lecturer review)" },
                 { value: "AUTO_OBJECTIVE", label: "Automatic objective marking" },
                 { value: "MANUAL", label: "Manual lecturer marking" },
-                { value: "AI_ASSISTED", label: "AI-assisted recommendation + Lecturer approval" },
+                { value: "AI_ASSISTED", label: "TuRnMaRk AI-assisted + Lecturer approval" },
               ]}
             />
-            <div className="flex items-center pt-6">
+            <CustomDropdown
+              label="Subject marking domain"
+              value={subjectDomain}
+              onChange={(val) => setSubjectDomain(val as SubjectDomain)}
+              options={SUBJECT_DOMAINS.map((d) => ({
+                value: d,
+                label:
+                  d === "MATHEMATICS_PHYSICS"
+                    ? "Mathematics & Physics (Equations, Steps, Units)"
+                    : d === "ENGINEERING"
+                      ? "Engineering (Technical Reasoning, Design, Calculations)"
+                      : d === "COMPUTER_SCIENCE"
+                        ? "Computer Science (Code, Algorithms, Complexity)"
+                        : d === "HUMANITIES_SOCIAL"
+                          ? "Humanities & Social Sciences (Argument, Evidence)"
+                          : d === "FINE_ART_DESIGN"
+                            ? "Fine Art & Design (Composition, Technique)"
+                            : "General Academic",
+              }))}
+            />
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-bold text-[#111318]">
+                Marking rubric &amp; assessment instructions (kept private from students)
+                <textarea
+                  value={markingInstructions}
+                  onChange={(e) => setMarkingInstructions(e.target.value)}
+                  rows={4}
+                  placeholder="Describe expected solution steps, partial credit rules, acceptable alternative approaches, unit requirements, or grading criteria…"
+                  className="mt-1.5 w-full rounded-xl border border-black/15 p-3.5 text-sm"
+                />
+              </label>
+            </div>
+            <div className="sm:col-span-2 flex items-center pt-1">
               <label className="flex items-center gap-2 text-sm font-semibold">
                 <input
                   type="checkbox"
                   checked={releaseMarksImmediately}
                   onChange={(e) => setReleaseMarksImmediately(e.target.checked)}
                 />
-                Release objective marks immediately upon submission
+                Release validated marks immediately upon submission
               </label>
             </div>
           </div>
@@ -1090,6 +1396,10 @@ export function AssignmentWizard({
           <div className="flex items-center justify-between">
             <dt className="text-neutral-500">Questions</dt>
             <dd className="font-bold text-[#111318]">{questions.filter((q) => q.prompt.trim()).length} active</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <dt className="text-neutral-500">Documents</dt>
+            <dd className="font-bold text-[#111318]">{attachments.length} attached</dd>
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-neutral-500">Total Marks</dt>
