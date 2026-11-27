@@ -22,7 +22,7 @@ export default async function LecturerAssignmentsPage() {
       />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Assignments" value={stats.totalAssignments} />
+        <StatCard label="Active Assignments" value={stats.totalAssignments} />
         <StatCard label="Drafts" value={stats.draftAssignments} />
         <StatCard label="Published" value={stats.publishedAssignments} />
         <StatCard label="Awaiting Marking" value={stats.awaitingMarking} />
