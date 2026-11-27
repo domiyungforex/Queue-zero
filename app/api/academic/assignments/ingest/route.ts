@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { requireUserId } from "@/lib/auth/server";
@@ -6,9 +6,14 @@ import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { createUserSupabaseClient } from "@/lib/db/server";
 import { storePrivateImage } from "@/lib/storage/store-image";
 import { extractTextFromDocxBuffer, parseAssignmentFromText } from "@/lib/academic/ingestion";
+import {
+  extractAssignmentWithMistralSmall,
+  isMistralConfigured,
+  runMistralOcr,
+} from "@/lib/ai/mistral";
 
 export const runtime = "nodejs";
-export const maxDuration = 20;
+export const maxDuration = 30;
 
 const ALLOWED_MIME = new Set([
   "application/pdf",
@@ -54,6 +59,7 @@ export async function POST(request: Request) {
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
+      const contentHash = createHash("sha256").update(buffer).digest("hex");
       const ext =
         file.type === "application/pdf"
           ? "pdf"
@@ -67,7 +73,7 @@ export async function POST(request: Request) {
                   ? "webp"
                   : "jpg";
 
-      const key = `academic-sources/${membership.businessId}/${randomUUID()}.${ext}`;
+      const key = `academic-sources/${membership.businessId}/${contentHash.slice(0, 24)}.${ext}`;
       const stored = await storePrivateImage(db, { key, body: buffer, type: file.type });
       if (stored.ok) originalPath = stored.key;
 
@@ -78,14 +84,35 @@ export async function POST(request: Request) {
       } else if (file.type === "text/plain") {
         extractedText = buffer.toString("utf8");
       } else {
-        // PDF / Image: use configured OCR/AI provider if available, otherwise preserve source and request lecturer review
-        warnings.push(
-          "Original document/photo preserved privately. Configure an OCR/AI provider key on the server for automated image/PDF text extraction, or paste/edit questions below.",
-        );
+        // PDF or Image -> Mistral OCR
+        if (!isMistralConfigured()) {
+          warnings.push(
+            "Original document/photo preserved privately. MISTRAL_API_KEY is not configured on the server, so automated OCR is unavailable — review or enter questions manually.",
+          );
+        } else {
+          const ocr = await runMistralOcr({ buffer, mimeType: file.type });
+          if (ocr.ok && ocr.text.trim()) {
+            extractedText = ocr.text;
+          } else {
+            warnings.push(ocr.ok ? "No readable text found in document; please review manually." : ocr.error);
+          }
+        }
       }
     }
 
-    const extraction = parseAssignmentFromText(extractedText, courses ?? []);
+    let extraction = parseAssignmentFromText(extractedText, courses ?? []);
+    if (extractedText.trim() && isMistralConfigured()) {
+      const ai = await extractAssignmentWithMistralSmall({
+        text: extractedText,
+        authorizedCourses: courses ?? [],
+      });
+      if (ai.ok) {
+        extraction = ai.extraction;
+      } else {
+        warnings.push(ai.error);
+      }
+    }
+
     if (warnings.length > 0) {
       extraction.warnings = [...warnings, ...extraction.warnings];
     }
@@ -97,6 +124,7 @@ export async function POST(request: Request) {
     )
       .from("assignment_ingestion_jobs")
       .insert({
+        id: randomUUID(),
         organization_id: membership.businessId,
         created_by: userId,
         source_method: method === "PHOTO" || method === "DOCUMENT" ? method : "DESCRIPTION",
@@ -110,8 +138,12 @@ export async function POST(request: Request) {
       ok: true,
       originalPath,
       extraction,
+      aiConfigured: isMistralConfigured(),
     });
   } catch {
-    return NextResponse.json({ error: "Smart extraction failed. You can still create the assignment manually." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Smart extraction failed. You can still create the assignment manually." },
+      { status: 500 },
+    );
   }
 }
