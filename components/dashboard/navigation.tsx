@@ -68,11 +68,16 @@ export function DashboardNavigation({
 
   if (individualLecturer) {
     links.push(
+      { href: "/dashboard/academic", label: "Academic", icon: BookOpen },
       { href: "/dashboard/courses", label: "Courses", icon: BookOpen },
       { href: "/dashboard/classes", label: "Classes", icon: CalendarDays },
       { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardCheck },
       { href: "/dashboard/students", label: "Students", icon: UsersRound },
       { href: "/dashboard/exports", label: "Reports", icon: FileText },
+    );
+  } else if ((role as string) === "student") {
+    links.push(
+      { href: "/dashboard/academic/student", label: "Assignments", icon: BookOpen },
     );
   } else if (individualService) {
     links.push(
@@ -98,6 +103,7 @@ export function DashboardNavigation({
     if (manager || role === "staff") links.push({ href: "/dashboard/bookings", label: "Bookings", icon: CalendarClock });
     if (teaching) {
       links.push(
+        { href: "/dashboard/academic", label: "Academic", icon: BookOpen },
         { href: "/dashboard/courses", label: "Courses", icon: BookOpen },
         { href: "/dashboard/classes", label: "Classes", icon: CalendarDays },
         { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardCheck },

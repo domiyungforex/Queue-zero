@@ -18,7 +18,7 @@ const headers = {
 };
 
 function imageResponse(bytes: Uint8Array, type: string) {
-  if (!["image/jpeg", "image/png", "image/webp"].includes(type) || bytes.byteLength < 32 || bytes.byteLength > 500_000) {
+  if (!["image/jpeg", "image/png", "image/webp"].includes(type) || bytes.byteLength < 32 || bytes.byteLength > 2_000_000) {
     return new NextResponse(null, { status: 404, headers });
   }
   return new NextResponse(Buffer.from(bytes), { status: 200, headers: { ...headers, "Content-Type": type } });
@@ -61,7 +61,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ reco
       const admin = createJoinSupabaseClient();
       const downloaded = await readPrivateImage(admin, objectPath, variant);
       if (downloaded) {
-        const type = downloaded.type.split(";")[0].trim() || (objectPath.endsWith(".png") ? "image/png" : objectPath.endsWith(".webp") ? "image/webp" : "image/jpeg");
+        const rawType = downloaded.type.split(";")[0].trim();
+        const inferredType = objectPath.endsWith(".png")
+          ? "image/png"
+          : objectPath.endsWith(".webp")
+            ? "image/webp"
+            : "image/jpeg";
+        const type = ["image/jpeg", "image/png", "image/webp"].includes(rawType) ? rawType : inferredType;
         return imageResponse(downloaded.body, type);
       }
     } catch {
