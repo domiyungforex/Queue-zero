@@ -79,10 +79,16 @@ export function assessAttendanceLocation(input: {
 }
 
 export function geolocationFailureMessage(code: number | undefined) {
-  if (code === 1) return "Location permission was denied. Allow location for this site in the browser settings, then try again.";
-  if (code === 2) return "Location services are unavailable on this device. Turn them on and try again.";
-  if (code === 3) return "The GPS request timed out. Move outdoors or wait for a stronger signal, then try again.";
-  return "This browser could not read a GPS location. Try again.";
+  if (code === 1) {
+    return "Location permission was denied. On iPhone Safari, tap 'aA' in the address bar → Website Settings → Location → Allow (and ensure Settings → Privacy & Security → Location Services is On), then tap Retry Location.";
+  }
+  if (code === 2) {
+    return "Location services are unavailable or disabled on this device. Turn on Location Services in your device settings and tap Retry Location.";
+  }
+  if (code === 3) {
+    return "The GPS request timed out. Move near a window or outdoors for a stronger signal, then tap Retry Location.";
+  }
+  return "This browser could not read a GPS location. Tap Retry Location to try again.";
 }
 
 export function attendanceMapUrl(latitude: number, longitude: number) {

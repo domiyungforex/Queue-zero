@@ -121,7 +121,7 @@ export function StudentScan({
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
 
-  // Request location when required
+  // Request location when required (with automatic low-accuracy fallback indoors on timeout/unavailable)
   const requestLocation = useCallback(() => {
     if (typeof window !== "undefined" && !window.isSecureContext) {
       setLocationState({
@@ -138,31 +138,46 @@ export function StudentScan({
       return;
     }
     setLocationState({ status: "requesting" });
+
+    const handleSuccess = (pos: GeolocationPosition) => {
+      const assessment = assessAttendanceLocation({
+        sessionLatitude: classInfo.location_lat,
+        sessionLongitude: classInfo.location_lng,
+        radiusMeters: classInfo.geofence_radius_meters,
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracyMeters: pos.coords.accuracy,
+      });
+      const capturedAt = new Date(pos.timestamp || Date.now()).toISOString();
+      setLocationState({
+        status: assessment.verified ? "verified" : "error",
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: Math.round(pos.coords.accuracy),
+        capturedAt,
+        distanceMeters: assessment.distanceMeters ?? undefined,
+        message: assessment.message,
+      });
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const assessment = assessAttendanceLocation({
-          sessionLatitude: classInfo.location_lat,
-          sessionLongitude: classInfo.location_lng,
-          radiusMeters: classInfo.geofence_radius_meters,
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracyMeters: pos.coords.accuracy,
-        });
-        const capturedAt = new Date(pos.timestamp || Date.now()).toISOString();
-        setLocationState({
-          status: assessment.verified ? "verified" : "error",
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: Math.round(pos.coords.accuracy),
-          capturedAt,
-          distanceMeters: assessment.distanceMeters ?? undefined,
-          message: assessment.message,
-        });
-      },
+      handleSuccess,
       (err) => {
+        // On iOS Safari / Android indoors, high-accuracy GPS can time out (3) or be unavailable (2).
+        // Fall back once to network/Wi-Fi-assisted positioning before failing.
+        if (err.code === 2 || err.code === 3) {
+          navigator.geolocation.getCurrentPosition(
+            handleSuccess,
+            (fallbackErr) => {
+              setLocationState({ status: "error", message: geolocationFailureMessage(fallbackErr.code) });
+            },
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 },
+          );
+          return;
+        }
         setLocationState({ status: "error", message: geolocationFailureMessage(err.code) });
       },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   }, [classInfo.location_lat, classInfo.location_lng, classInfo.geofence_radius_meters]);
 
@@ -268,25 +283,45 @@ export function StudentScan({
   };
 
   // Upload selfie to private storage. Never send the image bytes as the attendance record.
-  const uploadPhoto = async (classId: string, nonce: string, photoDataUrl: string): Promise<string | null> => {
+  const uploadPhoto = async (
+    classId: string,
+    nonce: string,
+    photoDataUrl: string,
+  ): Promise<{ ok: true; path: string } | { ok: false; error: string }> => {
     try {
       const res = await fetch(`/api/school/classes/${classId}/photo`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, nonce, photo: photoDataUrl }),
       });
-      if (!res.ok) return null;
-      const json = (await res.json()) as { path?: string; url?: string };
-      if (json.path && !json.path.startsWith("data:") && !json.path.includes("..")) return json.path;
-      return json.url && !json.url.startsWith("data:") ? json.url : null;
+      const json = (await res.json().catch(() => ({}))) as { path?: string; url?: string; error?: string };
+      if (!res.ok) {
+        return { ok: false, error: json.error || "Photograph upload failed. Please retry." };
+      }
+      if (json.path && !json.path.startsWith("data:") && !json.path.includes("..")) {
+        return { ok: true, path: json.path };
+      }
+      if (json.url && !json.url.startsWith("data:")) {
+        return { ok: true, path: json.url };
+      }
+      return { ok: false, error: "Photograph storage did not return a valid reference. Please retry." };
     } catch {
-      return null;
+      return { ok: false, error: "Network error while uploading photograph. Check your connection and try again." };
     }
   };
 
   // Submit attendance to backend
   const handleFinalSubmit = async () => {
     if (submitting) return;
+    if (!capturedPhoto) {
+      setLookupError("Please capture and confirm your attendance photograph before submitting.");
+      return;
+    }
+    if (isLocationRequired && locationState.status !== "verified") {
+      setLookupError("Location verification is required before submitting attendance.");
+      return;
+    }
+
     setSubmitting(true);
     setLookupError("");
 
@@ -303,25 +338,36 @@ export function StudentScan({
       const effectiveName = verifiedStudent?.full_name || fullName;
       const effectiveMatric = verifiedStudent?.matric_number || matricNumber;
 
-      // Extract classId and nonce from token (they are base64-encoded JSON parts)
-      let photoToSubmit: string | null = null;
-      if (capturedPhoto) {
-        try {
-          // Parse token: format is base64url(header).base64url(payload).signature
-          const payloadB64 = token.split(".")[1];
-          if (payloadB64) {
-            const payload = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"))) as {
-              session_id?: string;
-              nonce?: string;
-            };
-            if (payload.session_id && payload.nonce) {
-              photoToSubmit = await uploadPhoto(payload.session_id, payload.nonce, capturedPhoto);
-            }
-          }
-        } catch {
-          // Keep base64 as fallback
+      // Signed attendance token format is: base64url(payload).base64url(signature)
+      let sessionId: string | undefined;
+      let nonce: string | undefined;
+      try {
+        const payloadB64 = token.split(".")[0];
+        if (payloadB64) {
+          const base64 = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+          const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+          const payload = JSON.parse(atob(padded)) as { session_id?: string; nonce?: string };
+          sessionId = payload.session_id;
+          nonce = payload.nonce;
         }
+      } catch {
+        sessionId = undefined;
+        nonce = undefined;
       }
+
+      if (!sessionId || !nonce) {
+        setLookupError("Invalid attendance QR token. Please scan the classroom QR again.");
+        setSubmitting(false);
+        return;
+      }
+
+      const uploaded = await uploadPhoto(sessionId, nonce, capturedPhoto);
+      if (!uploaded.ok) {
+        setLookupError(uploaded.error);
+        setSubmitting(false);
+        return;
+      }
+      const photoToSubmit = uploaded.path;
 
       const response = await recordAttendance({
         token,

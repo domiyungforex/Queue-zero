@@ -1,6 +1,6 @@
 "use client";
 
-/* Interactive dynamic camera modal with retakes, front/rear camera flip, photo quality check, and responsive framing. */
+/* Interactive dynamic camera modal with retakes, front/rear camera flip, photo quality check, and iOS Safari support. */
 /* eslint-disable @next/next/no-img-element */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -16,6 +16,47 @@ type Props = {
   description?: string;
 };
 
+async function acquireCameraStream(mode: "user" | "environment"): Promise<MediaStream> {
+  const attempts: MediaStreamConstraints[] = [
+    {
+      video: {
+        facingMode: { ideal: mode },
+        width: { ideal: 1280 },
+        height: { ideal: 1280 },
+      },
+      audio: false,
+    },
+    {
+      video: { facingMode: mode },
+      audio: false,
+    },
+    {
+      video: true,
+      audio: false,
+    },
+  ];
+
+  let lastError: unknown = null;
+  for (const constraints of attempts) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (err) {
+      lastError = err;
+      const name = (err as { name?: string })?.name;
+      // Do not retry if permission was explicitly denied or no hardware exists
+      if (
+        name === "NotAllowedError" ||
+        name === "PermissionDeniedError" ||
+        name === "NotFoundError" ||
+        name === "DevicesNotFoundError"
+      ) {
+        throw err;
+      }
+    }
+  }
+  throw lastError;
+}
+
 export function DynamicCameraModal({
   isOpen,
   onClose,
@@ -25,152 +66,216 @@ export function DynamicCameraModal({
 }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const facingModeRef = useRef<"user" | "environment">("user");
+  const requestSeqRef = useRef(0);
+
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [cameraActive, setCameraActive] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
 
-  const stopMediaTracks = () => {
+  const stopMediaTracks = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {}
+      });
       streamRef.current = null;
     }
-  };
-
-  const stopCamera = useCallback(() => {
-    stopMediaTracks();
-    setCameraActive(false);
+    if (videoRef.current) {
+      try {
+        videoRef.current.srcObject = null;
+      } catch {}
+    }
   }, []);
 
-  const startCamera = useCallback(async (mode: "user" | "environment" = facingMode) => {
+  const stopCamera = useCallback(() => {
+    requestSeqRef.current += 1;
     stopMediaTracks();
-    setError("");
-    setCapturedPhoto(null);
+    setCameraActive(false);
+  }, [stopMediaTracks]);
 
-    if (typeof window !== "undefined" && !navigator.mediaDevices?.getUserMedia) {
-      setError("Your browser does not support camera access. Please use Chrome or Safari.");
-      return;
+  const attachStreamToVideo = useCallback(async (stream: MediaStream) => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("webkit-playsinline", "true");
+    video.muted = true;
+    video.autoplay = true;
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
     }
-
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: mode,
-          width: { ideal: 1280 },
-          height: { ideal: 1280 },
-        },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
-      }
-      setCameraActive(true);
-
-      // Check available devices
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoInputs = devices.filter((d) => d.kind === "videoinput");
-        setHasMultipleCameras(videoInputs.length > 1);
-      } catch {}
-    } catch (err: unknown) {
-      const errName = (err as { name?: string })?.name;
-      if (errName === "NotAllowedError" || errName === "PermissionDeniedError") {
-        setError("Camera permission was denied. Please allow camera permissions in your browser settings and try again.");
-      } else if (errName === "NotFoundError" || errName === "DevicesNotFoundError") {
-        setError("No camera was found on this device.");
-      } else {
-        setError("Unable to start the camera stream. Please close other camera apps and retry.");
-      }
-      setCameraActive(false);
+      await video.play();
+    } catch {
+      // Some browsers resolve play() on loadedmetadata
     }
-  }, [facingMode]);
+  }, []);
+
+  const startCamera = useCallback(
+    async (mode: "user" | "environment" = facingModeRef.current) => {
+      const seq = ++requestSeqRef.current;
+      stopMediaTracks();
+      setError("");
+      setCapturedPhoto(null);
+      setCameraActive(false);
+
+      if (typeof window !== "undefined" && !window.isSecureContext) {
+        setError("Camera access requires a secure HTTPS connection. Open this page over HTTPS and retry.");
+        return;
+      }
+      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        setError("This browser does not support camera capture. Please use Safari on iPhone or Chrome on Android.");
+        return;
+      }
+
+      try {
+        const stream = await acquireCameraStream(mode);
+        if (seq !== requestSeqRef.current) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+        setCameraActive(true);
+        await attachStreamToVideo(stream);
+
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoInputs = devices.filter((d) => d.kind === "videoinput");
+          setHasMultipleCameras(videoInputs.length > 1);
+        } catch {}
+      } catch (err: unknown) {
+        if (seq !== requestSeqRef.current) return;
+        const errName = (err as { name?: string })?.name;
+        if (errName === "NotAllowedError" || errName === "PermissionDeniedError") {
+          setError(
+            "Camera permission was denied. Allow camera access in your browser settings (on iPhone Safari: aA → Website Settings → Camera → Allow) and tap Retry Camera.",
+          );
+        } else if (errName === "NotFoundError" || errName === "DevicesNotFoundError") {
+          setError("No camera was found on this device. Connect or enable a camera and tap Retry Camera.");
+        } else if (errName === "NotReadableError" || errName === "TrackStartError") {
+          setError("Camera is currently in use by another app. Close other camera apps and tap Retry Camera.");
+        } else {
+          setError("Unable to start the camera stream. Tap Retry Camera to try again.");
+        }
+        setCameraActive(false);
+      }
+    },
+    [attachStreamToVideo, stopMediaTracks],
+  );
+
+  // Re-attach active stream when <video> mounts (e.g. right after Retake)
+  useEffect(() => {
+    if (isOpen && !capturedPhoto && cameraActive && streamRef.current) {
+      void attachStreamToVideo(streamRef.current);
+    }
+  }, [isOpen, capturedPhoto, cameraActive, attachStreamToVideo]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
     if (isOpen) {
-      timer = setTimeout(() => {
-        startCamera(facingMode);
+      const timer = setTimeout(() => {
+        void startCamera(facingModeRef.current);
       }, 0);
-    } else {
-      stopMediaTracks();
+      return () => {
+        clearTimeout(timer);
+        requestSeqRef.current += 1;
+        stopMediaTracks();
+      };
     }
-    return () => {
-      if (timer) clearTimeout(timer);
-      stopMediaTracks();
-    };
-  }, [isOpen, startCamera, facingMode]);
+    requestSeqRef.current += 1;
+    stopMediaTracks();
+    return undefined;
+  }, [isOpen, startCamera, stopMediaTracks]);
 
   const toggleCamera = () => {
     const nextMode = facingMode === "user" ? "environment" : "user";
+    facingModeRef.current = nextMode;
     setFacingMode(nextMode);
-    startCamera(nextMode);
+    void startCamera(nextMode);
   };
 
   const handleCapture = () => {
     const video = videoRef.current;
-    if (!video || video.videoWidth < 2) {
-      setError("Camera is still warming up. Wait a second and try again.");
+    if (!video || video.videoWidth < 2 || video.videoHeight < 2) {
+      setError("Camera is still warming up. Wait a moment and tap Capture Photo again.");
       return;
     }
 
-    const canvas = document.createElement("canvas");
-    const cropSize = Math.min(video.videoWidth, video.videoHeight);
-    canvas.width = 480;
-    canvas.height = 480;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const sx = (video.videoWidth - cropSize) / 2;
-    const sy = (video.videoHeight - cropSize) / 2;
-
-    if (facingMode === "user") {
-      ctx.translate(480, 0);
-      ctx.scale(-1, 1);
-    }
-    ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, 480, 480);
-    // Reset transform for sample checks
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-    // Verify lighting variance
     try {
-      const sample = ctx.getImageData(0, 0, 24, 24).data;
-      let total = 0;
-      const values: number[] = [];
-      for (let i = 0; i < sample.length; i += 16) {
-        const val = (sample[i] + sample[i + 1] + sample[i + 2]) / 3;
-        values.push(val);
-        total += val;
-      }
-      const mean = total / values.length;
-      const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
-      const quality = clientPhotoQuality(480, 480, variance);
-      if (quality) {
-        setError(quality);
+      const targetSize = 640;
+      const canvas = document.createElement("canvas");
+      const cropSize = Math.min(video.videoWidth, video.videoHeight);
+      canvas.width = targetSize;
+      canvas.height = targetSize;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        setError("Photograph capture failed on this browser. Tap Retry Camera and try again.");
         return;
       }
-    } catch {}
 
-    setError("");
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-    setCapturedPhoto(dataUrl);
-    stopCamera();
+      const sx = (video.videoWidth - cropSize) / 2;
+      const sy = (video.videoHeight - cropSize) / 2;
+
+      if (facingMode === "user") {
+        ctx.translate(targetSize, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, targetSize, targetSize);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+      // Verify lighting variance
+      try {
+        const sample = ctx.getImageData(0, 0, 24, 24).data;
+        let total = 0;
+        const values: number[] = [];
+        for (let i = 0; i < sample.length; i += 16) {
+          const val = (sample[i] + sample[i + 1] + sample[i + 2]) / 3;
+          values.push(val);
+          total += val;
+        }
+        const mean = total / values.length;
+        const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+        const quality = clientPhotoQuality(targetSize, targetSize, variance);
+        if (quality) {
+          setError(quality);
+          return;
+        }
+      } catch {}
+
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.88);
+      if (!dataUrl || !dataUrl.startsWith("data:image/jpeg;base64,")) {
+        setError("Photograph capture failed. Please try again.");
+        return;
+      }
+
+      setError("");
+      setCapturedPhoto(dataUrl);
+      stopCamera();
+    } catch {
+      setError("Photograph capture failed. Please retake your photo.");
+    }
   };
 
   const handleRetake = () => {
     setCapturedPhoto(null);
     setError("");
-    startCamera(facingMode);
+    void startCamera(facingModeRef.current);
   };
 
   const handleUsePhoto = () => {
     if (capturedPhoto) {
+      stopCamera();
       onConfirmPhoto(capturedPhoto);
       onClose();
     }
+  };
+
+  const handleClose = () => {
+    stopCamera();
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -190,6 +295,7 @@ export function DynamicCameraModal({
         alignItems: "center",
         justifyContent: "center",
         padding: "16px",
+        overscrollBehavior: "contain",
       }}
     >
       <div
@@ -198,11 +304,11 @@ export function DynamicCameraModal({
           maxWidth: "460px",
           background: "#ffffff",
           borderRadius: "24px",
-          overflow: "hidden",
+          overflowY: "auto",
           boxShadow: "0 24px 60px rgba(0,0,0,0.35)",
           display: "flex",
           flexDirection: "column",
-          maxHeight: "92vh",
+          maxHeight: "92dvh",
         }}
       >
         {/* Header */}
@@ -221,7 +327,7 @@ export function DynamicCameraModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close camera"
             style={{
               display: "grid",
@@ -240,7 +346,7 @@ export function DynamicCameraModal({
         </div>
 
         {/* Viewfinder area */}
-        <div style={{ position: "relative", width: "100%", background: "#111318", aspectRatio: "1 / 1", overflow: "hidden" }}>
+        <div style={{ position: "relative", width: "100%", background: "#111318", aspectRatio: "1 / 1", overflow: "hidden", flexShrink: 0 }}>
           {!capturedPhoto ? (
             <>
               <video
@@ -285,7 +391,7 @@ export function DynamicCameraModal({
                 }}
               >
                 <Sparkles size={12} color="#ff6b2b" />
-                Live Camera Preview
+                {cameraActive ? "Live Camera Preview" : "Starting Camera…"}
               </div>
             </>
           ) : (
@@ -338,45 +444,67 @@ export function DynamicCameraModal({
           }}
         >
           {!capturedPhoto ? (
-            <>
-              {hasMultipleCameras ? (
-                <button
-                  type="button"
-                  onClick={toggleCamera}
-                  className="button-secondary"
-                  style={{ minHeight: "44px", padding: "0 14px", borderRadius: "12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
-                  title="Switch Camera"
-                >
-                  <RotateCcw size={16} />
-                  <span style={{ fontSize: "12px" }}>Flip</span>
-                </button>
-              ) : (
-                <div style={{ width: "60px" }} />
-              )}
-
+            error && !cameraActive ? (
               <button
                 type="button"
-                onClick={handleCapture}
-                disabled={!cameraActive}
+                onClick={() => void startCamera(facingModeRef.current)}
                 className="button-primary"
                 style={{
-                  minHeight: "50px",
-                  padding: "0 28px",
+                  width: "100%",
+                  minHeight: "48px",
                   borderRadius: "14px",
                   fontSize: "14px",
                   fontWeight: 800,
                   display: "inline-flex",
                   alignItems: "center",
+                  justifyContent: "center",
                   gap: "8px",
-                  boxShadow: "0 8px 20px rgba(255, 107, 43, 0.3)",
                 }}
               >
-                <Camera size={18} />
-                Capture Photo
+                <RefreshCw size={16} />
+                Retry Camera
               </button>
+            ) : (
+              <>
+                {hasMultipleCameras ? (
+                  <button
+                    type="button"
+                    onClick={toggleCamera}
+                    className="button-secondary"
+                    style={{ minHeight: "44px", padding: "0 14px", borderRadius: "12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                    title="Switch Camera"
+                  >
+                    <RotateCcw size={16} />
+                    <span style={{ fontSize: "12px" }}>Flip</span>
+                  </button>
+                ) : (
+                  <div style={{ width: "60px" }} />
+                )}
 
-              <div style={{ width: "60px" }} />
-            </>
+                <button
+                  type="button"
+                  onClick={handleCapture}
+                  disabled={!cameraActive}
+                  className="button-primary"
+                  style={{
+                    minHeight: "50px",
+                    padding: "0 28px",
+                    borderRadius: "14px",
+                    fontSize: "14px",
+                    fontWeight: 800,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    boxShadow: "0 8px 20px rgba(255, 107, 43, 0.3)",
+                  }}
+                >
+                  <Camera size={18} />
+                  Capture Photo
+                </button>
+
+                <div style={{ width: "60px" }} />
+              </>
+            )
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", width: "100%" }}>
               <button
