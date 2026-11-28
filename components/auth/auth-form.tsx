@@ -16,6 +16,14 @@ function AuthFormInner({ mode }: { mode: "sign-in" | "sign-up" }) {
   const { signUp } = useSignUp();
   const search = useSearchParams();
   const returnTo = safeAuthReturn(search.get("redirect_url"), mode === "sign-up" ? "/onboarding" : "/dashboard", publicEnv.NEXT_PUBLIC_APP_URL);
+  // Plan chosen on the public pricing page (/sign-up?plan=starter). Shown so
+  // the selection is not silently lost; billing itself still happens after
+  // onboarding, in the dashboard.
+  const planParam = mode === "sign-up" ? search.get("plan")?.toLowerCase() : null;
+  const selectedPlan =
+    planParam && ["free", "starter", "events", "growth", "education", "professional"].includes(planParam)
+      ? planParam[0].toUpperCase() + planParam.slice(1)
+      : null;
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [method, setMethod] = useState<"password" | "code">("password");
@@ -204,6 +212,12 @@ function AuthFormInner({ mode }: { mode: "sign-in" | "sign-up" }) {
 
   return (
     <div className={`${styles.formWrap} ${styles.welcomeBack}`}>
+      {selectedPlan ? (
+        <p className={styles.planNotice} role="note">
+          Selected plan: <strong>{selectedPlan}</strong> — create your account first; you can confirm or change
+          your plan after setup.
+        </p>
+      ) : null}
       <form onSubmit={submit} noValidate className={styles.form}>
         {process.env.NEXT_PUBLIC_CLERK_PHONE_AUTH_ENABLED === "true" && method === "code" && !sent ? (
           <label className={styles.methodLabel}>

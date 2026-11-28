@@ -18,7 +18,24 @@ export default async function GuestAssignmentSubmitPage({
   let parsedToken: ReturnType<typeof verifyAssignmentGuestToken>;
   try {
     parsedToken = verifyAssignmentGuestToken(decodeURIComponent(token));
-  } catch {
+  } catch (cause) {
+    // An expired link is a normal, recoverable state -- students were shown
+    // a bare 404 for it. Invalid/forged tokens still 404.
+    if (cause instanceof Error && cause.message.includes("expired")) {
+      return (
+        <main className="min-h-screen bg-[#fffaf7] px-4 py-10">
+          <div className="mx-auto max-w-2xl">
+            <div className="panel p-8 text-center" role="alert">
+              <h1 className="text-lg font-bold text-[#111318]">This submission link has expired</h1>
+              <p className="mt-2 text-sm text-neutral-600">
+                Ask your lecturer to share the current assignment link, or sign in and open the assignment from
+                your student portal.
+              </p>
+            </div>
+          </div>
+        </main>
+      );
+    }
     notFound();
   }
 

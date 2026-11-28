@@ -28,7 +28,7 @@ export const PLAN_DESCRIPTIONS: Record<Plan, string> = {
   GROWTH: "Higher capacity for growing businesses and clinics.",
   PROFESSIONAL: "More queues, locations and team members for larger organizations.",
   EDUCATION: "Institutional pricing for schools and universities.",
-  EVENTS: "Per-event pricing for conference and summit organizers.",
+  EVENTS: "Event-ready queues for conference and summit organizers.",
   ENTERPRISE: "Custom quote for large institutions.",
   BUSINESS: "Legacy plan — equivalent capacity to Growth.",
 };

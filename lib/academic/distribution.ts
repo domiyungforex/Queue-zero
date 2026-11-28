@@ -15,8 +15,11 @@ function signingSecret(): string {
   const secret =
     process.env.ATTENDANCE_QR_SECRET?.trim() ||
     process.env.QUEUE_JOIN_SECRET?.trim() ||
-    process.env.CLERK_SECRET_KEY?.trim() ||
-    "turnmark-dev-assignment-signing-secret-32chars";
+    process.env.CLERK_SECRET_KEY?.trim();
+  // Never fall back to a hardcoded secret: links minted with a public,
+  // known key are forgeable, and they silently stop verifying the moment
+  // a real secret is configured, turning every shared link into a 404.
+  if (!secret) throw new Error("Assignment link signing is not configured.");
   return secret;
 }
 

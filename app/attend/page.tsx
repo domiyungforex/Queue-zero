@@ -47,6 +47,13 @@ async function resolveAttendanceClass(token: string) {
 
   const parsed = data ? publicClassSchema.safeParse(data) : null;
 
+  if (error) {
+    // Do not expose details to students, but keep the RPC failure visible in
+    // server logs: previously every failure here collapsed into the same
+    // "invalid or expired" message and was impossible to diagnose.
+    console.error("Attendance class lookup failed", { code: error.code ?? "UNKNOWN" });
+  }
+
   if (!error && parsed && parsed.success && parsed.data) {
     if (!parsed.data.open) {
       return { classInfo: null, message: "Attendance for this class is currently closed." };
@@ -147,6 +154,17 @@ export default async function AttendancePage({
       if (cause instanceof ExpiredAttendanceQr) {
         message = "This attendance QR has expired. Ask your lecturer for the updated QR code.";
       } else {
+        // Distinguish configuration/signature failures from a bad scan in
+        // logs (never in the student-facing message, and never log the
+        // token or secret). A signing-configuration error here rejects
+        // every fresh QR while looking like an expired code to students.
+        const reason =
+          cause instanceof Error && cause.message.includes("not configured")
+            ? "SIGNING_NOT_CONFIGURED"
+            : cause instanceof Error && cause.message.includes("Invalid attendance QR")
+              ? "TOKEN_INVALID"
+              : "LOOKUP_FAILED";
+        console.error("Attendance QR could not be resolved", { reason });
         message = "This attendance QR is invalid or expired. Scan the current classroom QR.";
       }
     }

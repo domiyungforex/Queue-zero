@@ -87,8 +87,10 @@ export async function resolveEligibleAttendanceRecipients(params: {
     candidateIds = filteredPeople.map((p) => String(p.id));
   } else {
     // Default: all students enrolled in the selected course (never restricted to prior attendees)
+    // Enrollment lives in course_students; the previous "course_enrollments"
+    // table does not exist, so this always resolved to zero recipients.
     const { data: enrollments } = await db
-      .from("course_enrollments")
+      .from("course_students")
       .select("student_id")
       .eq("organization_id", params.organizationId)
       .eq("course_id", params.courseId);

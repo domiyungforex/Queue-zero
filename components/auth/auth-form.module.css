@@ -26,6 +26,7 @@
 .inlineActions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 14px; }
 .inlineActions button, .differentMethod { min-height: 44px; border: 0; padding: 8px 0; color: #5f4c69; background: transparent; font-size: 12px; font-weight: 700; }
 .differentMethod { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; margin-top: 20px; }
+.planNotice { margin-bottom: 16px; border: 1px solid #f0d9c8; border-radius: 14px; padding: 12px 16px; color: #5b4232; background: #fff7f0; font-size: 13px; line-height: 1.55; }
 .accountPrompt { margin-top: 26px; color: #76747d; text-align: center; font-size: 12px; }
 .accountPrompt a { margin-left: 4px; color: #d84b1b; font-weight: 800; text-decoration: none; }
 .legal { display: none; }

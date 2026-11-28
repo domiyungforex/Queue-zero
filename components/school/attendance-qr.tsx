@@ -166,7 +166,7 @@ export function AttendanceQr({
                 type="button"
                 className={styles.refreshButton}
                 onClick={() => setRetry((v) => v + 1)}
-                title="Refresh QR Code"
+                title="Reload QR code — the code stays the same while attendance is open"
               >
                 <RefreshCw size={15} /> Refresh
               </button>

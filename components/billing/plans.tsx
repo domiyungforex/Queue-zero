@@ -2,14 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowUpRight, Check, CreditCard, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Check, ShieldCheck } from "lucide-react";
 import { startCheckout, manageSubscription } from "@/app/dashboard/billing/actions";
 import { PLAN_LIMITS, PLAN_DESCRIPTIONS, type Plan } from "@/lib/paystack/plans";
 import { captureAnalytics } from "@/lib/analytics/client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 import type { CatalogPlan } from "@/lib/pricing/plans";
-
-type ProviderOption = "paystack" | "stripe";
 
 export function Plans({
   current,
@@ -17,28 +15,33 @@ export function Plans({
   configured,
   publicPage = false,
   catalog,
-  providers = { paystack: true, stripe: false },
+  highlightedPlan,
+  planAvailability,
 }: {
   current: Plan;
   prices: Partial<Record<Plan, string>>;
   configured: boolean;
   publicPage?: boolean;
   catalog?: CatalogPlan[];
-  providers?: { paystack: boolean; stripe: boolean };
+  /** Plan carried over from the marketing pricing page (?plan=). */
+  highlightedPlan?: Plan;
+  /** Per-plan Paystack checkout availability, from server env configuration. */
+  planAvailability?: Partial<Record<Plan, { monthly: boolean; annual: boolean }>>;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [interval, setInterval] = useState<"monthly" | "annual">("monthly");
-  const [provider, setProvider] = useState<ProviderOption>(providers.paystack ? "paystack" : "stripe");
 
   const displayPlans: Plan[] = catalog?.length
     ? (catalog.map((c) => c.code).filter((c) => c !== "BUSINESS") as Plan[])
-    : ["FREE", "STARTER", "GROWTH", "PROFESSIONAL", "EDUCATION", "EVENTS", "ENTERPRISE"];
+    : // Ascending monthly price order (matches plans.sort_order in the catalog).
+      ["FREE", "STARTER", "EVENTS", "GROWTH", "EDUCATION", "PROFESSIONAL", "ENTERPRISE"];
 
   async function upgrade(plan: Plan) {
     if (publicPage) {
-      router.push(plan === "ENTERPRISE" ? "/contact" : "/sign-up");
+      // Carry the chosen plan into sign-up so the selection is not lost.
+      router.push(plan === "ENTERPRISE" ? "/contact" : `/sign-up?plan=${plan.toLowerCase()}`);
       return;
     }
     if (plan === "ENTERPRISE") {
@@ -48,7 +51,7 @@ export function Plans({
     setBusy(plan);
     setError("");
     try {
-      const r = await startCheckout(plan, provider);
+      const r = await startCheckout(plan, interval);
       if (r.url) {
         captureAnalytics(ANALYTICS_EVENTS.checkoutStarted, { plan_tier: plan });
         location.assign(r.url);
@@ -82,8 +85,8 @@ export function Plans({
     const entry = catalog?.find((c) => c.code === plan);
     if (entry) {
       const priceRow =
-        entry.prices.find((p) => p.provider === provider && p.interval === interval) ??
-        entry.prices.find((p) => p.provider === provider) ??
+        entry.prices.find((p) => p.provider === "paystack" && p.interval === interval) ??
+        entry.prices.find((p) => p.provider === "paystack") ??
         entry.prices[0];
       if (priceRow && priceRow.amountMinor > 0) {
         const major = interval === "annual" && priceRow.interval === "monthly"
@@ -99,7 +102,6 @@ export function Plans({
     return prices[plan] ?? "Coming soon";
   }
 
-  const bothProviders = providers.paystack && providers.stripe;
 
   return (
     <>
@@ -135,33 +137,6 @@ export function Plans({
           </button>
         </div>
 
-        {bothProviders && !publicPage ? (
-          <div
-            role="group"
-            aria-label="Payment provider"
-            className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white p-1"
-          >
-            <CreditCard size={16} className="ml-2 text-neutral-500" aria-hidden="true" />
-            <button
-              type="button"
-              onClick={() => setProvider("paystack")}
-              className={`min-h-9 rounded-lg px-3 text-xs font-bold uppercase tracking-wide transition ${
-                provider === "paystack" ? "bg-[#111318] text-white" : "text-neutral-600 hover:bg-neutral-100"
-              }`}
-            >
-              Paystack
-            </button>
-            <button
-              type="button"
-              onClick={() => setProvider("stripe")}
-              className={`min-h-9 rounded-lg px-3 text-xs font-bold uppercase tracking-wide transition ${
-                provider === "stripe" ? "bg-[#111318] text-white" : "text-neutral-600 hover:bg-neutral-100"
-              }`}
-            >
-              Stripe
-            </button>
-          </div>
-        ) : null}
       </div>
 
       <div className="billing-plans">
@@ -170,29 +145,36 @@ export function Plans({
           const limits = PLAN_LIMITS[plan];
           const priceLabel = formatCatalogPrice(plan);
           const isCurrent = !publicPage && current === plan;
-          const isFeatured = catalogEntry?.isFeatured ?? plan === "STARTER";
+          const checkoutAvailable =
+            publicPage || (configured && (planAvailability ? (planAvailability[plan]?.[interval] ?? false) : true));
+          const isHighlighted = highlightedPlan === plan && !isCurrent;
+          const isFeatured = isHighlighted || (catalogEntry?.isFeatured ?? plan === "STARTER");
 
           return (
             <article key={plan} className={`panel billing-plan ${isFeatured ? "featured" : ""}`}>
               <div className="plan-top">
                 <h2>{catalogEntry?.name ?? plan[0] + plan.slice(1).toLowerCase()}</h2>
-                {isCurrent ? <span>YOUR PLAN</span> : isFeatured ? <span>RECOMMENDED</span> : null}
+                {isCurrent ? <span>YOUR PLAN</span> : isHighlighted ? <span>SELECTED</span> : isFeatured ? <span>RECOMMENDED</span> : null}
               </div>
               <p>{catalogEntry?.description ?? PLAN_DESCRIPTIONS[plan]}</p>
               <div className="plan-price">
                 {priceLabel}
                 {plan !== "FREE" && plan !== "ENTERPRISE" && priceLabel !== "Coming soon" ? (
-                  <small>{interval === "annual" ? "/ year" : "/ month"}</small>
+                  <small>{interval === "annual" ? "/ year, billed annually" : "/ month"}</small>
                 ) : null}
               </div>
               <ul>
                 <li>
                   <Check size={16} aria-hidden="true" />
-                  {limits.queues === null ? "Unlimited queues" : `${limits.queues} active queues`}
+                  {limits.queues === null
+                    ? "Unlimited queues"
+                    : `${limits.queues} active ${limits.queues === 1 ? "queue" : "queues"}`}
                 </li>
                 <li>
                   <Check size={16} aria-hidden="true" />
-                  {limits.locations === null ? "Unlimited locations" : `${limits.locations} locations`}
+                  {limits.locations === null
+                    ? "Unlimited locations"
+                    : `${limits.locations} ${limits.locations === 1 ? "location" : "locations"}`}
                 </li>
                 <li>
                   <Check size={16} aria-hidden="true" />
@@ -209,7 +191,7 @@ export function Plans({
               </ul>
 
               {plan === "FREE" ? (
-                <a className="button-secondary" href={publicPage ? "/sign-up" : "/dashboard"}>
+                <a className="button-secondary" href={publicPage ? "/sign-up?plan=free" : "/dashboard"}>
                   {publicPage ? "Get started" : "Open workspace"}
                   <ArrowUpRight size={16} aria-hidden="true" />
                 </a>
@@ -222,16 +204,16 @@ export function Plans({
                 <button
                   type="button"
                   className={isFeatured ? "button-primary" : "button-secondary"}
-                  disabled={!!busy || (!publicPage && !configured && !providers.stripe) || isCurrent}
+                  disabled={!!busy || isCurrent || (!publicPage && !checkoutAvailable)}
                   onClick={() => void upgrade(plan)}
                 >
                   {busy === plan
                     ? "Opening checkout…"
                     : isCurrent
                       ? "Current plan"
-                      : publicPage || configured || providers.stripe
-                        ? `Choose ${(catalogEntry?.name ?? plan).toLowerCase()}`
-                        : "Subscriptions opening soon"}
+                      : !publicPage && !checkoutAvailable
+                        ? "Not yet available"
+                        : `Choose ${(catalogEntry?.name ?? plan).toLowerCase()}`}
                   <ArrowUpRight size={16} aria-hidden="true" />
                 </button>
               )}
@@ -240,11 +222,15 @@ export function Plans({
         })}
       </div>
 
-      <p className="billing-security">
-        <ShieldCheck size={17} aria-hidden="true" />
-        Payments are verified server-side via {provider === "stripe" ? "Stripe" : "Paystack"} webhooks. Your
-        subscription updates only after cryptographic confirmation.
-      </p>
+      {/* Internal payment-verification detail belongs on the dashboard
+          billing view, not the public pricing page. */}
+      {!publicPage ? (
+        <p className="billing-security">
+          <ShieldCheck size={17} aria-hidden="true" />
+          Payments are verified server-side via Paystack webhooks. Your subscription updates only after
+          cryptographic confirmation.
+        </p>
+      ) : null}
 
       {!publicPage && current !== "FREE" ? (
         <button type="button" className="button-secondary" disabled={!!busy} onClick={() => void manage()}>

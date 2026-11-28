@@ -16,7 +16,7 @@ export default function AboutPage() {
     <MarketingFrame>
       <main id="main" className={styles.subpage}>
         <Breadcrumbs label="About" path="/about" />
-        <p className={styles.eyebrow}>ABOUT TURNMARK</p>
+        <p className={styles.eyebrow}>ABOUT TuRnMaRk</p>
         <h1>
           Give people
           <br />

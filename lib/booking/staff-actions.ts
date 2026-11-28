@@ -67,9 +67,9 @@ export async function fetchStaffBookings(
   });
 
   if (error || !res) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("fetchStaffBookings error:", error);
-    }
+    // Log in every environment: silently returning an empty list here made
+    // a broken staff RPC look like "no bookings" in production.
+    console.error("fetchStaffBookings failed", { code: error?.code ?? "NO_DATA" });
     return { total: 0, bookings: [] };
   }
 
@@ -89,6 +89,7 @@ export async function fetchStaffBookingMetrics(date?: string): Promise<StaffBook
   });
 
   if (error || !data) {
+    console.error("fetchStaffBookingMetrics failed", { code: error?.code ?? "NO_DATA" });
     return {
       date: date || new Date().toISOString().split("T")[0],
       total: 0,

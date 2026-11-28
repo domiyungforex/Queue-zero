@@ -30,7 +30,8 @@ export interface CatalogPlan {
 }
 
 function fallbackCatalog(): CatalogPlan[] {
-  const codes: Plan[] = ["FREE", "STARTER", "GROWTH", "PROFESSIONAL", "EDUCATION", "EVENTS", "ENTERPRISE"];
+  // Ascending monthly price order, matching plans.sort_order in the catalog.
+  const codes: Plan[] = ["FREE", "STARTER", "EVENTS", "GROWTH", "EDUCATION", "PROFESSIONAL", "ENTERPRISE"];
   return codes.map((code, index) => {
     const ngnMonthly = PLAN_PRICES_NGN[code];
     const limits = PLAN_LIMITS[code];

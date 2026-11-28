@@ -1,6 +1,7 @@
 import "server-only";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { createUserSupabaseClient } from "@/lib/db/server";
+import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { requireUserId } from "@/lib/auth/server";
 
 type UntypedQueryResult = Promise<{ data: unknown[] | null; error: unknown }>;
@@ -135,9 +136,25 @@ export async function getStudentPortalData() {
     studentProfile = sp;
   }
 
+  // Published assignments are read with the service-role client, scoped to
+  // the caller's verified workspace membership. The RLS policy for the user
+  // client additionally requires a people row whose clerk_user_id matches
+  // the signed-in user; students enrolled via roster import or attendance
+  // often have no such linked row, so the RLS-filtered list came back empty
+  // and the detail page 404'd for legitimately published assignments.
+  // Workspace membership (checked above) is the authorization boundary here,
+  // and per-student submission data below stays keyed to the linked profile.
+  let serviceDb: UntypedClient = udb;
+  try {
+    serviceDb = createJoinSupabaseClient() as unknown as UntypedClient;
+  } catch {
+    // Service client not configured in this environment; fall back to the
+    // RLS-filtered user client rather than failing the whole portal.
+    serviceDb = udb;
+  }
   const [coursesRes, assignmentsRes, submissionsRes] = await Promise.all([
     db.from("courses").select("id,code,title").eq("organization_id", membership.businessId),
-    udb
+    serviceDb
       .from("assignments")
       .select("id,course_id,title,description,category,status,opens_at,due_at,closes_at,total_marks,submission_mode,allow_text_answer,allow_file_upload,allow_photo_submission,release_marks_immediately,grades_published,created_at")
       .eq("organization_id", membership.businessId)

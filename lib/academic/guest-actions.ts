@@ -179,13 +179,18 @@ export async function verifyGuestStudentForAssignment(input: {
     // Enforce lecturer-selected target audience if configured
     const audience = String(assignment.target_audience ?? "ALL_INSTITUTION");
     if (audience === "COURSE_ENROLLED" && assignment.course_id) {
+      // Enrollment lives in course_students (PK course_id+student_id, no id
+      // column). This previously queried a non-existent "course_enrollments"
+      // table, so the query always returned nothing and every student --
+      // including enrolled ones -- was rejected here.
       const { data: enrolled } = await db
-        .from("course_enrollments")
-        .select("id")
+        .from("course_students")
+        .select("student_id")
         .eq("course_id", assignment.course_id)
         .eq("student_id", profile.id)
+        .eq("organization_id", parsedToken.orgId)
         .maybeSingle();
-      if (!enrolled?.id) {
+      if (!enrolled?.student_id) {
         return {
           ok: false as const,
           error: "This assignment is restricted to students registered for this course.",

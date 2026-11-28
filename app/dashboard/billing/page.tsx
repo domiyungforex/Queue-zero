@@ -1,17 +1,16 @@
 import { getBusinessDetails } from "@/lib/dashboard/data";
 import { PageHeading } from "@/components/ui/workspace";
 import { Plans } from "@/components/billing/plans";
-import { billingConfigured, getPaidPlan } from "@/lib/paystack/server";
+import { billingConfigured, getPaidPlan, paystackPlanConfigured, type PaystackPlanCode } from "@/lib/paystack/server";
 import { BillingViewedAnalytics } from "@/components/analytics/billing-viewed";
 import { getCatalogPlans, getOrganizationEntitlements } from "@/lib/pricing/plans";
-import { getAvailablePaymentProviders } from "@/lib/payments/provider";
 import { createUserSupabaseClient } from "@/lib/db/server";
 import { requireBusinessMembership } from "@/lib/business/membership";
 
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ payment?: string }>;
+  searchParams: Promise<{ payment?: string; plan?: string }>;
 }) {
   const membership = await requireBusinessMembership();
   const [business, catalog, entitlements, db] = await Promise.all([
@@ -21,7 +20,7 @@ export default async function BillingPage({
     createUserSupabaseClient(),
   ]);
 
-  const [{ count: queueCount }, { count: locationCount }, { count: staffCount }, { data: checkouts }] =
+  const [{ count: queueCount }, { count: locationCount }, { count: staffCount }, { data: checkouts }, { data: subscription }] =
     await Promise.all([
       db.from("queues").select("id", { count: "exact", head: true }).eq("business_id", membership.businessId),
       db.from("locations").select("id", { count: "exact", head: true }).eq("business_id", membership.businessId),
@@ -32,27 +31,54 @@ export default async function BillingPage({
         .eq("business_id", membership.businessId)
         .order("created_at", { ascending: false })
         .limit(8),
+      db
+        .from("subscriptions")
+        .select("plan,status,current_period_end")
+        .eq("business_id", membership.businessId)
+        .maybeSingle(),
     ]);
 
   const prices: Record<string, string> = {};
-  let configured = billingConfigured();
+  const configured = billingConfigured();
+  const paidPlans = ["STARTER", "GROWTH", "PROFESSIONAL", "EDUCATION", "EVENTS"] as const;
+  const planAvailability: Partial<Record<string, { monthly: boolean; annual: boolean }>> = {};
   if (configured) {
-    try {
-      for (const p of ["STARTER", "BUSINESS"] as const) {
-        const v = await getPaidPlan(p);
-        prices[p] = new Intl.NumberFormat("en", {
-          style: "currency",
-          currency: v.currency,
-          maximumFractionDigits: 0,
-        }).format(v.amount / 100);
+    for (const p of paidPlans) {
+      planAvailability[p] = {
+        monthly: paystackPlanConfigured(p as PaystackPlanCode, "monthly"),
+        annual: paystackPlanConfigured(p as PaystackPlanCode, "annual"),
+      };
+      if (planAvailability[p].monthly) {
+        try {
+          const v = await getPaidPlan(p as PaystackPlanCode);
+          prices[p] = new Intl.NumberFormat("en", {
+            style: "currency",
+            currency: v.currency,
+            maximumFractionDigits: 0,
+          }).format(v.amount / 100);
+        } catch {
+          planAvailability[p].monthly = false;
+        }
       }
-    } catch {
-      configured = false;
     }
   }
 
-  const providers = getAvailablePaymentProviders();
-  const status = (await searchParams).payment;
+  const params = await searchParams;
+  const status = params.payment;
+  const requestedPlan = paidPlans.includes(params.plan?.toUpperCase() as (typeof paidPlans)[number])
+    ? (params.plan!.toUpperCase() as (typeof paidPlans)[number])
+    : undefined;
+  const subStatus = (subscription as { status?: string; current_period_end?: string | null } | null) ?? null;
+  const statusLabel =
+    subStatus?.status === "active"
+      ? "Active"
+      : subStatus?.status === "past_due"
+        ? "Past due"
+        : subStatus?.status === "cancelled"
+          ? "Cancelled"
+          : subStatus?.status === "expired"
+            ? "Expired"
+            : null;
 
   return (
     <>
@@ -72,6 +98,41 @@ export default async function BillingPage({
               : "Payment is not confirmed yet. Your plan will update after secure provider verification."}
         </p>
       ) : null}
+
+      {requestedPlan && business.subscription_tier !== requestedPlan ? (
+        <p className="notice" role="status">
+          You selected the {requestedPlan[0] + requestedPlan.slice(1).toLowerCase()} plan on the pricing page.
+          Complete checkout below to activate it.
+        </p>
+      ) : null}
+
+      <section className="panel mb-8 flex flex-wrap items-center justify-between gap-4 p-6" aria-label="Current plan">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Current plan</p>
+          <p className="mt-1 text-2xl font-bold text-[#111318]">
+            {business.subscription_tier[0] + business.subscription_tier.slice(1).toLowerCase()}
+            {statusLabel ? (
+              <span className="ml-3 align-middle inline-flex rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold">
+                {statusLabel}
+              </span>
+            ) : null}
+          </p>
+          {subStatus?.current_period_end ? (
+            <p className="mt-1 text-sm text-neutral-500">
+              {subStatus.status === "active" ? "Renews" : "Current period ends"}{" "}
+              {new Date(subStatus.current_period_end).toLocaleDateString()}
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-neutral-500">No paid subscription yet.</p>
+          )}
+        </div>
+        {subStatus?.status === "past_due" ? (
+          <p className="notice warning" role="alert">
+            Your last payment failed. Update your payment method via “Manage or cancel subscription” below to keep
+            your plan active.
+          </p>
+        ) : null}
+      </section>
 
       <section className="mb-8 grid gap-4 sm:grid-cols-3" aria-label="Plan usage summary">
         <div className="panel p-5">
@@ -106,16 +167,17 @@ export default async function BillingPage({
       <Plans
         current={business.subscription_tier}
         prices={prices}
-        configured={configured || providers.stripe}
+        configured={configured}
         catalog={catalog}
-        providers={providers}
+        highlightedPlan={requestedPlan}
+        planAvailability={planAvailability as never}
       />
 
-      {checkouts && checkouts.length > 0 ? (
-        <section className="panel mt-10 p-6" aria-labelledby="billing-history-title">
-          <h2 id="billing-history-title" className="text-lg font-bold text-[#111318]">
-            Billing History
-          </h2>
+      <section className="panel mt-10 p-6" aria-labelledby="billing-history-title">
+        <h2 id="billing-history-title" className="text-lg font-bold text-[#111318]">
+          Billing History
+        </h2>
+        {checkouts && checkouts.length > 0 ? (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
@@ -148,8 +210,12 @@ export default async function BillingPage({
               </tbody>
             </table>
           </div>
-        </section>
-      ) : null}
+        ) : (
+          <p className="mt-3 text-sm text-neutral-500">
+            No payments yet. When you upgrade, your Paystack payments and their status will appear here.
+          </p>
+        )}
+      </section>
     </>
   );
 }
