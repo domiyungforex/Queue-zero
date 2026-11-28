@@ -6,6 +6,7 @@ import { CourseAudienceForm } from "@/components/school/course-audience-form";
 import { CourseDeleteBar } from "@/components/school/course-delete-bar";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { EmptyState, PageHeading } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 import "@/components/school/school.css";
 
 export default async function CoursePage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -19,6 +20,7 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
   const enrollmentCount = data.enrollments.filter((item) => item.course_id === courseId).length;
 
   return <>
+    <Breadcrumbs items={[{ label: "Courses", href: "/dashboard/courses" }, { label: course.code }]} />
     <PageHeading eyebrow={course.code} title={course.title} description={`${enrollmentCount} enrolled students`} action={<Link href="/dashboard/courses" className="button-secondary">All courses</Link>} />
     <LiveRefresh topic={`school:${data.organization.id}`} authenticated />
     <h2 className="school-subheading">Class sessions</h2>

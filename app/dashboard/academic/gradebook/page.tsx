@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
-import { PageHeading } from "@/components/ui/workspace";
+import { EmptyState, PageHeading, StatusPill } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 
 export default async function GradebookPage() {
   const membership = await requireBusinessMembership();
@@ -28,6 +29,7 @@ export default async function GradebookPage() {
 
   return (
     <main className="space-y-6">
+      <Breadcrumbs items={[{ label: "Academic", href: "/dashboard/academic" }, { label: "Gradebook" }]} />
       <PageHeading
         eyebrow="GRADEBOOK & RESULTS"
         title="Course Gradebook"
@@ -41,9 +43,12 @@ export default async function GradebookPage() {
 
       <section className="panel p-6">
         {!entries || entries.length === 0 ? (
-          <p className="text-sm text-neutral-600">
-            No gradebook entries recorded yet. Grades appear here once submissions are marked.
-          </p>
+          <EmptyState
+            title="No gradebook entries yet"
+            description="No gradebook entries recorded yet. Grades appear here once submissions are marked."
+            href="/dashboard/academic/assignments"
+            label="Review Assignments"
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -68,9 +73,7 @@ export default async function GradebookPage() {
                     <td className="py-3 pr-4 font-bold">{String(row.total_score)}</td>
                     <td className="py-3 pr-4 font-bold text-[#ff6b2b]">{String(row.letter_grade ?? "—")}</td>
                     <td className="py-3">
-                      <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold">
-                        {String(row.status)}
-                      </span>
+                      <StatusPill status={String(row.status)} />
                     </td>
                   </tr>
                 ))}

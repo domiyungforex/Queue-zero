@@ -2,6 +2,7 @@ import { pageMetadata } from "@/lib/site/metadata";
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs";
 import { MarketingFrame } from "@/components/marketing/site";
 import styles from "@/components/marketing/site.module.css";
+import { Check, ShieldCheck } from "lucide-react";
 import { Plans } from "@/components/billing/plans";
 import { billingConfigured, getPaidPlan } from "@/lib/paystack/server";
 import { getCatalogPlans } from "@/lib/pricing/plans";
@@ -55,6 +56,17 @@ export default async function PricingPage() {
           catalog={catalog}
           publicPage
         />
+        <section className={styles.assuranceStrip} aria-label="Pricing assurances">
+          <span>
+            <ShieldCheck size={17} aria-hidden="true" /> Upgrades are processed securely via Paystack
+          </span>
+          <span>
+            <Check size={17} aria-hidden="true" /> No app downloads for your customers
+          </span>
+          <span>
+            <Check size={17} aria-hidden="true" /> Start free, then scale as your organization grows
+          </span>
+        </section>
       </main>
     </MarketingFrame>
   );

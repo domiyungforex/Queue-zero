@@ -119,18 +119,24 @@ export function Plans({
         >
           <button
             type="button"
+            aria-pressed={interval === "monthly"}
             onClick={() => setInterval("monthly")}
             className={`min-h-10 rounded-lg px-4 text-sm font-semibold transition ${
-              interval === "monthly" ? "bg-[#ff6b2b] text-white" : "text-neutral-700 hover:bg-neutral-100"
+              interval === "monthly"
+                ? "bg-[#ff6b2b] text-white shadow-[0_8px_20px_rgba(255,107,43,0.35)]"
+                : "text-neutral-700 hover:bg-neutral-100"
             }`}
           >
             Monthly
           </button>
           <button
             type="button"
+            aria-pressed={interval === "annual"}
             onClick={() => setInterval("annual")}
             className={`min-h-10 rounded-lg px-4 text-sm font-semibold transition ${
-              interval === "annual" ? "bg-[#ff6b2b] text-white" : "text-neutral-700 hover:bg-neutral-100"
+              interval === "annual"
+                ? "bg-[#ff6b2b] text-white shadow-[0_8px_20px_rgba(255,107,43,0.35)]"
+                : "text-neutral-700 hover:bg-neutral-100"
             }`}
           >
             Annual (Save 15%)

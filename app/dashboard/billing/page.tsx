@@ -1,5 +1,5 @@
 import { getBusinessDetails } from "@/lib/dashboard/data";
-import { PageHeading } from "@/components/ui/workspace";
+import { EmptyState, PageHeading, StatCard, StatusPill } from "@/components/ui/workspace";
 import { Plans } from "@/components/billing/plans";
 import { billingConfigured, getPaidPlan, paystackPlanConfigured, type PaystackPlanCode } from "@/lib/paystack/server";
 import { BillingViewedAnalytics } from "@/components/analytics/billing-viewed";
@@ -109,13 +109,9 @@ export default async function BillingPage({
       <section className="panel mb-8 flex flex-wrap items-center justify-between gap-4 p-6" aria-label="Current plan">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Current plan</p>
-          <p className="mt-1 text-2xl font-bold text-[#111318]">
+          <p className="mt-1 flex flex-wrap items-center gap-3 text-2xl font-bold text-[#111318]">
             {business.subscription_tier[0] + business.subscription_tier.slice(1).toLowerCase()}
-            {statusLabel ? (
-              <span className="ml-3 align-middle inline-flex rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold">
-                {statusLabel}
-              </span>
-            ) : null}
+            {statusLabel && subStatus?.status ? <StatusPill status={subStatus.status} /> : null}
           </p>
           {subStatus?.current_period_end ? (
             <p className="mt-1 text-sm text-neutral-500">
@@ -135,33 +131,18 @@ export default async function BillingPage({
       </section>
 
       <section className="mb-8 grid gap-4 sm:grid-cols-3" aria-label="Plan usage summary">
-        <div className="panel p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Active Queues</p>
-          <p className="mt-2 text-2xl font-bold text-[#111318]">
-            {queueCount ?? 0}
-            <span className="ml-1 text-sm font-medium text-neutral-500">
-              / {entitlements.limits.max_queues === null ? "Unlimited" : entitlements.limits.max_queues}
-            </span>
-          </p>
-        </div>
-        <div className="panel p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Locations</p>
-          <p className="mt-2 text-2xl font-bold text-[#111318]">
-            {locationCount ?? 0}
-            <span className="ml-1 text-sm font-medium text-neutral-500">
-              / {entitlements.limits.max_locations === null ? "Unlimited" : entitlements.limits.max_locations}
-            </span>
-          </p>
-        </div>
-        <div className="panel p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Team Members</p>
-          <p className="mt-2 text-2xl font-bold text-[#111318]">
-            {staffCount ?? 0}
-            <span className="ml-1 text-sm font-medium text-neutral-500">
-              / {entitlements.limits.max_staff === null ? "Unlimited" : entitlements.limits.max_staff}
-            </span>
-          </p>
-        </div>
+        <StatCard
+          label="Active Queues"
+          value={<>{queueCount ?? 0}<span className="ml-1 text-sm font-medium text-neutral-500">/ {entitlements.limits.max_queues === null ? "Unlimited" : entitlements.limits.max_queues}</span></>}
+        />
+        <StatCard
+          label="Locations"
+          value={<>{locationCount ?? 0}<span className="ml-1 text-sm font-medium text-neutral-500">/ {entitlements.limits.max_locations === null ? "Unlimited" : entitlements.limits.max_locations}</span></>}
+        />
+        <StatCard
+          label="Team Members"
+          value={<>{staffCount ?? 0}<span className="ml-1 text-sm font-medium text-neutral-500">/ {entitlements.limits.max_staff === null ? "Unlimited" : entitlements.limits.max_staff}</span></>}
+        />
       </section>
 
       <Plans
@@ -173,12 +154,14 @@ export default async function BillingPage({
         planAvailability={planAvailability as never}
       />
 
-      <section className="panel mt-10 p-6" aria-labelledby="billing-history-title">
-        <h2 id="billing-history-title" className="text-lg font-bold text-[#111318]">
-          Billing History
-        </h2>
+      <section className="panel mt-10" aria-labelledby="billing-history-title">
+        <div className="panel-heading">
+          <h2 id="billing-history-title">
+            Billing History
+          </h2>
+        </div>
         {checkouts && checkouts.length > 0 ? (
-          <div className="mt-4 overflow-x-auto">
+          <div className="overflow-x-auto p-6">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-black/10 text-xs uppercase tracking-wider text-neutral-500">
@@ -201,9 +184,7 @@ export default async function BillingPage({
                       }).format(c.amount / 100)}
                     </td>
                     <td className="py-3">
-                      <span className="inline-flex rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold capitalize">
-                        {c.status}
-                      </span>
+                      <StatusPill status={c.status.toLowerCase()} />
                     </td>
                   </tr>
                 ))}
@@ -211,9 +192,9 @@ export default async function BillingPage({
             </table>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-neutral-500">
-            No payments yet. When you upgrade, your Paystack payments and their status will appear here.
-          </p>
+          <div className="p-6">
+            <EmptyState title="No payments yet" description="When you upgrade, your Paystack payments and their status will appear here." />
+          </div>
         )}
       </section>
     </>

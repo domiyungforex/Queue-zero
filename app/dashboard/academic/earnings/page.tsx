@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { requireUserId } from "@/lib/auth/server";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
-import { PageHeading, StatCard } from "@/components/ui/workspace";
+import { EmptyState, PageHeading, StatCard } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 import { formatNgnFromMinor } from "@/lib/academic/allowance-ledger";
 
 export default async function LecturerEarningsPage() {
@@ -38,6 +39,7 @@ export default async function LecturerEarningsPage() {
 
   return (
     <main className="space-y-6">
+      <Breadcrumbs items={[{ label: "Academic", href: "/dashboard/academic" }, { label: "Earnings" }]} />
       <PageHeading
         eyebrow="LECTURER EARNINGS"
         title="Submission Revenue & Ledger"
@@ -58,9 +60,10 @@ export default async function LecturerEarningsPage() {
       <section className="panel p-6">
         <h2 className="text-lg font-bold text-[#111318]">Immutable Financial Ledger</h2>
         {rows.length === 0 ? (
-          <p className="mt-2 text-sm text-neutral-600">
-            No paid submission earnings recorded yet. Earnings appear here once students complete paid submissions.
-          </p>
+          <EmptyState
+            title="No earnings yet"
+            description="No paid submission earnings recorded yet. Earnings appear here once students complete paid submissions."
+          />
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">

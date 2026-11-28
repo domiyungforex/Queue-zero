@@ -86,7 +86,7 @@ export default async function PublicTeamPage() {
             ))}
           </section>
         ) : (
-          <section className="panel max-w-2xl p-8">
+          <section className={`${styles.emptyState} max-w-2xl p-8`}>
             <h2 className="text-xl font-bold text-[#111318]">Team directory</h2>
             <p className="mt-2 text-sm text-neutral-600">
               No public team profiles have been published yet. Want to reach our engineering or onboarding team?

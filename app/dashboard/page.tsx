@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, CheckCheck, Clock3, Plus, UserRound, Users } from "lucide-react";
+import { ArrowUpRight, CalendarCheck, CheckCheck, ClipboardCheck, Clock3, GraduationCap, Layers, Plus, UserRound, Users } from "lucide-react";
 import { QueueSummary } from "@/components/dashboard/queue-summary";
 import { InstitutionOverview } from "@/components/institution/overview";
 import { OrganizationSetupStatus } from "@/components/organization/setup-status";
@@ -7,7 +7,7 @@ import { ProfessionalOverview } from "@/components/professional/overview";
 import { SchoolOverview } from "@/components/school/overview";
 import { FeedbackNotice } from "@/components/school/feedback-notice";
 import { DashboardWelcomeBanner } from "@/components/ui/turnmark-system";
-import { PageHeading, StatCard, duration } from "@/components/ui/workspace";
+import { EmptyState, PageHeading, StatCard, duration } from "@/components/ui/workspace";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { getDashboardQueues } from "@/lib/dashboard/data";
 import { getOrganizationWorkspaceProfile } from "@/lib/organization/data";
@@ -54,17 +54,26 @@ export default async function Page({ searchParams }: DashboardPageProps = {}) {
       <StatCard label="Served today" value={metrics.completed_today} icon={<CheckCheck size={20} />} note="Completed customer visits" />
       <StatCard label="Average wait" value={duration(metrics.average_wait_seconds)} icon={<Clock3 size={20} />} note="Last 7 days · until called" />
     </div> : <section className="workspace-tip" role="alert"><div><h2>Live totals could not be loaded</h2><p>Queues below are still your real queues. Refresh to try the totals again. No sample numbers are shown.</p></div></section>}
+    <div className="section-toolbar"><h2>Jump back in</h2></div>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {[
+        { href: "/dashboard/queues", icon: <Layers size={23} />, title: "Queues", description: "Open a console, call next, and keep the line moving." },
+        { href: "/dashboard/bookings", icon: <CalendarCheck size={23} />, title: "Bookings", description: "See today’s advance bookings and scheduled arrivals." },
+        { href: "/dashboard/academic", icon: <GraduationCap size={23} />, title: "Academic", description: "Classes, courses and assignments for your school." },
+        { href: "/dashboard/attendance", icon: <ClipboardCheck size={23} />, title: "Attendance", description: "Open registers and check students in." },
+      ].map((card) => (
+        <Link key={card.href} href={card.href} className="panel queue-card">
+          <div className="queue-card-top"><span className="tile-icon">{card.icon}</span><ArrowUpRight size={17} /></div>
+          <h2>{card.title}</h2>
+          <p>{card.description}</p>
+        </Link>
+      ))}
+    </div>
     <div className="section-toolbar"><h2>Your queues</h2><Link href="/dashboard/queues">View all<ArrowUpRight size={16} /></Link></div>
     {queuesResult.failed ? (
       <section className="workspace-tip" role="alert"><div><h2>Queues could not be loaded</h2><p>Refresh to try again. This is not an empty workspace, and no sample queues are shown.</p></div></section>
     ) : queues.length === 0 ? (
-      <section className="workspace-tip" style={{ textAlign: "center", padding: 32 }}>
-        <h2>No queues yet</h2>
-        <p>Create your first queue to start managing arrivals.</p>
-        <Link href="/dashboard/queues/new" className="button-primary" style={{ display: "inline-flex", marginTop: 16 }}>
-          Create a queue <Plus size={16} />
-        </Link>
-      </section>
+      <EmptyState title="No queues yet" description="Create your first queue to start managing arrivals." href="/dashboard/queues/new" label="Create a queue" />
     ) : (
       <QueueSummary queues={queues} staff={membership.role === "staff"} />
     )}

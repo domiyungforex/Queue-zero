@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowRight, BookOpen, ShieldCheck, UsersRound } from "lucide-react";
 import { pageMetadata } from "@/lib/site/metadata";
 import { Breadcrumbs } from "@/components/marketing/breadcrumbs";
 import { MarketingFrame } from "@/components/marketing/site";
@@ -53,26 +53,30 @@ export default function HelpPage() {
           Everything your staff, lecturers, and administrators need to run TuRnMaRk smoothly.
         </p>
 
-        <section className={styles.steps} aria-label="Help guides">
+        <section className={styles.guideGrid} aria-label="Help guides">
           {guides.map(({ icon: Icon, title, description, href, linkLabel }) => (
-            <article key={title} className={styles.step}>
-              <div className={styles.stepTop}>
+            <article key={title} className={styles.guideCard}>
+              <div className={styles.guideIcon}>
                 <Icon size={24} aria-hidden="true" />
               </div>
               <h3>{title}</h3>
               <p>{description}</p>
-              <p>
-                <Link href={href}>{linkLabel}</Link>
-              </p>
+              <Link href={href} className={styles.guideLink}>
+                {linkLabel} <ArrowRight size={15} aria-hidden="true" />
+              </Link>
             </article>
           ))}
         </section>
 
-        <div className="mt-10">
-          <Link href="/contact" className={styles.tmPrimaryAction}>
-            Still need help? Contact support
+        <section className={styles.contactBand} aria-labelledby="help-contact-title">
+          <div>
+            <h2 id="help-contact-title">Still stuck?</h2>
+            <p>Tell us what you are trying to do and the team will point you in the right direction.</p>
+          </div>
+          <Link href="/contact" className={styles.contactBandAction}>
+            Still need help? Contact support <ArrowRight size={16} aria-hidden="true" />
           </Link>
-        </div>
+        </section>
       </main>
     </MarketingFrame>
   );

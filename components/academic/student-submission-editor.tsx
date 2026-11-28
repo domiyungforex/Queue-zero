@@ -384,10 +384,12 @@ export function StudentSubmissionEditor({
         </p>
       ) : null}
 
-      <button type="button" disabled={submitting} onClick={() => void handleSubmit()} className="button-primary">
-        <ArrowRight size={16} aria-hidden="true" />
-        {submitting ? "Submitting…" : "Submit Assignment"}
-      </button>
+      <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-[#eee7e3] bg-white/95 p-3 shadow-[0_8px_30px_rgba(17,19,24,0.08)] backdrop-blur">
+        <button type="button" disabled={submitting} onClick={() => void handleSubmit()} className="button-primary">
+          <ArrowRight size={16} aria-hidden="true" />
+          {submitting ? "Submitting…" : "Submit Assignment"}
+        </button>
+      </div>
     </div>
   );
 }
