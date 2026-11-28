@@ -5,7 +5,6 @@ import styles from "@/components/marketing/site.module.css";
 import { Plans } from "@/components/billing/plans";
 import { billingConfigured, getPaidPlan } from "@/lib/paystack/server";
 import { getCatalogPlans } from "@/lib/pricing/plans";
-import { getAvailablePaymentProviders } from "@/lib/payments/provider";
 
 export const dynamic = "force-dynamic";
 
@@ -16,25 +15,22 @@ export const metadata = pageMetadata(
 );
 
 export default async function PricingPage() {
-  const [catalog, providers] = await Promise.all([
-    getCatalogPlans(),
-    Promise.resolve(getAvailablePaymentProviders()),
-  ]);
+  const catalog = await getCatalogPlans();
 
   const prices: Record<string, string> = {};
-  let configured = billingConfigured();
+  const configured = billingConfigured();
   if (configured) {
-    try {
-      for (const p of ["STARTER", "BUSINESS"] as const) {
+    for (const p of ["STARTER", "GROWTH", "PROFESSIONAL", "EDUCATION", "EVENTS"] as const) {
+      try {
         const v = await getPaidPlan(p);
         prices[p] = new Intl.NumberFormat("en", {
           style: "currency",
           currency: v.currency,
           maximumFractionDigits: 0,
         }).format(v.amount / 100);
+      } catch {
+        // Plan not configured in Paystack yet; the catalog price is shown instead.
       }
-    } catch {
-      configured = false;
     }
   }
 
@@ -55,9 +51,8 @@ export default async function PricingPage() {
         <Plans
           current="FREE"
           prices={prices}
-          configured={configured || providers.stripe}
+          configured={configured}
           catalog={catalog}
-          providers={providers}
           publicPage
         />
       </main>

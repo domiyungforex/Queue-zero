@@ -24,7 +24,10 @@ describe("signed attendance QR", () => {
     expect(() => validateAttendanceToken(signed, secret, { now: 1001, organizationId: session })).toThrow();
     expect(() => validateAttendanceToken(signed, secret, { now: 1001, sessionId: org })).toThrow();
     expect(() => validateAttendanceToken(signed, "b".repeat(64), { now: 1001 })).toThrow();
-    expect(() => validateAttendanceToken(signed, secret, { now: 994 })).toThrow();
+    // 6s of issuer clock skew is tolerated (see lib/qr/validation.ts), but a
+    // token issued more than 60s in the future is rejected.
+    expect(validateAttendanceToken(signed, secret, { now: 994 })).toEqual(token);
+    expect(() => validateAttendanceToken(signed, secret, { now: 939 })).toThrow();
     expect(() => validateAttendanceToken(signAttendanceToken({ ...token, expires_at: token.issued_at + 18 * 60 * 60 + 1 }, secret), secret, { now: 1001 })).toThrow();
   });
   it("allows expired signatures solely for replay while retaining structural validation", () => {

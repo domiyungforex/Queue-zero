@@ -2,96 +2,41 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
-import { billingConfigured as paystackConfigured, getPaidPlan, paystack } from "@/lib/paystack/server";
-import { createStripeBillingPortalSession, createStripeCheckoutSession, stripeConfigured } from "@/lib/stripe/server";
-import { getCatalogPlans } from "@/lib/pricing/plans";
+import { getPaidPlan, paystack, type PaystackPlanCode } from "@/lib/paystack/server";
 import type { Plan } from "@/lib/paystack/plans";
 
-export type PaymentProvider = "paystack" | "stripe";
+// Turnmark bills exclusively through Paystack (product decision, 2026-11-28).
+// The earlier dual-provider Stripe path was removed so there is exactly one
+// wired checkout, verification and webhook flow to maintain.
+export type PaymentProvider = "paystack";
 
 const hostedPaystackUrl = z.url().refine((v) => {
   const u = new URL(v);
   return u.protocol === "https:" && !u.username && !u.password && (u.hostname === "checkout.paystack.com" || u.hostname === "paystack.com" || u.hostname.endsWith(".paystack.com"));
 });
 
-const hostedStripeUrl = z.url().refine((v) => {
-  const u = new URL(v);
-  return u.protocol === "https:" && !u.username && !u.password && (u.hostname === "checkout.stripe.com" || u.hostname === "billing.stripe.com");
-});
-
 export function getDefaultPaymentProvider(): PaymentProvider {
-  return process.env.PAYMENT_DEFAULT_PROVIDER === "stripe" ? "stripe" : "paystack";
-}
-
-export function getAvailablePaymentProviders(): { paystack: boolean; stripe: boolean } {
-  return {
-    paystack: paystackConfigured(),
-    stripe: stripeConfigured(),
-  };
+  return "paystack";
 }
 
 export async function startProviderCheckout(input: {
-  provider: PaymentProvider;
   businessId: string;
   plan: Plan;
   email: string;
-  currency?: string;
+  interval?: "monthly" | "annual";
 }): Promise<{ url: string }> {
+  if (input.plan === "FREE" || input.plan === "ENTERPRISE") {
+    throw new Error("This plan does not use checkout.");
+  }
+  const plan = input.plan as PaystackPlanCode;
+  const interval = input.interval ?? "monthly";
   const reference = randomUUID();
   const db = createJoinSupabaseClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  if (input.provider === "stripe") {
-    const catalog = await getCatalogPlans();
-    const planEntry = catalog.find((p) => p.code === input.plan);
-    if (!planEntry) throw new Error("Selected plan is unavailable.");
-
-    const priceEntry =
-      planEntry.prices.find((p) => p.provider === "stripe" && p.currency === (input.currency ?? "USD")) ??
-      planEntry.prices.find((p) => p.currency === (input.currency ?? "USD")) ??
-      planEntry.prices[0];
-
-    if (!priceEntry || priceEntry.amountMinor <= 0) {
-      throw new Error("Stripe pricing is not configured for this plan.");
-    }
-
-    const { error } = await (
-      db.from("billing_checkouts") as unknown as {
-        insert: (row: Record<string, unknown>) => Promise<{ error: unknown }>;
-      }
-    ).insert({
-      reference,
-      business_id: input.businessId,
-      plan: input.plan,
-      provider: "stripe",
-      provider_plan_code: priceEntry.providerPriceCode ?? `stripe_${input.plan.toLowerCase()}`,
-      amount: priceEntry.amountMinor,
-      currency: priceEntry.currency,
-    });
-    if (error) throw new Error("Could not initialize billing checkout.");
-
-    const session = await createStripeCheckoutSession({
-      businessId: input.businessId,
-      planCode: input.plan,
-      planName: planEntry.name,
-      email: input.email,
-      amountMinor: priceEntry.amountMinor,
-      currency: priceEntry.currency,
-      reference,
-      successUrl: `${appUrl}/dashboard/billing?payment=verified`,
-      cancelUrl: `${appUrl}/dashboard/billing?payment=cancelled`,
-      providerPriceCode: priceEntry.providerPriceCode,
-    });
-
-    return { url: hostedStripeUrl.parse(session.url) };
-  }
-
-  // Default: Paystack
-  if (input.plan !== "STARTER" && input.plan !== "BUSINESS") {
-    throw new Error("Paystack checkout currently supports Starter and Business plans.");
-  }
-
-  const details = await getPaidPlan(input.plan);
+  // The amount/currency are read back from Paystack's own plan record, so a
+  // mispriced or swapped plan code fails here instead of charging wrongly.
+  const details = await getPaidPlan(plan, interval);
   const { error } = await (
     db.from("billing_checkouts") as unknown as {
       insert: (row: Record<string, unknown>) => Promise<{ error: unknown }>;
@@ -133,7 +78,7 @@ export async function openProviderPortal(businessId: string): Promise<{ url: str
     .maybeSingle();
 
   if (!data) {
-    throw new Error("Subscription management will be available after the provider confirms your subscription.");
+    throw new Error("Subscription management will be available after Paystack confirms your subscription.");
   }
 
   const sub = data as unknown as {
@@ -142,20 +87,8 @@ export async function openProviderPortal(businessId: string): Promise<{ url: str
     provider_subscription_code: string | null;
   };
 
-  if (sub.provider === "stripe") {
-    if (!sub.provider_customer_code) {
-      throw new Error("Stripe customer record is pending.");
-    }
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const portal = await createStripeBillingPortalSession({
-      customerId: sub.provider_customer_code,
-      returnUrl: `${appUrl}/dashboard/billing`,
-    });
-    return { url: hostedStripeUrl.parse(portal.url) };
-  }
-
   if (!sub.provider_subscription_code) {
-    throw new Error("Subscription management will be available after the provider confirms your subscription.");
+    throw new Error("Subscription management will be available after Paystack confirms your subscription.");
   }
   const result = z
     .object({ link: hostedPaystackUrl })

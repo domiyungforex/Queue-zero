@@ -51,6 +51,24 @@ describe("authentication UI helpers", () => {
     );
   });
 
+  it("maps an incorrect password instead of falling through to the generic failure", () => {
+    expect(
+      authErrorMessage(
+        { errors: [{ code: "form_password_incorrect", message: "Password is incorrect" }] },
+        "sign-in",
+      ),
+    ).toBe("That password is incorrect. Try again, or use an email code instead.");
+  });
+
+  it("maps duplicate accounts and short passwords on sign-up", () => {
+    expect(authErrorMessage({ code: "form_identifier_exists" }, "sign-up")).toBe(
+      "An account with that email already exists. Sign in instead.",
+    );
+    expect(authErrorMessage({ code: "form_password_length_too_short" }, "sign-up")).toBe(
+      "Use a longer password (at least 8 characters).",
+    );
+  });
+
   it("maps rate limits and unknown failures", () => {
     expect(authErrorMessage({ code: "too_many_requests" }, "sign-in")).toBe(
       "Too many attempts. Please wait a moment and try again.",

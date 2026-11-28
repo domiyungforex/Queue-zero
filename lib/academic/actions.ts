@@ -61,6 +61,44 @@ function zodFieldErrors(error: z.ZodError): Record<string, string> {
   return out;
 }
 
+type DbErrorLike = { code?: string; message?: string; details?: string | null; hint?: string | null } | null | undefined;
+
+/**
+ * Assignment saves used to collapse every database failure into
+ * "Could not save assignment.", which made a production outage (missing
+ * migration on the assignments tables) indistinguishable from a typo.
+ * Log the full provider error server-side and return a specific,
+ * user-safe reason keyed by the Postgres error code.
+ */
+function assignmentSaveErrorMessage(error: DbErrorLike): string {
+  const code = error?.code ?? "";
+  const message = error?.message ?? "";
+  if (code === "42P01" || code === "42703" || /does not exist/i.test(message)) {
+    return "Assignment storage is not ready on the server yet (a database update is pending). Nothing was saved — please contact support.";
+  }
+  if (code === "23503") {
+    return "The selected course could not be verified for this workspace. Re-select the course and try again.";
+  }
+  if (code === "23514") {
+    return "One of the assignment settings was rejected by the server. Check the marks, dates and limits, then try again.";
+  }
+  if (code === "23505") {
+    return "An assignment with these details already exists.";
+  }
+  return `Could not save assignment (error ${code || "unknown"}). Please try again; if it keeps happening, contact support with this error code.`;
+}
+
+function logAssignmentSaveError(stage: string, error: DbErrorLike, context: Record<string, unknown>) {
+  console.error("Assignment save failed", {
+    stage,
+    code: error?.code ?? null,
+    message: error?.message ?? null,
+    details: error?.details ?? null,
+    hint: error?.hint ?? null,
+    ...context,
+  });
+}
+
 export async function createAssignmentAction(input: unknown) {
   const membership = await requireBusinessMembership();
   if (!isStaffRole(membership.role)) {
@@ -161,13 +199,28 @@ export async function createAssignmentAction(input: unknown) {
     .single();
 
   if (error || !created?.id) {
-    return { ok: false as const, error: "Could not save assignment." };
+    logAssignmentSaveError("assignments.insert", error, {
+      organizationId: membership.businessId,
+      courseId: v.courseId,
+      publishNow: v.publishNow,
+    });
+    return { ok: false as const, error: assignmentSaveErrorMessage(error) };
   }
 
   const assignmentId = String(created.id);
+  // Question / answer-key / attachment failures used to be ignored, leaving
+  // a published assignment with missing questions. Fail the whole save and
+  // remove the partial assignment instead (deleting it cascades to any
+  // questions already inserted).
+  const failSave = async (stage: string, stageError: DbErrorLike) => {
+    logAssignmentSaveError(stage, stageError, { organizationId: membership.businessId, assignmentId });
+    await db.from("assignments").delete().eq("id", assignmentId).eq("organization_id", membership.businessId);
+    return { ok: false as const, error: assignmentSaveErrorMessage(stageError) };
+  };
+
   for (let i = 0; i < activeQuestions.length; i += 1) {
     const q = activeQuestions[i];
-    const { data: qRow } = await db
+    const { data: qRow, error: qError } = await db
       .from("assignment_questions")
       .insert({
         organization_id: membership.businessId,
@@ -185,23 +238,28 @@ export async function createAssignmentAction(input: unknown) {
       .select("id")
       .single();
 
-    if (qRow?.id) {
-      await db.from("answer_keys").insert({
-        organization_id: membership.businessId,
-        assignment_id: assignmentId,
-        question_id: qRow.id,
-        accepted_answers: q.acceptedAnswers,
-        model_answer: q.modelAnswer || null,
-        expected_formula: q.expectedFormula || null,
-        expected_unit: q.expectedUnit || null,
-        numeric_tolerance: q.numericTolerance,
-        case_sensitive: q.caseSensitive,
-      });
+    if (qError || !qRow?.id) {
+      return failSave("assignment_questions.insert", qError);
+    }
+
+    const { error: keyError } = await db.from("answer_keys").insert({
+      organization_id: membership.businessId,
+      assignment_id: assignmentId,
+      question_id: qRow.id,
+      accepted_answers: q.acceptedAnswers,
+      model_answer: q.modelAnswer || null,
+      expected_formula: q.expectedFormula || null,
+      expected_unit: q.expectedUnit || null,
+      numeric_tolerance: q.numericTolerance,
+      case_sensitive: q.caseSensitive,
+    });
+    if (keyError) {
+      return failSave("answer_keys.insert", keyError);
     }
   }
 
   if (v.attachments.length > 0) {
-    await db.from("assignment_attachments").insert(
+    const { error: attError } = await db.from("assignment_attachments").insert(
       v.attachments.map((att, idx) => ({
         organization_id: membership.businessId,
         assignment_id: assignmentId,
@@ -216,6 +274,9 @@ export async function createAssignmentAction(input: unknown) {
         uploaded_by: userId,
       })),
     );
+    if (attError) {
+      return failSave("assignment_attachments.insert", attError);
+    }
   }
 
   revalidatePath("/dashboard/academic");

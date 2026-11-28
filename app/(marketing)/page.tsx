@@ -59,7 +59,7 @@ export default function Home() {
         </section>
 
         <section className={styles.tmSteps} id="how-it-works" aria-labelledby="flow-title">
-          <div className={styles.tmSectionHeading}><p>HOW TURNMARK WORKS</p><h2 id="flow-title">A better queue in three small moves.</h2><span>The customer flow remains deliberately simple, even when the organization behind it is complex.</span></div>
+          <div className={styles.tmSectionHeading}><p>HOW TuRnMaRk WORKS</p><h2 id="flow-title">A better queue in three small moves.</h2><span>The customer flow remains deliberately simple, even when the organization behind it is complex.</span></div>
           <div className={styles.tmStepGrid}>{steps.map(({ number, title, text, icon: Icon }) => <article key={number}><div><Icon size={24} aria-hidden="true" /><span>{number}</span></div><h3>{title}</h3><p>{text}</p></article>)}</div>
         </section>
 

@@ -44,6 +44,33 @@ export function authErrorMessage(cause: unknown, action: AuthAction) {
     return "We couldn't continue with that email. Check it or create an account.";
   }
 
+  // Clerk reports a wrong password as form_password_incorrect. Without this
+  // mapping it fell through to the generic sign-in failure, so users were
+  // told only "We couldn't sign you in right now" with no reason.
+  if (text.includes("form_password_incorrect") || text.includes("password_incorrect")) {
+    return "That password is incorrect. Try again, or use an email code instead.";
+  }
+
+  if (text.includes("password_pwned") || text.includes("form_password_pwned")) {
+    return "That password appeared in a data breach and can't be used. Reset it, or use an email code instead.";
+  }
+
+  if (
+    text.includes("form_identifier_exists") ||
+    text.includes("identifier_already_exists") ||
+    text.includes("email_address_already_exists")
+  ) {
+    return "An account with that email already exists. Sign in instead.";
+  }
+
+  if (
+    text.includes("form_password_length_too_short") ||
+    text.includes("password_length_too_short") ||
+    text.includes("password_too_short")
+  ) {
+    return "Use a longer password (at least 8 characters).";
+  }
+
   if (
     text.includes("form_code_incorrect") ||
     text.includes("verification_invalid") ||

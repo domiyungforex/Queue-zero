@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   computeRevenueAllocation,
   DEFAULT_FEE_CONFIG,
@@ -23,6 +23,22 @@ describe("Assignment distribution & guest submission tokens", () => {
     const verified = verifyAssignmentGuestToken(token, "secret-key-at-least-32-chars-long", now);
     expect(verified.assignmentId).toBe(assignmentId);
     expect(verified.orgId).toBe(orgId);
+  });
+
+  describe("without a configured signing secret", () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("fails closed instead of minting links with a hardcoded secret", () => {
+      vi.stubEnv("ATTENDANCE_QR_SECRET", "");
+      vi.stubEnv("QUEUE_JOIN_SECRET", "");
+      vi.stubEnv("CLERK_SECRET_KEY", "");
+      const orgId = "11111111-1111-4111-8111-111111111111";
+      const assignmentId = "22222222-2222-4222-8222-222222222222";
+      const now = Math.floor(Date.now() / 1000);
+      expect(() => signAssignmentGuestToken(orgId, assignmentId, now + 3600)).toThrow(
+        "Assignment link signing is not configured.",
+      );
+    });
   });
 });
 

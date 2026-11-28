@@ -17,18 +17,24 @@ const guides = [
     title: "Setting up your first queue",
     description:
       "Create a location, configure service duration and capacity, print or share your QR code, and start calling tickets from the staff console.",
+    href: "/how-it-works",
+    linkLabel: "See how it works",
   },
   {
     icon: UsersRound,
     title: "Running smart class attendance",
     description:
-      "Import your student roster or share a one-time registration link, launch a rotating QR session, and export verified attendance sheets.",
+      "Import your student roster or share a one-time registration link, launch a QR session, and export verified attendance sheets.",
+    href: "/solutions/education",
+    linkLabel: "Explore education attendance",
   },
   {
     icon: ShieldCheck,
     title: "Team roles & billing",
     description:
-      "Assign Owner, Admin, Manager, Staff, or Viewer roles to teammates, and upgrade capacity securely via Paystack or Stripe.",
+      "Assign Owner, Admin, Manager, Staff, or Viewer roles to teammates, and upgrade capacity securely via Paystack.",
+    href: "/pricing",
+    linkLabel: "Compare plans and billing",
   },
 ];
 
@@ -48,13 +54,16 @@ export default function HelpPage() {
         </p>
 
         <section className={styles.steps} aria-label="Help guides">
-          {guides.map(({ icon: Icon, title, description }) => (
+          {guides.map(({ icon: Icon, title, description, href, linkLabel }) => (
             <article key={title} className={styles.step}>
               <div className={styles.stepTop}>
                 <Icon size={24} aria-hidden="true" />
               </div>
               <h3>{title}</h3>
               <p>{description}</p>
+              <p>
+                <Link href={href}>{linkLabel}</Link>
+              </p>
             </article>
           ))}
         </section>
