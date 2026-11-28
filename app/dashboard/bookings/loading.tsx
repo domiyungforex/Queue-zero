@@ -1,3 +1,5 @@
+import { ListSkeleton } from "@/components/ui/loading";
+
 export default function BookingsLoading() {
   return (
     <>
@@ -12,6 +14,7 @@ export default function BookingsLoading() {
           <div key={i} className="stat-card" style={{ minHeight: 90, opacity: 0.5 }} />
         ))}
       </div>
+      <ListSkeleton rows={4} />
     </>
   );
 }

@@ -7,6 +7,7 @@ import {
   publishAssignmentAction,
   runSimilarityAnalysisAction,
 } from "@/lib/academic/actions";
+import { EmptyState, StatusPill } from "@/components/ui/workspace";
 import type { QuestionAnswer } from "@/lib/academic/submission-review";
 
 export interface SubmissionRow {
@@ -108,12 +109,13 @@ export function SubmissionReviewer({
       </div>
 
       {submissions.length === 0 ? (
-        <div className="panel p-8 text-sm text-neutral-600">
-          No student submissions have been received for this assignment yet.
-        </div>
+        <EmptyState
+          title="No submissions yet"
+          description="No student submissions have been received for this assignment yet."
+        />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-          <div className="panel p-4 space-y-2">
+        <div className="grid gap-6 lg:grid-cols-[340px_1fr] lg:items-start">
+          <div className="panel p-4 space-y-2 lg:sticky lg:top-6">
             <h2 className="px-2 text-sm font-bold uppercase tracking-wider text-neutral-500">
               Submissions ({submissions.length})
             </h2>
@@ -131,9 +133,7 @@ export function SubmissionReviewer({
                   >
                     <div className="flex items-center justify-between gap-2">
                       <strong className="text-sm text-[#111318]">{row.studentName}</strong>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-neutral-700">
-                        {row.status}
-                      </span>
+                      <StatusPill status={row.status} />
                     </div>
                     <p className="mt-1 text-xs text-neutral-600">
                       {row.matricNumber ? `${row.matricNumber} · ` : ""}Ref: {row.submissionReference}
@@ -155,9 +155,12 @@ export function SubmissionReviewer({
                     {selected.submittedAt ? new Date(selected.submittedAt).toLocaleString() : "Draft"}
                   </p>
                 </div>
-                <span className="rounded-full bg-[#fff0e8] px-3 py-1 text-xs font-bold text-[#d94b14]">
-                  Auto score: {selected.autoScore ?? "—"} / {totalMarks}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusPill status={selected.status} />
+                  <span className="rounded-full bg-[#fff0e8] px-3 py-1 text-xs font-bold text-[#d94b14]">
+                    Auto score: {selected.autoScore ?? "—"} / {totalMarks}
+                  </span>
+                </div>
               </div>
 
               <div>
@@ -225,7 +228,7 @@ export function SubmissionReviewer({
                 />
               </label>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="sticky bottom-4 z-10 flex flex-wrap gap-3 rounded-xl border border-[#eee7e3] bg-white/95 p-3 shadow-[0_8px_30px_rgba(17,19,24,0.08)] backdrop-blur">
                 <button type="button" disabled={busy} onClick={() => void submitGrade(false)} className="button-primary">
                   <Check size={16} aria-hidden="true" />
                   {busy ? "Saving…" : "Save Grade"}

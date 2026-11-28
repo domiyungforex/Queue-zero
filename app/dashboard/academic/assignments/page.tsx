@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getAcademicOverview } from "@/lib/academic/data";
 import { PageHeading, StatCard } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 import { AssignmentsDashboard } from "@/components/academic/assignments-dashboard";
 
 export default async function LecturerAssignmentsPage() {
@@ -9,6 +10,12 @@ export default async function LecturerAssignmentsPage() {
 
   return (
     <main className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Academic", href: "/dashboard/academic" },
+          { label: "Assignments" },
+        ]}
+      />
       <PageHeading
         eyebrow="LECTURER WORKSPACE"
         title="Assignments & Assessments"
@@ -21,7 +28,7 @@ export default async function LecturerAssignmentsPage() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="metrics-grid">
         <StatCard label="Active Assignments" value={stats.totalAssignments} />
         <StatCard label="Drafts" value={stats.draftAssignments} />
         <StatCard label="Published" value={stats.publishedAssignments} />

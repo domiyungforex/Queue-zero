@@ -45,6 +45,6 @@ export default async function ServicesPage() {
   }
   return <>
     <PageHeading eyebrow="SERVICES" title="Institution services" description="Open a unit to see the queues and courses your role permits you to access." />
-    {units.length ? <div className="grid gap-4 sm:grid-cols-2">{units.map((unit) => <Link key={unit.id} href={`/dashboard/units/${unit.id}`} className="rounded-xl border border-black/10 bg-white p-5"><h2 className="font-semibold">{unit.name}</h2><p className="mt-2 text-muted">{queueCounts.get(unit.id) ?? 0} accessible queues · {courseCounts.get(unit.id) ?? 0} courses</p></Link>)}</div> : <EmptyState title="No services available" description="No active institutional units are available to your account." />}
+    {units.length ? <div className="grid gap-4 sm:grid-cols-2">{units.map((unit) => <Link key={unit.id} href={`/dashboard/units/${unit.id}`} className="panel block p-5"><h2 className="font-semibold">{unit.name}</h2><p className="mt-2 text-muted">{queueCounts.get(unit.id) ?? 0} accessible queues · {courseCounts.get(unit.id) ?? 0} courses</p></Link>)}</div> : <EmptyState title="No services available" description="No active institutional units are available to your account." />}
   </>;
 }

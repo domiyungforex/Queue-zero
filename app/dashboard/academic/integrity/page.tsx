@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
-import { PageHeading } from "@/components/ui/workspace";
+import { EmptyState, PageHeading } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 
 export default async function IntegrityPage() {
   const membership = await requireBusinessMembership();
@@ -31,6 +32,7 @@ export default async function IntegrityPage() {
 
   return (
     <main className="space-y-8">
+      <Breadcrumbs items={[{ label: "Academic", href: "/dashboard/academic" }, { label: "Integrity" }]} />
       <PageHeading
         eyebrow="ACADEMIC INTEGRITY"
         title="Similarity & AI-Writing Risk Review"
@@ -56,9 +58,10 @@ export default async function IntegrityPage() {
       <section className="panel p-6 space-y-4">
         <h2 className="text-lg font-bold text-[#111318]">Student-to-Student Similarity Matches</h2>
         {!matches || matches.length === 0 ? (
-          <p className="text-sm text-neutral-600">
-            No similarity matches flagged yet. Run a similarity scan from any assignment review page.
-          </p>
+          <EmptyState
+            title="No similarity matches flagged yet"
+            description="Run a similarity scan from any assignment review page."
+          />
         ) : (
           <div className="space-y-3">
             {matches.map((m) => (
@@ -81,7 +84,10 @@ export default async function IntegrityPage() {
       <section className="panel p-6 space-y-4">
         <h2 className="text-lg font-bold text-[#111318]">AI-Writing Risk Indicators (Separate Signal)</h2>
         {!aiRisks || aiRisks.length === 0 ? (
-          <p className="text-sm text-neutral-600">No AI-writing risk assessments recorded yet.</p>
+          <EmptyState
+            title="No risk assessments recorded"
+            description="No AI-writing risk assessments recorded yet."
+          />
         ) : (
           <div className="space-y-3">
             {aiRisks.map((r) => (

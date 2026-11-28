@@ -9,6 +9,7 @@ import {
   type ReviewQuestion,
 } from "@/lib/academic/submission-review";
 import { PageHeading, StatCard } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 import { SubmissionReviewer, type SubmissionRow } from "@/components/academic/submission-reviewer";
 
 type Row = Record<string, unknown>;
@@ -110,6 +111,13 @@ export default async function AssignmentDetailPage({
 
   return (
     <main className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Academic", href: "/dashboard/academic" },
+          { label: "Assignments", href: "/dashboard/academic/assignments" },
+          { label: String(assignment.title) },
+        ]}
+      />
       <PageHeading
         eyebrow={String(assignment.category).replaceAll("_", " ")}
         title={String(assignment.title)}

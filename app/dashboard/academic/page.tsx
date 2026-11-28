@@ -10,7 +10,8 @@ import {
   UsersRound,
 } from "lucide-react";
 import { getAcademicOverview } from "@/lib/academic/data";
-import { PageHeading, StatCard } from "@/components/ui/workspace";
+import { EmptyState, PageHeading, StatCard, StatusPill } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 
 export default async function AcademicOverviewPage() {
   const { membership, stats, assignments } = await getAcademicOverview();
@@ -83,6 +84,7 @@ export default async function AcademicOverviewPage() {
 
   return (
     <main className="space-y-8">
+      <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Academic" }]} />
       <PageHeading
         eyebrow="ACADEMIC MANAGEMENT"
         title="Academic CMS & Assessment"
@@ -100,12 +102,16 @@ export default async function AcademicOverviewPage() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Academic metrics">
+      <section className="metrics-grid" aria-label="Academic metrics">
         <StatCard label="Published Assignments" value={stats.publishedAssignments} />
         <StatCard label="Total Submissions" value={stats.totalSubmissions} />
         <StatCard label="Awaiting Marking" value={stats.awaitingMarking} />
         <StatCard label="Integrity Reviews" value={stats.pendingIntegrityReviews} />
       </section>
+
+      <div className="section-toolbar">
+        <h2>Quick actions</h2>
+      </div>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Academic modules">
         {modules.map(({ href, title, description, icon: Icon, badge }) => (
@@ -131,16 +137,15 @@ export default async function AcademicOverviewPage() {
         ))}
       </section>
 
+      <div className="section-toolbar">
+        <h2 id="recent-assignments-title">Recent Assignments</h2>
+        <Link href="/dashboard/academic/assignments" className="text-sm font-semibold text-[#ff6b2b] hover:underline">
+          View all
+        </Link>
+      </div>
+
       {assignments.length > 0 ? (
         <section className="panel p-6" aria-labelledby="recent-assignments-title">
-          <div className="flex items-center justify-between gap-4">
-            <h2 id="recent-assignments-title" className="text-lg font-bold text-[#111318]">
-              Recent Assignments
-            </h2>
-            <Link href="/dashboard/academic/assignments" className="text-sm font-semibold text-[#ff6b2b] hover:underline">
-              View all
-            </Link>
-          </div>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
@@ -158,9 +163,7 @@ export default async function AcademicOverviewPage() {
                     <td className="py-3 pr-4 font-semibold text-[#111318]">{a.title}</td>
                     <td className="py-3 pr-4 text-neutral-600">{a.course_code}</td>
                     <td className="py-3 pr-4">
-                      <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold">
-                        {a.status}
-                      </span>
+                      <StatusPill status={a.status} />
                     </td>
                     <td className="py-3 pr-4">{a.submission_count ?? 0}</td>
                     <td className="py-3">
@@ -177,7 +180,14 @@ export default async function AcademicOverviewPage() {
             </table>
           </div>
         </section>
-      ) : null}
+      ) : (
+        <EmptyState
+          title="No assignments yet"
+          description="Create your first assignment to start collecting and marking student submissions."
+          href="/dashboard/academic/assignments/new"
+          label="Create Assignment"
+        />
+      )}
     </main>
   );
 }

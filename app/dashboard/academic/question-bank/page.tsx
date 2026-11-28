@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
-import { PageHeading } from "@/components/ui/workspace";
+import { EmptyState, PageHeading } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 
 export default async function QuestionBankPage() {
   const membership = await requireBusinessMembership();
@@ -23,6 +24,7 @@ export default async function QuestionBankPage() {
 
   return (
     <main className="space-y-6">
+      <Breadcrumbs items={[{ label: "Academic", href: "/dashboard/academic" }, { label: "Question Bank" }]} />
       <PageHeading
         eyebrow="QUESTION BANK"
         title="Reusable Question Bank"
@@ -36,9 +38,12 @@ export default async function QuestionBankPage() {
 
       <section className="panel p-6">
         {!items || items.length === 0 ? (
-          <p className="text-sm text-neutral-600">
-            No questions in the bank yet. Questions created in assignments can be saved here for reuse.
-          </p>
+          <EmptyState
+            title="No questions in the bank yet"
+            description="Questions created in assignments can be saved here for reuse."
+            href="/dashboard/academic/assignments/new"
+            label="Create Assignment"
+          />
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {items.map((item) => (

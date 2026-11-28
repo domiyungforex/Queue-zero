@@ -9,6 +9,7 @@ import { AttendanceNotificationsPanel } from "@/components/school/attendance-not
 import { getAttendanceNotificationSummary } from "@/lib/school/attendance-notifications";
 import { LiveRefresh } from "@/components/realtime/refresh";
 import { PageHeading, StatCard } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 import "@/components/school/school.css";
 
 export default async function ClassPage({ params, searchParams }: { params: Promise<{ classId: string }>; searchParams?: Promise<{ q?: string; department?: string }> }) {
@@ -58,6 +59,12 @@ export default async function ClassPage({ params, searchParams }: { params: Prom
 
   return (
     <>
+      <Breadcrumbs
+        items={[
+          { label: "Attendance", href: "/dashboard/attendance" },
+          { label: course.code },
+        ]}
+      />
       <PageHeading
         eyebrow={course.code}
         title={

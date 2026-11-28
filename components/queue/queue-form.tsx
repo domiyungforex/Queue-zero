@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
+import { StickyActionBar } from "@/components/ui/flow";
 import type { QueueAction, QueueField, QueueState, QueueValues } from "@/lib/validation/queue";
 
 const control = "mt-2 min-h-12 w-full min-w-0 rounded-lg border border-black/20 bg-white px-3 py-3 text-base aria-invalid:border-red-700";
@@ -57,7 +58,7 @@ export function QueueForm({ action, locations, initialValues, editing = false, u
       <div><label htmlFor="warningThreshold" className="font-semibold">Return notification threshold</label><input {...props("warningThreshold")} required type="number" inputMode="numeric" min={0} max={100} step={1} />{error("warningThreshold")}<p className="mt-2 text-sm text-muted">People ahead when a customer should start returning. Default: 3.</p></div>
       <div className="sm:col-span-2"><CustomDropdown key={values.phoneMode} name="phoneMode" label="Customer phone number" defaultValue={values.phoneMode ?? "none"} options={[{ value: "none", label: "Don’t collect phone numbers" }, { value: "optional", label: "Optional" }, { value: "required", label: "Required" }]} />{error("phoneMode")}</div>
     </fieldset>
-    <button type="submit" disabled={pending || state.conflict || !locations.some((location) => location.is_active)} className="min-h-12 rounded-xl bg-primary px-7 py-3 font-semibold text-white disabled:opacity-50">{pending ? "Saving queue…" : editing ? "Save changes" : "Create queue"}</button>
+    <StickyActionBar><button type="submit" disabled={pending || state.conflict || !locations.some((location) => location.is_active)} className="button-primary">{pending ? "Saving queue…" : editing ? "Save changes" : "Create queue"}</button></StickyActionBar>
     <p role="status" className="sr-only">{pending ? "Saving queue settings. Please wait." : ""}</p>
   </form>;
 }

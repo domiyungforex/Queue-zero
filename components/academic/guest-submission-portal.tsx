@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ArrowRight, Camera, CheckCircle2, CreditCard, Download, Eye, FileText, Plus, ShieldCheck, Trash2, UserCheck } from "lucide-react";
 import { DynamicCameraModal } from "@/components/school/dynamic-camera-modal";
+import { StepIndicator } from "@/components/ui/flow";
 import { submitGuestAssignmentAction, verifyGuestStudentForAssignment } from "@/lib/academic/guest-actions";
 import { formatNgnFromMinor } from "@/lib/academic/allowance-ledger";
 
@@ -175,29 +176,37 @@ export function GuestSubmissionPortal({
     setReceipt({ reference: res.reference, submittedAt: res.submittedAt, isLate: res.isLate });
   }
 
+  const guestSteps = ["Verify identity", "Answer", "Submit", "Done"];
+
   if (receipt) {
     return (
-      <section className="rounded-2xl border border-black/10 bg-white p-6 space-y-4">
-        <div className="flex items-center gap-3 text-emerald-700">
-          <CheckCircle2 size={24} aria-hidden="true" />
-          <div>
-            <h2 className="text-lg font-bold text-[#111318]">Assignment Submitted</h2>
-            <p className="text-xs text-neutral-600">Reference: {receipt.reference}</p>
+      <div className="space-y-6">
+        <StepIndicator steps={guestSteps} current={3} />
+        <section className="panel p-6 space-y-4 sm:p-8">
+          <div className="flex items-center gap-3 text-emerald-700">
+            <CheckCircle2 size={24} aria-hidden="true" />
+            <div>
+              <h2 className="text-lg font-bold text-[#111318]">Assignment Submitted</h2>
+              <p className="text-xs text-neutral-600">Reference: {receipt.reference}</p>
+            </div>
           </div>
-        </div>
-        <p className="text-sm text-neutral-700">
-          Your submission for <strong>{courseCode} — {assignmentTitle}</strong> was recorded at{" "}
-          {new Date(receipt.submittedAt).toLocaleString()}
-          {receipt.isLate ? " (Late)" : ""}.
-        </p>
-      </section>
+          <p className="text-sm text-neutral-700">
+            Your submission for <strong>{courseCode} — {assignmentTitle}</strong> was recorded at{" "}
+            {new Date(receipt.submittedAt).toLocaleString()}
+            {receipt.isLate ? " (Late)" : ""}.
+          </p>
+        </section>
+      </div>
     );
   }
 
+  const currentStep = submitting ? 2 : student ? 1 : 0;
+
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-black/10 bg-white p-6 space-y-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-[#ff6b2b]">
+      <StepIndicator steps={guestSteps} current={currentStep} />
+      <section className="panel p-6 space-y-5 sm:p-8">
+        <p className="eyebrow">
           {organizationName} · {courseCode}
         </p>
         <h1 className="text-2xl font-bold text-[#111318]">{assignmentTitle}</h1>
@@ -293,7 +302,7 @@ export function GuestSubmissionPortal({
 
       {student && allowance ? (
         allowance.requiresPayment ? (
-          <section className="rounded-2xl border border-black/10 bg-white p-6 space-y-4">
+          <section className="panel p-6 space-y-4 sm:p-8">
             <h2 className="text-lg font-bold text-[#111318]">Submission Fee Required</h2>
             <p className="text-sm text-neutral-600">
               You have used your 5 free submissions. Pay{" "}
@@ -311,7 +320,7 @@ export function GuestSubmissionPortal({
             </button>
           </section>
         ) : (
-          <section className="rounded-2xl border border-black/10 bg-white p-6 space-y-5">
+          <section className="panel p-6 space-y-5 sm:p-8">
             {questions.map((q) => (
               <div key={q.id} className="space-y-2 border-b border-black/5 pb-4">
                 <p className="text-sm font-bold text-[#111318]">

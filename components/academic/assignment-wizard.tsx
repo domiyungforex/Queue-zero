@@ -606,7 +606,7 @@ export function AssignmentWizard({
                   active
                     ? "border-[#ff6b2b] bg-[#fff5ef] text-[#111318] shadow-sm"
                     : completed
-                      ? "border-emerald-200 bg-emerald-50/60 text-emerald-900 hover:bg-emerald-50"
+                      ? "border-[#ffd9ca] bg-[#fffaf7] text-[#111318] hover:bg-[#fff0e8]"
                       : "border-black/10 bg-white text-neutral-600 hover:border-black/20 hover:bg-neutral-50"
                 }`}
               >
@@ -615,7 +615,7 @@ export function AssignmentWizard({
                     active
                       ? "bg-[#ff6b2b] text-white"
                       : completed
-                        ? "bg-emerald-600 text-white"
+                        ? "bg-[#ff4765] text-white"
                         : "bg-neutral-100 text-neutral-700"
                   }`}
                 >
@@ -1343,7 +1343,7 @@ export function AssignmentWizard({
           </div>
         ) : null}
 
-        <div className="mt-8 flex items-center justify-between border-t border-black/10 pt-5">
+        <div className="sticky bottom-4 z-10 mt-8 flex items-center justify-between rounded-xl border border-[#eee7e3] bg-white/95 p-3 shadow-[0_8px_30px_rgba(17,19,24,0.08)] backdrop-blur">
           <button
             type="button"
             disabled={step === 1}

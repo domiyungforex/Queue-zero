@@ -12,6 +12,20 @@ export function QrLoader({ label = "Loading", compact = false }: QrLoaderProps) 
   </div>;
 }
 
+export function ListSkeleton({ rows = 5 }: { rows?: number }) {
+  return <div className="list-skeleton" role="status" aria-label="Loading list">
+    <QrLoader label="Loading list" compact />
+    <ul aria-hidden="true" className="list-skeleton-rows">{Array.from({ length: rows }, (_, index) => <li className="list-skeleton-row" key={index}><span className="list-skeleton-badge" /><span className="list-skeleton-lines"><span /><span /></span><span className="list-skeleton-tail" /></li>)}</ul>
+  </div>;
+}
+
+export function PanelSkeleton({ label = "Loading panel" }: { label?: string }) {
+  return <div className="panel-skeleton" role="status" aria-label={label}>
+    <div className="page-skeleton-top"><QrLoader label={label} compact /><span className="skeleton-line skeleton-line-short" /></div>
+    <div aria-hidden="true" className="skeleton-panel" />
+  </div>;
+}
+
 export function PageSkeleton({ cards = 3, label = "Loading page" }: { cards?: number; label?: string }) {
   return <div className="page-skeleton" role="status" aria-label={label}>
     <div className="page-skeleton-top"><QrLoader label={label} compact /><span className="skeleton-line skeleton-line-short" /></div>

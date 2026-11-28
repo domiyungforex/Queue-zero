@@ -4,6 +4,7 @@ import { Download, Eye, FileText } from "lucide-react";
 import { getStudentPortalData } from "@/lib/academic/data";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
 import { PageHeading } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 import { StudentSubmissionEditor, type StudentQuestionView } from "@/components/academic/student-submission-editor";
 
 export default async function StudentAssignmentDetailPage({
@@ -71,6 +72,13 @@ export default async function StudentAssignmentDetailPage({
 
   return (
     <main className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Academic", href: "/dashboard/academic" },
+          { label: "Student Portal", href: "/dashboard/academic/student" },
+          { label: assignment.title },
+        ]}
+      />
       <PageHeading
         eyebrow={`${assignment.course_code ?? "COURSE"} · ${assignment.category.replaceAll("_", " ")}`}
         title={assignment.title}

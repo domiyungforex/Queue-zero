@@ -8,13 +8,14 @@ import {
   ArrowRight,
   CalendarClock,
   Check,
+  ChevronRight,
   FileText,
-  Plus,
   RotateCcw,
   Search,
   X,
 } from "lucide-react";
 import { CustomDropdown } from "@/components/ui/custom-dropdown";
+import { EmptyState, StatusPill } from "@/components/ui/workspace";
 import {
   archiveAssignmentAction,
   deleteAssignmentAction,
@@ -22,13 +23,6 @@ import {
   restoreAssignmentAction,
 } from "@/lib/academic/actions";
 import type { AssignmentSummary } from "@/lib/academic/data";
-
-function statusTone(status: string) {
-  if (status === "PUBLISHED") return "bg-emerald-50 text-emerald-800 border-emerald-200";
-  if (status === "DRAFT") return "bg-amber-50 text-amber-800 border-amber-200";
-  if (status === "ARCHIVED") return "bg-neutral-100 text-neutral-600 border-neutral-200";
-  return "bg-blue-50 text-blue-800 border-blue-200";
-}
 
 export function AssignmentsDashboard({
   assignments,
@@ -302,16 +296,12 @@ export function AssignmentsDashboard({
       ) : null}
 
       {filtered.length === 0 ? (
-        <div className="panel p-12 text-center">
-          <p className="text-base font-bold text-[#111318]">No assignments match your filters</p>
-          <p className="mt-1 text-sm text-neutral-600">
-            Create a new assignment or switch status tabs above.
-          </p>
-          <Link href="/dashboard/academic/assignments/new" className="button-primary mt-5 inline-flex">
-            <Plus size={16} aria-hidden="true" />
-            Create Assignment
-          </Link>
-        </div>
+        <EmptyState
+          title="No assignments match your filters"
+          description="Create a new assignment or switch status tabs above."
+          href="/dashboard/academic/assignments/new"
+          label="Create Assignment"
+        />
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
           {filtered.map((a) => {
@@ -319,7 +309,7 @@ export function AssignmentsDashboard({
             return (
               <article
                 key={a.id}
-                className="panel flex flex-col justify-between p-5 transition hover:border-black/20"
+                className="panel flex flex-col justify-between p-5 transition hover:border-[#ff6b2b]"
               >
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -339,11 +329,7 @@ export function AssignmentsDashboard({
                           Edited
                         </span>
                       ) : null}
-                      <span
-                        className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${statusTone(a.status)}`}
-                      >
-                        {a.status}
-                      </span>
+                      <StatusPill status={a.status} />
                     </div>
                   </div>
 
@@ -376,7 +362,7 @@ export function AssignmentsDashboard({
                       className="inline-flex items-center gap-1 font-bold text-[#ff6b2b] hover:underline"
                     >
                       Review &amp; Grade
-                      <ArrowRight size={13} aria-hidden="true" />
+                      <ChevronRight size={14} aria-hidden="true" />
                     </Link>
                   </div>
 

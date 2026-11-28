@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAcademicOverview } from "@/lib/academic/data";
 import { PageHeading } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 import { AssignmentWizard } from "@/components/academic/assignment-wizard";
 
 export default async function NewAssignmentPage() {
@@ -8,6 +9,13 @@ export default async function NewAssignmentPage() {
 
   return (
     <main className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Academic", href: "/dashboard/academic" },
+          { label: "Assignments", href: "/dashboard/academic/assignments" },
+          { label: "Create Assignment" },
+        ]}
+      />
       <PageHeading
         eyebrow="ASSIGNMENT WIZARD"
         title="Create Assignment"

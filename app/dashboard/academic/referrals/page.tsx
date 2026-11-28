@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireBusinessMembership } from "@/lib/business/membership";
 import { requireUserId } from "@/lib/auth/server";
 import { createJoinSupabaseClient } from "@/lib/db/join-server";
-import { PageHeading, StatCard } from "@/components/ui/workspace";
+import { EmptyState, PageHeading, StatCard } from "@/components/ui/workspace";
+import { Breadcrumbs } from "@/components/ui/flow";
 import { formatNgnFromMinor } from "@/lib/academic/allowance-ledger";
 
 export default async function ReferralsDashboardPage() {
@@ -47,6 +48,7 @@ export default async function ReferralsDashboardPage() {
 
   return (
     <main className="space-y-6">
+      <Breadcrumbs items={[{ label: "Academic", href: "/dashboard/academic" }, { label: "Referrals" }]} />
       <PageHeading
         eyebrow="REFERRAL PROGRAMME (10%)"
         title="Referral Commissions"
@@ -67,9 +69,10 @@ export default async function ReferralsDashboardPage() {
       <section className="panel p-6">
         <h2 className="text-lg font-bold text-[#111318]">Commission Ledger</h2>
         {refRows.length === 0 ? (
-          <p className="mt-2 text-sm text-neutral-600">
-            No referral commissions recorded yet. Append <code>?ref=YOUR_CODE</code> to any assignment link.
-          </p>
+          <EmptyState
+            title="No referral commissions yet"
+            description="No referral commissions recorded yet. Append ?ref=YOUR_CODE to any assignment link."
+          />
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
