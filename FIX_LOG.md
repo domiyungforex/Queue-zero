@@ -290,3 +290,50 @@ plan codes, so with them unset every paid button showed the disabled
 5. Mobile responsiveness was not re-tested; Team page needs real profiles
    published in the DB; pricing/hero marketing claims ("1,000+ teams", "4.9")
    still need a source or removal — content decision for the user.
+
+---
+
+# Submission reviewer identity + answers — branch `fix/submission-reviewer-identity-answers` (2026-11-28)
+
+## SUBMISSION REVIEWER — fake student identity, answers invisible to lecturers
+
+**Symptoms (verified live + in DB):** on the staff assignment detail page
+(`/dashboard/academic/assignments/[assignmentId]`), every submission showed a
+made-up identity ("Student 15368c" / matric "15368cc7" — slices of the student
+UUID), and the answer panel always said "No written text answer provided."
+even for submissions with a full written answer (e.g. SUB-C0CAA204).
+
+**Root causes:**
+1. The detail page never looked the student up: it hardcoded
+   `studentName: "Student " + student_id.slice(0, 6)` and
+   `matricNumber: student_id.slice(0, 8)`.
+2. The submissions query never selected `answers_json`, and
+   `submission-reviewer.tsx` rendered only `text_content`. Guest submissions
+   store per-question answers in `answers_json` (question_id -> answer) while
+   `text_content` stays empty, so the reviewer had nothing to show. The data
+   was intact in the DB the whole time.
+
+**Fixes:**
+- `app/dashboard/academic/assignments/[assignmentId]/page.tsx`: submissions
+  query now also selects `answers_json`; the assignment's questions are
+  loaded from `assignment_questions` (ordered by position); people
+  (`full_name`) and `school_profiles` (`matric_number`) are batch-loaded for
+  the distinct submission student ids, scoped to the workspace, via the same
+  service-role join client. Names fall back to the truncated-id label only
+  when no `people` row exists; the matric falls back to "" — never a fake
+  value sliced from the UUID.
+- `lib/academic/submission-review.ts` (new): pure helpers —
+  `buildQuestionAnswers` (joins `answers_json` to questions in position
+  order, skips unanswered questions, stringifies non-string answers),
+  `buildStudentIdentityMap`, `submissionStudentName`, `formatAnswerValue`.
+- `components/academic/submission-reviewer.tsx`: `SubmissionRow` gains
+  `questionAnswers`; the detail panel renders each question prompt (with
+  marks) and the student's answer, keeps the free-text block when
+  `textContent` exists, and shows "No written text answer provided." only
+  when there is neither. List rows/detail header show the real name and
+  matric (matric segment omitted when empty).
+
+**Tests:** `tests/unit/submission-review.test.ts` — answer join (present,
+missing question, orphaned answer, non-string answers, malformed/empty
+payloads, JSON-string payload) and identity mapping (real name + matric,
+no fabricated matric, fallback label). All pass.
