@@ -7,6 +7,7 @@ import {
   publishAssignmentAction,
   runSimilarityAnalysisAction,
 } from "@/lib/academic/actions";
+import type { QuestionAnswer } from "@/lib/academic/submission-review";
 
 export interface SubmissionRow {
   id: string;
@@ -17,6 +18,7 @@ export interface SubmissionRow {
   isLate: boolean;
   submittedAt: string | null;
   textContent: string | null;
+  questionAnswers: QuestionAnswer[];
   autoScore: number | null;
   finalScore: number | null;
   lecturerRemarks: string | null;
@@ -134,7 +136,7 @@ export function SubmissionReviewer({
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-neutral-600">
-                      {row.matricNumber} · Ref: {row.submissionReference}
+                      {row.matricNumber ? `${row.matricNumber} · ` : ""}Ref: {row.submissionReference}
                       {row.isLate ? " · LATE" : ""}
                     </p>
                   </button>
@@ -149,7 +151,7 @@ export function SubmissionReviewer({
                 <div>
                   <h2 className="text-lg font-bold text-[#111318]">{selected.studentName}</h2>
                   <p className="text-xs text-neutral-600">
-                    {selected.matricNumber} · Submitted{" "}
+                    {selected.matricNumber ? `${selected.matricNumber} · ` : ""}Submitted{" "}
                     {selected.submittedAt ? new Date(selected.submittedAt).toLocaleString() : "Draft"}
                   </p>
                 </div>
@@ -160,9 +162,31 @@ export function SubmissionReviewer({
 
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Student Answer</h3>
-                <div className="mt-2 whitespace-pre-wrap rounded-xl border border-black/10 bg-[#fffaf7] p-4 text-sm text-[#111318]">
-                  {selected.textContent || "No written text answer provided."}
-                </div>
+                {selected.questionAnswers.length > 0 ? (
+                  <div className="mt-2 space-y-3">
+                    {selected.questionAnswers.map((qa, index) => (
+                      <div
+                        key={`${qa.questionPrompt}-${index}`}
+                        className="rounded-xl border border-black/10 bg-[#fffaf7] p-4 text-sm text-[#111318]"
+                      >
+                        <p className="font-semibold">
+                          {qa.questionPrompt}{" "}
+                          <span className="text-xs font-bold text-neutral-500">({qa.marks} marks)</span>
+                        </p>
+                        <p className="mt-1.5 whitespace-pre-wrap">{qa.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {selected.textContent ? (
+                  <div className="mt-2 whitespace-pre-wrap rounded-xl border border-black/10 bg-[#fffaf7] p-4 text-sm text-[#111318]">
+                    {selected.textContent}
+                  </div>
+                ) : selected.questionAnswers.length === 0 ? (
+                  <div className="mt-2 whitespace-pre-wrap rounded-xl border border-black/10 bg-[#fffaf7] p-4 text-sm text-[#111318]">
+                    No written text answer provided.
+                  </div>
+                ) : null}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
