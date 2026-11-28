@@ -61,7 +61,7 @@ create policy grading_audit_logs_org_select
     exists (
       select 1 from public.business_members bm
       where bm.business_id = grading_audit_logs.organization_id
-        and bm.user_id = auth.uid()::text
+        and bm.clerk_user_id = (select private.current_clerk_user_id())
     )
   );
 
@@ -73,7 +73,7 @@ create policy grading_audit_logs_org_insert
     exists (
       select 1 from public.business_members bm
       where bm.business_id = grading_audit_logs.organization_id
-        and bm.user_id = auth.uid()::text
+        and bm.clerk_user_id = (select private.current_clerk_user_id())
         and bm.role in ('owner', 'admin', 'staff')
     )
   );
